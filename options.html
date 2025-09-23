@@ -1,5 +1,6 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -8,7 +9,7 @@
         * {
             box-sizing: border-box;
         }
-        
+
         body {
             font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
             background: #f8f9fa;
@@ -16,13 +17,13 @@
             padding: 0;
             line-height: 1.6;
         }
-        
+
         .container {
             max-width: 800px;
             margin: 0 auto;
             padding: 2rem;
         }
-        
+
         .header {
             background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
             color: white;
@@ -31,18 +32,18 @@
             text-align: center;
             margin-bottom: 2rem;
         }
-        
+
         .header h1 {
             margin: 0;
             font-size: 2rem;
             font-weight: 600;
         }
-        
+
         .header p {
             margin: 0.5rem 0 0 0;
             opacity: 0.9;
         }
-        
+
         .settings-section {
             background: white;
             padding: 1.5rem;
@@ -50,7 +51,7 @@
             margin-bottom: 1.5rem;
             border: 1px solid #e9ecef;
         }
-        
+
         .section-title {
             font-size: 1.25rem;
             font-weight: 600;
@@ -60,7 +61,7 @@
             align-items: center;
             gap: 8px;
         }
-        
+
         .setting-item {
             display: flex;
             justify-content: space-between;
@@ -68,29 +69,29 @@
             padding: 1rem 0;
             border-bottom: 1px solid #f1f3f4;
         }
-        
+
         .setting-item:last-child {
             border-bottom: none;
         }
-        
+
         .setting-info {
             flex: 1;
         }
-        
+
         .setting-label {
             font-weight: 500;
             margin-bottom: 0.25rem;
         }
-        
+
         .setting-description {
             font-size: 0.9rem;
             color: #6c757d;
         }
-        
+
         .setting-control {
             margin-left: 1rem;
         }
-        
+
         .toggle {
             position: relative;
             width: 50px;
@@ -100,11 +101,11 @@
             cursor: pointer;
             transition: background 0.2s;
         }
-        
+
         .toggle.active {
             background: #667eea;
         }
-        
+
         .toggle::after {
             content: '';
             position: absolute;
@@ -116,17 +117,17 @@
             left: 2px;
             transition: transform 0.2s;
         }
-        
+
         .toggle.active::after {
             transform: translateX(26px);
         }
-        
+
         .time-input {
             display: flex;
             align-items: center;
             gap: 8px;
         }
-        
+
         .time-input input {
             width: 80px;
             padding: 6px 8px;
@@ -134,7 +135,7 @@
             border-radius: 4px;
             font-size: 0.9rem;
         }
-        
+
         .time-input select {
             padding: 6px 8px;
             border: 1px solid #ced4da;
@@ -142,7 +143,7 @@
             font-size: 0.9rem;
             background: white;
         }
-        
+
         .group-list {
             max-height: 200px;
             overflow-y: auto;
@@ -150,42 +151,42 @@
             border-radius: 4px;
             margin-top: 0.5rem;
         }
-        
+
         .group-item {
             display: flex;
             align-items: center;
             padding: 8px 12px;
             border-bottom: 1px solid #f1f3f4;
         }
-        
+
         .group-item:last-child {
             border-bottom: none;
         }
-        
+
         .group-checkbox {
             margin-right: 8px;
         }
-        
+
         .group-name {
             flex: 1;
             font-size: 0.9rem;
         }
-        
+
         .group-count {
             font-size: 0.8rem;
             color: #6c757d;
         }
-        
+
         .whitelist-section {
             margin-top: 1rem;
         }
-        
+
         .url-input {
             display: flex;
             gap: 8px;
             margin-bottom: 0.5rem;
         }
-        
+
         .url-input input {
             flex: 1;
             padding: 8px 12px;
@@ -193,7 +194,7 @@
             border-radius: 4px;
             font-size: 0.9rem;
         }
-        
+
         .btn {
             padding: 8px 16px;
             border: none;
@@ -202,31 +203,31 @@
             cursor: pointer;
             transition: all 0.2s;
         }
-        
+
         .btn-primary {
             background: #667eea;
             color: white;
         }
-        
+
         .btn-primary:hover {
             background: #5a6fd8;
         }
-        
+
         .btn-danger {
             background: #dc3545;
             color: white;
         }
-        
+
         .btn-danger:hover {
             background: #c82333;
         }
-        
+
         .url-list {
             list-style: none;
             padding: 0;
             margin: 0;
         }
-        
+
         .url-item {
             display: flex;
             justify-content: space-between;
@@ -237,7 +238,7 @@
             margin-bottom: 4px;
             font-size: 0.9rem;
         }
-        
+
         .save-section {
             text-align: center;
             padding: 1.5rem;
@@ -245,7 +246,7 @@
             border-radius: 8px;
             border: 1px solid #e9ecef;
         }
-        
+
         .btn-save {
             background: #28a745;
             color: white;
@@ -253,24 +254,24 @@
             font-size: 1rem;
             font-weight: 500;
         }
-        
+
         .btn-save:hover {
             background: #218838;
         }
-        
+
         .status-message {
             margin-top: 1rem;
             padding: 8px 16px;
             border-radius: 4px;
             display: none;
         }
-        
+
         .status-success {
             background: #d4edda;
             color: #155724;
             border: 1px solid #c3e6cb;
         }
-        
+
         .status-error {
             background: #f8d7da;
             color: #721c24;
@@ -278,16 +279,17 @@
         }
     </style>
 </head>
+
 <body>
     <div class="container">
         <div class="header">
             <h1>💤 Tab Suspend Pro Settings</h1>
             <p>Configure how tabs are automatically suspended to save memory</p>
         </div>
-        
+
         <div class="settings-section">
             <h2 class="section-title">🔧 General Settings</h2>
-            
+
             <div class="setting-item">
                 <div class="setting-info">
                     <div class="setting-label">Enable Tab Suspension</div>
@@ -297,11 +299,12 @@
                     <div class="toggle active" id="enable-toggle"></div>
                 </div>
             </div>
-            
+
             <div class="setting-item">
                 <div class="setting-info">
                     <div class="setting-label">Auto-suspend inactive tabs after</div>
-                    <div class="setting-description">Automatically suspend tabs that haven't been used for this amount of time</div>
+                    <div class="setting-description">Automatically suspend tabs that haven't been used for this amount
+                        of time</div>
                 </div>
                 <div class="setting-control">
                     <div class="time-input">
@@ -314,47 +317,49 @@
                 </div>
             </div>
         </div>
-        
+
         <div class="settings-section">
             <h2 class="section-title">👥 Tab Groups</h2>
-            
+
             <div class="setting-item">
                 <div class="setting-info">
                     <div class="setting-label">Excluded Tab Groups</div>
-                    <div class="setting-description">Select tab groups that should never be automatically suspended</div>
+                    <div class="setting-description">Select tab groups that should never be automatically suspended
+                    </div>
                 </div>
             </div>
-            
+
             <div class="group-list" id="group-list">
                 <div style="padding: 20px; text-align: center; color: #6c757d;">
                     Loading tab groups...
                 </div>
             </div>
         </div>
-        
+
         <div class="settings-section">
             <h2 class="section-title">🔗 URL Whitelist</h2>
-            
+
             <div class="setting-item">
                 <div class="setting-info">
                     <div class="setting-label">Never suspend these URLs</div>
-                    <div class="setting-description">Add URL patterns that should never be suspended (e.g., meet.google.com, localhost:)</div>
+                    <div class="setting-description">Add URL patterns that should never be suspended (e.g.,
+                        meet.google.com, localhost:)</div>
                 </div>
             </div>
-            
+
             <div class="whitelist-section">
                 <div class="url-input">
                     <input type="text" id="new-url" placeholder="Enter URL pattern (e.g., github.com, localhost:)">
                     <button class="btn btn-primary" id="add-url">Add</button>
                 </div>
-                
+
                 <ul class="url-list" id="url-list"></ul>
             </div>
         </div>
-        
+
         <div class="settings-section">
             <h2 class="section-title">📊 Advanced Options</h2>
-            
+
             <div class="setting-item">
                 <div class="setting-info">
                     <div class="setting-label">Suspend tabs playing audio</div>
@@ -364,7 +369,7 @@
                     <div class="toggle" id="audio-toggle"></div>
                 </div>
             </div>
-            
+
             <div class="setting-item">
                 <div class="setting-info">
                     <div class="setting-label">Show suspension notifications</div>
@@ -374,24 +379,26 @@
                     <div class="toggle active" id="notifications-toggle"></div>
                 </div>
             </div>
-            
+
             <div class="setting-item">
                 <div class="setting-info">
                     <div class="setting-label">Aggressive memory saving</div>
-                    <div class="setting-description">Use more aggressive suspension methods (may affect tab restoration)</div>
+                    <div class="setting-description">Use more aggressive suspension methods (may affect tab restoration)
+                    </div>
                 </div>
                 <div class="setting-control">
                     <div class="toggle" id="aggressive-toggle"></div>
                 </div>
             </div>
         </div>
-        
+
         <div class="save-section">
-            <button class="btn btn-save" id="save-settings">💾 Save Settings</button>
+            <button class="btn btn-primary" id="save-settings">Save Settings</button>
             <div class="status-message" id="status-message"></div>
         </div>
     </div>
 
     <script src="options.js"></script>
 </body>
+
 </html>

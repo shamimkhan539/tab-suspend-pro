@@ -1,70 +1,175 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Tab Suspend Pro</title>
+    <title>Tab Suspender Pro</title>
     <style>
+        :root {
+            --bg-primary: #f8f9fa;
+            --bg-secondary: #ffffff;
+            --bg-tertiary: #e9ecef;
+            --text-primary: #495057;
+            --text-secondary: #6c757d;
+            --border-color: #e9ecef;
+            --border-hover: #adb5bd;
+            --card-bg: #ffffff;
+            --btn-secondary-bg: #ffffff;
+            --btn-secondary-hover: #f8f9fa;
+        }
+
+        [data-theme="dark"] {
+            --bg-primary: #1a1a1a;
+            --bg-secondary: #2d2d2d;
+            --bg-tertiary: #404040;
+            --text-primary: #e0e0e0;
+            --text-secondary: #b0b0b0;
+            --border-color: #404040;
+            --border-hover: #606060;
+            --card-bg: #2d2d2d;
+            --btn-secondary-bg: #2d2d2d;
+            --btn-secondary-hover: #404040;
+            --header-gradient-start: #4a5568;
+            --header-gradient-end: #553c9a;
+        }
+
         body {
             width: 350px;
+            min-height: 600px;
             padding: 0;
             margin: 0;
             font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-            background: #f8f9fa;
+            background: var(--bg-primary);
+            color: var(--text-primary);
+            transition: background-color 0.3s, color 0.3s;
         }
-        
+
         .header {
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            background: linear-gradient(135deg, var(--header-gradient-start, #667eea) 0%, var(--header-gradient-end, #764ba2) 100%);
             color: white;
             padding: 16px;
             text-align: center;
+            position: relative;
         }
-        
+
         .header h1 {
             margin: 0;
             font-size: 1.2rem;
             font-weight: 600;
         }
-        
+
         .header .subtitle {
             margin: 4px 0 0 0;
             font-size: 0.85rem;
             opacity: 0.9;
         }
-        
+
+        .theme-toggle {
+            border: none;
+            color: white;
+            width: 32px;
+            height: 32px;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.3rem;
+            transition: all 0.2s;
+            background-color: transparent;
+            padding: 0;
+        }
+
+        .content .status .settings-toggle {
+            background-color: transparent;
+            padding: 0;
+            border: None;
+            cursor: pointer;
+            transition: all 0.2s;
+            font-size: 1.3rem;
+            width: 32px;
+            height: 32px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+
+        .content .status .settings-toggle.disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+
+        .whitelist-actions {
+            margin-top: 16px;
+            padding-top: 16px;
+            border-top: 1px solid var(--border-color);
+            display: block;
+            width: 100%;
+        }
+
+        .whitelist-btn {
+            background: var(--btn-secondary-bg) !important;
+            color: var(--text-primary) !important;
+            border: 1px solid var(--border-color) !important;
+            font-size: 0.85rem;
+            text-align: left;
+            margin-bottom: 6px;
+            width: 100%;
+            display: block;
+        }
+
+        .whitelist-btn:hover {
+            background: var(--btn-secondary-hover) !important;
+            border-color: var(--border-hover) !important;
+        }
+
+        .whitelist-btn.disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+
         .content {
             padding: 16px;
         }
-        
+
         .status {
             display: flex;
             align-items: center;
             justify-content: space-between;
             padding: 12px;
-            background: white;
+            background: var(--card-bg);
             border-radius: 8px;
             margin-bottom: 16px;
-            border: 1px solid #e9ecef;
+            border: 1px solid var(--border-color);
         }
-        
+
         .status-text {
             font-weight: 500;
+            color: var(--text-primary);
         }
-        
+
+        .status-controls {
+            display: flex;
+            align-items: center;
+            justify-content: end;
+            gap: 8px;
+        }
+
         .toggle {
             position: relative;
             width: 50px;
             height: 24px;
-            background: #ccc;
+            background: var(--border-color);
             border-radius: 12px;
             cursor: pointer;
             transition: background 0.2s;
         }
-        
+
         .toggle.active {
             background: #667eea;
         }
-        
+
         .toggle::after {
             content: '';
             position: absolute;
@@ -76,44 +181,44 @@
             left: 2px;
             transition: transform 0.2s;
         }
-        
+
         .toggle.active::after {
             transform: translateX(26px);
         }
-        
+
         .stats {
             display: grid;
             grid-template-columns: 1fr 1fr;
             gap: 12px;
             margin-bottom: 16px;
         }
-        
+
         .stat-card {
-            background: white;
+            background: var(--card-bg);
             padding: 12px;
             border-radius: 8px;
             text-align: center;
-            border: 1px solid #e9ecef;
+            border: 1px solid var(--border-color);
         }
-        
+
         .stat-number {
             font-size: 1.5rem;
             font-weight: 600;
             color: #667eea;
         }
-        
+
         .stat-label {
             font-size: 0.8rem;
-            color: #6c757d;
+            color: var(--text-secondary);
             margin-top: 4px;
         }
-        
+
         .actions {
             display: flex;
             flex-direction: column;
             gap: 8px;
         }
-        
+
         .btn {
             padding: 10px 16px;
             border: none;
@@ -121,66 +226,66 @@
             font-size: 0.9rem;
             cursor: pointer;
             transition: all 0.2s;
-            text-align: center;
             display: flex;
             align-items: center;
-            justify-content: center;
+            justify-content: start;
             gap: 8px;
         }
-        
+
         .btn-primary {
             background: #667eea;
             color: white;
         }
-        
+
         .btn-primary:hover {
             background: #5a6fd8;
         }
-        
+
         .btn-secondary {
-            background: white;
-            color: #495057;
-            border: 1px solid #e9ecef;
+            background: var(--btn-secondary-bg);
+            color: var(--text-primary);
+            border: 1px solid var(--border-color);
         }
-        
+
         .btn-secondary:hover {
-            background: #f8f9fa;
+            background: #5a6fd8;
+            color: white;
         }
-        
+
         .suggestions {
             margin-top: 16px;
             padding-top: 16px;
-            border-top: 1px solid #e9ecef;
+            border-top: 1px solid var(--border-color);
         }
-        
+
         .suggestion-item {
             display: flex;
             align-items: center;
             padding: 8px;
-            background: white;
+            background: var(--card-bg);
             border-radius: 6px;
             margin-bottom: 8px;
-            border: 1px solid #e9ecef;
+            border: 1px solid var(--border-color);
             cursor: pointer;
             transition: all 0.2s;
         }
-        
+
         .suggestion-item:hover {
             background: #f8f9fa;
         }
-        
+
         .suggestion-favicon {
             width: 16px;
             height: 16px;
             margin-right: 8px;
             border-radius: 2px;
         }
-        
+
         .suggestion-info {
             flex: 1;
             min-width: 0;
         }
-        
+
         .suggestion-title {
             font-size: 0.85rem;
             font-weight: 500;
@@ -188,24 +293,24 @@
             text-overflow: ellipsis;
             white-space: nowrap;
         }
-        
+
         .suggestion-meta {
             font-size: 0.75rem;
             color: #6c757d;
             margin-top: 2px;
         }
-        
+
         .suggestion-actions {
             display: flex;
             gap: 4px;
         }
-        
+
         .btn-small {
             padding: 4px 8px;
             font-size: 0.75rem;
             border-radius: 4px;
         }
-        
+
         .group-selector {
             margin: 16px 0;
             padding: 12px;
@@ -213,35 +318,42 @@
             border-radius: 8px;
             border: 1px solid #e9ecef;
         }
-        
+
         .group-selector select {
             width: 100%;
             padding: 8px 12px;
-            border: 1px solid #ced4da;
+            border: 1px solid var(--border-color);
             border-radius: 6px;
             font-size: 0.9rem;
-            background: white;
+            background: var(--card-bg);
+            color: var(--text-primary);
             margin-bottom: 8px;
         }
-        
+
         .group-selector label {
-            color: #495057;
+            color: var(--text-primary);
             font-weight: 500;
         }
     </style>
 </head>
+
 <body>
     <div class="header">
-        <h1>💤 Tab Suspend Pro</h1>
-        <div class="subtitle">Save memory by suspending inactive tabs</div>
+
+        <h1>Tab Suspender Pro</h1>
+        <div class="subtitle">Save memory by susstatus-textpending inactive tabs</div>
     </div>
-    
+
     <div class="content">
         <div class="status">
-            <div class="status-text" id="status-text">Extension Enabled</div>
-            <div class="toggle active" id="toggle"></div>
+            <h3 class="" id="status-text">Extension Enabled</h3>
+            <div class="status-controls">
+                <div class="toggle active" id="toggle"></div>
+                <button class="settings-toggle" id="settings-btn" title="Settings">⚙️</button>
+                <button class="theme-toggle" id="theme-toggle" title="Toggle dark/light theme">🌙</button>
+            </div>
         </div>
-        
+
         <div class="stats">
             <div class="stat-card">
                 <div class="stat-number" id="suspended-count">0</div>
@@ -252,52 +364,53 @@
                 <div class="stat-label">Memory Saved</div>
             </div>
         </div>
-        
+
         <div class="actions">
-            <button class="btn btn-primary" id="suspend-current">
-                💤 Suspend Current Tab
+            <button class="btn btn-secondary" id="suspend-current">
+                Suspend Current Tab
             </button>
             <button class="btn btn-secondary" id="suggest-tabs">
-                🔍 Suggest Next Suspend
+                Suggest Next Suspend
             </button>
             <button class="btn btn-secondary" id="restore-all">
-                🔄 Restore All Tabs
+                Restore All Tabs
             </button>
-            
-            <!-- Tab Group Selector -->
-            <div class="group-selector" id="group-selector" style="display: none;">
-                <label for="group-dropdown" style="font-size: 0.9rem; font-weight: 500; margin-bottom: 8px; display: block;">Select Tab Group to Suspend:</label>
-                <select class="btn btn-secondary" id="group-dropdown" style="width: 100%; text-align: left;">
+            <button class="btn btn-secondary" id="restore-lost"
+                title="Recreate tabs that were suspended but lost after reload">
+                Restore Lost Tabs
+            </button>
+
+            <!-- Combined Tab Group Selector -->
+            <div class="group-selector" id="combined-group-selector" style="display: none;">
+                <label for="combined-group-dropdown"
+                    style="font-size: 0.9rem; font-weight: 500; margin-bottom: 8px; display: block;">Select Tab
+                    Group:</label>
+                <select class="btn btn-secondary" id="combined-group-dropdown" style="width: 100%; text-align: left;">
                     <option value="">Loading tab groups...</option>
                 </select>
-                <button class="btn btn-primary" id="suspend-selected-group" style="margin-top: 8px;">
-                    💤 Suspend Selected Group
-                </button>
+                <div id="group-action-buttons" style="margin-top: 8px; display: flex; gap: 8px;">
+                    <button class="btn btn-primary" id="suspend-group-btn" style="flex: 1; display: none;">
+                        Suspend Group
+                    </button>
+                    <button class="btn btn-primary" id="restore-group-btn" style="flex: 1; display: none;">
+                        Restore Group
+                    </button>
+                </div>
             </div>
-            
-            <!-- Tab Group Restore Selector -->
-            <div class="group-selector" id="restore-group-selector" style="display: none;">
-                <label for="restore-group-dropdown" style="font-size: 0.9rem; font-weight: 500; margin-bottom: 8px; display: block;">Select Tab Group to Restore:</label>
-                <select class="btn btn-secondary" id="restore-group-dropdown" style="width: 100%; text-align: left;">
-                    <option value="">Loading suspended groups...</option>
-                </select>
-                <button class="btn btn-primary" id="restore-selected-group" style="margin-top: 8px;">
-                    🔄 Restore Selected Group
-                </button>
-            </div>
-            
-            <button class="btn btn-secondary" id="toggle-group-selector">
-                👥 Suspend Tab Group
+
+            <button class="btn btn-secondary" id="toggle-combined-group-selector">
+                Suspend/Restore Tab Groups
             </button>
-            
-            <button class="btn btn-secondary" id="toggle-restore-group-selector">
-                🔄 Restore Tab Group
+
+            <!-- Whitelist (Never Suspend) Actions -->
+            <button class="btn btn-secondary" id="never-suspend-url" title="Add this exact page URL to the whitelist">
+                Never suspend this URL
             </button>
-            <button class="btn btn-secondary" id="open-settings">
-                ⚙️ Settings
+            <button class="btn btn-secondary" id="never-suspend-domain" title="Add this domain to the whitelist">
+                Never suspend this domain
             </button>
         </div>
-        
+
         <div class="suggestions" id="suggestions" style="display: none;">
             <h3 style="margin: 0 0 12px 0; font-size: 0.9rem;">Suggested tabs to suspend:</h3>
             <div id="suggestion-list"></div>
@@ -306,4 +419,5 @@
 
     <script src="popup.js"></script>
 </body>
+
 </html>
