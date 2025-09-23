@@ -258,7 +258,7 @@
                 💤 Suspend Current Tab
             </button>
             <button class="btn btn-secondary" id="suggest-tabs">
-                🔍 Find Tabs to Suspend
+                🔍 Suggest Next Suspend
             </button>
             <button class="btn btn-secondary" id="restore-all">
                 🔄 Restore All Tabs
@@ -275,8 +275,23 @@
                 </button>
             </div>
             
+            <!-- Tab Group Restore Selector -->
+            <div class="group-selector" id="restore-group-selector" style="display: none;">
+                <label for="restore-group-dropdown" style="font-size: 0.9rem; font-weight: 500; margin-bottom: 8px; display: block;">Select Tab Group to Restore:</label>
+                <select class="btn btn-secondary" id="restore-group-dropdown" style="width: 100%; text-align: left;">
+                    <option value="">Loading suspended groups...</option>
+                </select>
+                <button class="btn btn-primary" id="restore-selected-group" style="margin-top: 8px;">
+                    🔄 Restore Selected Group
+                </button>
+            </div>
+            
             <button class="btn btn-secondary" id="toggle-group-selector">
                 👥 Suspend Tab Group
+            </button>
+            
+            <button class="btn btn-secondary" id="toggle-restore-group-selector">
+                🔄 Restore Tab Group
             </button>
             <button class="btn btn-secondary" id="open-settings">
                 ⚙️ Settings

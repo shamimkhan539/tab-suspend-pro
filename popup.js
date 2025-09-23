@@ -25,6 +25,7 @@ class PopupManager {
       const groups = await chrome.tabGroups.query({});
       this.tabGroups = groups;
       this.populateGroupDropdown(groups);
+      await this.populateRestoreGroupDropdown();
     } catch (error) {
       console.error('Error loading tab groups:', error);
     }
@@ -48,6 +49,51 @@ class PopupManager {
       option.style.color = group.color || '#495057';
       dropdown.appendChild(option);
     });
+  }
+
+  async populateRestoreGroupDropdown() {
+    try {
+      const tabs = await chrome.tabs.query({});
+      const suspendedGroupIds = new Set();
+      
+      // Find all group IDs that have suspended tabs
+      tabs.forEach(tab => {
+        if (tab.url && tab.url.includes('suspended.html') && 
+            tab.groupId !== chrome.tabGroups.TAB_GROUP_ID_NONE) {
+          suspendedGroupIds.add(tab.groupId);
+        }
+      });
+
+      const dropdown = document.getElementById('restore-group-dropdown');
+      dropdown.innerHTML = '';
+      
+      if (suspendedGroupIds.size === 0) {
+        dropdown.innerHTML = '<option value="">No suspended groups found</option>';
+        return;
+      }
+      
+      dropdown.innerHTML = '<option value="">Select a group to restore...</option>';
+      
+      // Get group details for suspended groups
+      for (const groupId of suspendedGroupIds) {
+        try {
+          const group = await chrome.tabGroups.get(groupId);
+          const groupTabs = tabs.filter(tab => tab.groupId === groupId);
+          const suspendedCount = groupTabs.filter(tab => tab.url.includes('suspended.html')).length;
+          
+          const option = document.createElement('option');
+          option.value = groupId;
+          option.textContent = `${group.title || 'Unnamed Group'} (${suspendedCount} suspended)`;
+          option.style.color = group.color || '#495057';
+          dropdown.appendChild(option);
+        } catch (error) {
+          // Group might have been deleted, skip it
+          continue;
+        }
+      }
+    } catch (error) {
+      console.error('Error loading suspended groups:', error);
+    }
   }
 
   async updateStats() {
@@ -105,12 +151,28 @@ class PopupManager {
     // Toggle group selector
     document.getElementById('toggle-group-selector').addEventListener('click', () => {
       const groupSelector = document.getElementById('group-selector');
+      const restoreSelector = document.getElementById('restore-group-selector');
       const isVisible = groupSelector.style.display !== 'none';
+      
       groupSelector.style.display = isVisible ? 'none' : 'block';
+      restoreSelector.style.display = 'none'; // Hide restore selector
       
       if (!isVisible) {
-        // Refresh tab groups when showing
         this.loadTabGroups();
+      }
+    });
+
+    // Toggle restore group selector
+    document.getElementById('toggle-restore-group-selector').addEventListener('click', () => {
+      const groupSelector = document.getElementById('group-selector');
+      const restoreSelector = document.getElementById('restore-group-selector');
+      const isVisible = restoreSelector.style.display !== 'none';
+      
+      restoreSelector.style.display = isVisible ? 'none' : 'block';
+      groupSelector.style.display = 'none'; // Hide suspend selector
+      
+      if (!isVisible) {
+        this.populateRestoreGroupDropdown();
       }
     });
 
@@ -127,8 +189,26 @@ class PopupManager {
       await this.sendMessageToBackground('suspendTabGroup', { groupId: parseInt(selectedGroupId) });
       setTimeout(() => this.updateStats(), 500);
       
-      // Hide selector after suspending
       document.getElementById('group-selector').style.display = 'none';
+    });
+
+    // Restore selected group
+    document.getElementById('restore-selected-group').addEventListener('click', async () => {
+      const dropdown = document.getElementById('restore-group-dropdown');
+      const selectedGroupId = dropdown.value;
+      
+      if (!selectedGroupId) {
+        alert('Please select a group to restore first');
+        return;
+      }
+      
+      await this.sendMessageToBackground('restoreTabGroup', { groupId: parseInt(selectedGroupId) });
+      setTimeout(() => {
+        this.updateStats();
+        this.populateRestoreGroupDropdown(); // Refresh the restore dropdown
+      }, 500);
+      
+      document.getElementById('restore-group-selector').style.display = 'none';
     });
   }
 
@@ -204,19 +284,60 @@ class PopupManager {
   }
 
   estimateTabMemory(tab) {
-    let estimate = 50;
-    
-    if (tab.url) {
-      if (tab.url.includes('youtube.com') || tab.url.includes('video')) {
-        estimate += 100;
-      } else if (tab.url.includes('docs.google.com') || tab.url.includes('office.com')) {
-        estimate += 75;
-      } else if (tab.url.includes('github.com') || tab.url.includes('stackoverflow.com')) {
+    let estimate = 30; // Base memory in MB
+
+    // URL-based estimates
+    if (tab.url.includes('youtube.com') || tab.url.includes('video')) {
+      estimate += 150;
+    } else if (tab.url.includes('docs.google.com') || tab.url.includes('office.com')) {
+      estimate += 100;
+    } else if (tab.url.includes('github.com')) {
+      estimate += 40;
+    } else if (tab.url.includes('stackoverflow.com') || tab.url.includes('reddit.com')) {
+      estimate += 35;
+    } else if (tab.url.includes('facebook.com') || tab.url.includes('twitter.com') || tab.url.includes('linkedin.com')) {
+      estimate += 80;
+    } else if (tab.url.includes('gmail.com') || tab.url.includes('outlook.com')) {
+      estimate += 70;
+    } else if (tab.url.includes('atlassian.net') || tab.url.includes('jira') || tab.url.includes('confluence')) {
+      estimate += 90;
+    } else if (tab.url.includes('figma.com') || tab.url.includes('canva.com')) {
+      estimate += 120;
+    } else if (tab.url.includes('netflix.com') || tab.url.includes('hulu.com') || tab.url.includes('primevideo.com')) {
+      estimate += 180;
+    } else if (tab.url.includes('spotify.com') || tab.url.includes('music')) {
+      estimate += 60;
+    } else if (tab.url.includes('discord.com') || tab.url.includes('slack.com')) {
+      estimate += 85;
+    } else if (tab.url.includes('maps.google.com') || tab.url.includes('maps')) {
+      estimate += 110;
+    }
+
+    // Title-based adjustments
+    if (tab.title) {
+      const title = tab.title.toLowerCase();
+      if (title.includes('dashboard') || title.includes('admin')) {
+        estimate += 25;
+      }
+      if (title.includes('editor') || title.includes('ide')) {
         estimate += 30;
       }
+      if (title.includes('meeting') || title.includes('zoom') || title.includes('teams')) {
+        estimate += 100;
+      }
     }
-    
-    return estimate;
+
+    // Audible tabs use more memory
+    if (tab.audible) {
+      estimate += 50;
+    }
+
+    // Pinned tabs might be heavier
+    if (tab.pinned) {
+      estimate += 20;
+    }
+
+    return Math.min(estimate, 300); // Cap at 300MB
   }
 }
 

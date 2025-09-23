@@ -578,18 +578,96 @@ class TabSuspendManager {
     return this.settings.whitelistedUrls.some(pattern => url.startsWith(pattern));
   }
 
-  estimateTabMemory(tab) {
-    let estimate = 50;
+  async addToWhitelist(url, type) {
+    try {
+      let urlToAdd = '';
+      
+      if (type === 'url') {
+        // Add exact URL
+        urlToAdd = url;
+      } else if (type === 'domain') {
+        // Extract domain from URL
+        try {
+          const urlObj = new URL(url);
+          urlToAdd = urlObj.hostname;
+        } catch (error) {
+          // If URL parsing fails, try to extract domain manually
+          const match = url.match(/(?:https?:\/\/)?(?:www\.)?([^\/]+)/);
+          urlToAdd = match ? match[1] : url;
+        }
+      }
+      
+      if (urlToAdd && !this.settings.whitelistedUrls.includes(urlToAdd)) {
+        this.settings.whitelistedUrls.push(urlToAdd);
+        await this.saveSettings();
+        
+        chrome.notifications.create({
+          type: 'basic',
+          iconUrl: 'icons/icon48.png',
+          title: 'Tab Suspend Pro',
+          message: `Added to whitelist: ${urlToAdd}`
+        });
+        
+        console.log('Added to whitelist:', urlToAdd);
+      }
+    } catch (error) {
+      console.error('Error adding to whitelist:', error);
+    }
+  }
+    let estimate = 30; // Base memory in MB
 
+    // URL-based estimates
     if (tab.url.includes('youtube.com') || tab.url.includes('video')) {
-      estimate += 100;
+      estimate += 150; // Video streaming uses lots of memory
     } else if (tab.url.includes('docs.google.com') || tab.url.includes('office.com')) {
-      estimate += 75;
-    } else if (tab.url.includes('github.com') || tab.url.includes('stackoverflow.com')) {
-      estimate += 30;
+      estimate += 100; // Office applications are memory-heavy
+    } else if (tab.url.includes('github.com')) {
+      estimate += 40; // Code repositories with syntax highlighting
+    } else if (tab.url.includes('stackoverflow.com') || tab.url.includes('reddit.com')) {
+      estimate += 35; // Content-heavy sites
+    } else if (tab.url.includes('facebook.com') || tab.url.includes('twitter.com') || tab.url.includes('linkedin.com')) {
+      estimate += 80; // Social media with dynamic content
+    } else if (tab.url.includes('gmail.com') || tab.url.includes('outlook.com')) {
+      estimate += 70; // Email clients with lots of JS
+    } else if (tab.url.includes('atlassian.net') || tab.url.includes('jira') || tab.url.includes('confluence')) {
+      estimate += 90; // Enterprise tools are memory-intensive
+    } else if (tab.url.includes('figma.com') || tab.url.includes('canva.com')) {
+      estimate += 120; // Design tools
+    } else if (tab.url.includes('netflix.com') || tab.url.includes('hulu.com') || tab.url.includes('primevideo.com')) {
+      estimate += 180; // Video streaming services
+    } else if (tab.url.includes('spotify.com') || tab.url.includes('music')) {
+      estimate += 60; // Music streaming
+    } else if (tab.url.includes('discord.com') || tab.url.includes('slack.com')) {
+      estimate += 85; // Chat applications
+    } else if (tab.url.includes('maps.google.com') || tab.url.includes('maps')) {
+      estimate += 110; // Maps applications
     }
 
-    return estimate;
+    // Title-based adjustments
+    if (tab.title) {
+      const title = tab.title.toLowerCase();
+      if (title.includes('dashboard') || title.includes('admin')) {
+        estimate += 25; // Admin interfaces tend to be heavy
+      }
+      if (title.includes('editor') || title.includes('ide')) {
+        estimate += 30; // Code editors
+      }
+      if (title.includes('meeting') || title.includes('zoom') || title.includes('teams')) {
+        estimate += 100; // Video conferencing
+      }
+    }
+
+    // Audible tabs use more memory
+    if (tab.audible) {
+      estimate += 50;
+    }
+
+    // Pinned tabs might be more important but also potentially heavier
+    if (tab.pinned) {
+      estimate += 20;
+    }
+
+    return Math.min(estimate, 300); // Cap at 300MB for reasonable estimates
   }
 }
 
