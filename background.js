@@ -578,7 +578,42 @@ class TabSuspendManager {
     return this.settings.whitelistedUrls.some(pattern => url.startsWith(pattern));
   }
 
-  estimateTabMemory(tab) {
+  async addToWhitelist(url, type) {
+    try {
+      let urlToAdd = '';
+      
+      if (type === 'url') {
+        // Add exact URL
+        urlToAdd = url;
+      } else if (type === 'domain') {
+        // Extract domain from URL
+        try {
+          const urlObj = new URL(url);
+          urlToAdd = urlObj.hostname;
+        } catch (error) {
+          // If URL parsing fails, try to extract domain manually
+          const match = url.match(/(?:https?:\/\/)?(?:www\.)?([^\/]+)/);
+          urlToAdd = match ? match[1] : url;
+        }
+      }
+      
+      if (urlToAdd && !this.settings.whitelistedUrls.includes(urlToAdd)) {
+        this.settings.whitelistedUrls.push(urlToAdd);
+        await this.saveSettings();
+        
+        chrome.notifications.create({
+          type: 'basic',
+          iconUrl: 'icons/icon48.png',
+          title: 'Tab Suspend Pro',
+          message: `Added to whitelist: ${urlToAdd}`
+        });
+        
+        console.log('Added to whitelist:', urlToAdd);
+      }
+    } catch (error) {
+      console.error('Error adding to whitelist:', error);
+    }
+  }
     let estimate = 30; // Base memory in MB
 
     // URL-based estimates
