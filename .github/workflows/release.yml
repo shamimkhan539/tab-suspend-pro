@@ -42,7 +42,7 @@ jobs:
       - name: Create GitHub Release
         uses: softprops/action-gh-release@v2
         with:
-          files: extension.zip
+          files: tab-suspender-pro-${{ steps.version.outputs.tag }}.zip
           body: ${{ steps.changelog.outputs.changelog }}
           draft: false  # Set to true if you want to review before publishing
           prerelease: false
