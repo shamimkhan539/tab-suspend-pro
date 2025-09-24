@@ -1,5 +1,6 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -16,7 +17,7 @@
             min-height: 100vh;
             color: white;
         }
-        
+
         .container {
             text-align: center;
             padding: 2rem;
@@ -27,19 +28,19 @@
             max-width: 500px;
             box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
         }
-        
+
         .icon {
             font-size: 4rem;
             margin-bottom: 1rem;
             opacity: 0.8;
         }
-        
+
         h1 {
             margin: 0 0 1rem 0;
             font-size: 2rem;
             font-weight: 300;
         }
-        
+
         .tab-info {
             background: rgba(0, 0, 0, 0.2);
             padding: 1rem;
@@ -49,14 +50,14 @@
             align-items: center;
             gap: 12px;
         }
-        
+
         .favicon {
             width: 24px;
             height: 24px;
             border-radius: 4px;
             flex-shrink: 0;
         }
-        
+
         .tab-title {
             font-weight: 500;
             text-align: left;
@@ -64,7 +65,7 @@
             text-overflow: ellipsis;
             white-space: nowrap;
         }
-        
+
         .tab-url {
             font-size: 0.85rem;
             opacity: 0.7;
@@ -73,7 +74,7 @@
             text-overflow: ellipsis;
             white-space: nowrap;
         }
-        
+
         .restore-btn {
             background: rgba(255, 255, 255, 0.2);
             border: 2px solid rgba(255, 255, 255, 0.3);
@@ -85,19 +86,19 @@
             transition: all 0.2s ease;
             margin: 0.5rem;
         }
-        
+
         .restore-btn:hover {
             background: rgba(255, 255, 255, 0.3);
             border-color: rgba(255, 255, 255, 0.5);
             transform: translateY(-2px);
         }
-        
+
         .memory-saved {
             font-size: 0.9rem;
             opacity: 0.8;
             margin-top: 1rem;
         }
-        
+
         .auto-restore {
             font-size: 0.85rem;
             opacity: 0.7;
@@ -106,11 +107,12 @@
         }
     </style>
 </head>
+
 <body>
     <div class="container">
-        <div class="icon">💤</div>
+        <div class="icon"><img class="logo" src="icons/icon128.png" alt=""></div>
         <h1>Tab Suspended</h1>
-        
+
         <div class="tab-info">
             <img class="favicon" id="favicon" src="" alt="">
             <div style="flex: 1; min-width: 0;">
@@ -118,15 +120,15 @@
                 <div class="tab-url" id="tab-url"></div>
             </div>
         </div>
-        
+
         <button class="restore-btn" id="restore-btn">
             🔄 Restore Tab
         </button>
-        
+
         <div class="memory-saved">
             💾 Estimated memory saved: <span id="memory-estimate">~50MB</span>
         </div>
-        
+
         <div class="auto-restore">
             This tab will automatically restore when you click on it
         </div>
@@ -134,4 +136,5 @@
 
     <script src="suspended.js"></script>
 </body>
+
 </html>

@@ -97,27 +97,13 @@
             });
         }
 
-        // Auto-restore on container click (but not on the button)
-        const container = document.querySelector(".container");
-        if (container) {
-            container.addEventListener("click", function (e) {
-                // Only restore if clicking on the container itself or tab info, not on the button
-                if (
-                    e.target === container ||
-                    e.target.classList.contains("tab-info") ||
-                    e.target.classList.contains("tab-title") ||
-                    e.target.classList.contains("tab-url") ||
-                    e.target.classList.contains("icon") ||
-                    e.target.tagName === "H1"
-                ) {
-                    restoreTab();
-                }
-            });
-        }
-
-        // Auto-restore on key press (Enter or Space)
+        // Auto-restore on key press (Enter or Space) only when restore button is focused
         document.addEventListener("keydown", function (e) {
-            if (e.key === "Enter" || e.key === " ") {
+            if (
+                (e.key === "Enter" || e.key === " ") &&
+                document.activeElement ===
+                    document.getElementById("restore-btn")
+            ) {
                 e.preventDefault();
                 restoreTab();
             }
