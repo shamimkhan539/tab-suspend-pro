@@ -1,0 +1,48 @@
+name: Build and Release Chrome Extension
+
+on:
+  push:
+    tags:
+      - 'v*.*.*'  # Triggers on semver tags
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write  # For creating releases
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0  # For changelog generation
+
+      - name: Setup Node.js (if building)
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'  # Adjust to your version
+
+      - name: Install dependencies (if building)
+        run: npm ci  # Skip if no npm dependencies
+
+      - name: Build extension (if needed)
+        run: npm run build  # Replace with your build command, e.g., "webpack" or skip if raw files
+
+      - name: Zip extension
+        run: |
+          # Zip the extension files; adjust path if build outputs to 'dist/'
+          zip -r extension.zip . -x "*.git*" "node_modules/*" ".github/*" "tests/*" "*.md"  # Customize exclusions
+        # If building to a dir like 'dist/', use: cd dist && zip -r ../extension.zip .
+
+      - name: Generate changelog
+        id: changelog
+        uses: heinrichreimer/github-changelog-generator-action@v2.4
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}  # Optional: auto-generates from commits
+
+      - name: Create GitHub Release
+        uses: softprops/action-gh-release@v2
+        with:
+          files: extension.zip
+          body: ${{ steps.changelog.outputs.changelog }}
+          draft: false  # Set to true if you want to review before publishing
+          prerelease: false
