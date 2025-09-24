@@ -14,7 +14,7 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v4
         with:
-          fetch-depth: 0  # Needed for changelog generation
+          fetch-depth: 0  # For changelog generation
 
       - name: Get version from tag
         id: version
