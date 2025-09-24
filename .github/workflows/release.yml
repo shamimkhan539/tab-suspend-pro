@@ -23,7 +23,7 @@ jobs:
       - name: Zip extension
         run: |
           # Zip all files, excluding unnecessary ones
-          zip -r my-extension-${{ steps.version.outputs.tag }}.zip . -x "*.git*" ".github/*" "*.md" "tests/*"
+          zip -r tab-suspender-pro-${{ steps.version.outputs.tag }}.zip . -x "*.git*" ".github/*" "*.md" "tests/*"
 
       - name: Create GitHub Release
         uses: softprops/action-gh-release@v2
