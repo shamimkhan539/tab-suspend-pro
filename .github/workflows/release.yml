@@ -16,6 +16,10 @@ jobs:
         with:
           fetch-depth: 0  # Needed for changelog generation
 
+      - name: Skip npm setup
+        run: echo "No npm dependencies, skipping install"
+        if: false  # Prevents any default npm action
+
       - name: Get version from tag
         id: version
         run: echo "tag=${GITHUB_REF#refs/tags/}" >> $GITHUB_OUTPUT
