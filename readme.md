@@ -1,4 +1,4 @@
-# Tab Suspend Pro 💤
+# Tab Suspender Pro 💤
 
 A powerful Chrome extension that automatically suspends inactive tabs to save up to 80% of memory usage. Keep your browser fast and responsive even with hundreds of open tabs!
 
