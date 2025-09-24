@@ -60,7 +60,7 @@ jobs:
                   generate_release_notes: true # Auto-generates changelog from commits
                   draft: false
                   prerelease: false
-                  name: "Tab Suspend Pro ${{ steps.version.outputs.tag }}"
+                  name: "tab-suspender-pro-${{ steps.version.outputs.tag }}"
                   body: |
                       ## Chrome Extension Release ${{ steps.version.outputs.tag }}
 
