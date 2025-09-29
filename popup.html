@@ -334,6 +334,145 @@
             color: var(--text-primary);
             font-weight: 500;
         }
+
+        /* Saved Groups Popup Styles */
+        .saved-groups-section {
+            margin-top: 16px;
+            padding-top: 16px;
+            border-top: 1px solid var(--border-color);
+        }
+
+        .popup-saved-group-item {
+            display: flex;
+            align-items: center;
+            padding: 8px;
+            background: var(--card-bg);
+            border-radius: 6px;
+            margin-bottom: 6px;
+            border: 1px solid var(--border-color);
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .popup-saved-group-item:hover {
+            background: var(--btn-secondary-hover);
+        }
+
+        .popup-group-info {
+            flex: 1;
+            min-width: 0;
+        }
+
+        .popup-group-name {
+            font-size: 0.8rem;
+            font-weight: 500;
+            margin-bottom: 2px;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+
+        .popup-group-meta {
+            font-size: 0.7rem;
+            color: var(--text-secondary);
+        }
+
+        .popup-group-actions {
+            display: flex;
+            gap: 4px;
+            opacity: 0;
+            transition: opacity 0.2s;
+        }
+
+        .popup-saved-group-item:hover .popup-group-actions {
+            opacity: 1;
+        }
+
+        .btn-small {
+            padding: 3px 6px;
+            font-size: 0.7rem;
+            border-radius: 3px;
+            border: none;
+            cursor: pointer;
+            font-weight: 500;
+            transition: all 0.2s;
+        }
+
+        .btn-restore-small {
+            background: #28a745;
+            color: white;
+        }
+
+        .btn-restore-small:hover {
+            background: #218838;
+        }
+
+        .popup-saved-groups-empty {
+            text-align: center;
+            color: var(--text-secondary);
+            font-size: 0.8rem;
+            padding: 16px 8px;
+            border: 2px dashed var(--border-color);
+            border-radius: 6px;
+            margin: 8px 0;
+        }
+
+        /* Tab Interface Styles */
+        .tab-container {
+            margin: 0 -16px;
+        }
+
+        .tab-header {
+            display: flex;
+            background: var(--bg-tertiary);
+            border-bottom: 1px solid var(--border-color);
+        }
+
+        .tab-button {
+            flex: 1;
+            padding: 12px 16px;
+            background: none;
+            border: none;
+            cursor: pointer;
+            font-size: 0.85rem;
+            font-weight: 500;
+            color: var(--text-secondary);
+            transition: all 0.2s;
+            border-bottom: 2px solid transparent;
+        }
+
+        .tab-button.active {
+            color: var(--text-primary);
+            background: var(--bg-secondary);
+            border-bottom-color: #667eea;
+        }
+
+        .tab-button:hover:not(.active) {
+            background: var(--btn-secondary-hover);
+            color: var(--text-primary);
+        }
+
+        .tab-content {
+            display: none;
+            padding: 16px;
+        }
+
+        .tab-content.active {
+            display: block;
+        }
+
+        /* Adjust content padding when tabs are enabled */
+        .content.has-tabs {
+            padding: 0;
+        }
+
+        .content.has-tabs .status {
+            margin: 16px 16px 0 16px;
+        }
+
+        .content.has-tabs .stats {
+            margin: 16px;
+        }
     </style>
 </head>
 
@@ -365,56 +504,93 @@
             </div>
         </div>
 
-        <div class="actions">
-            <button class="btn btn-secondary" id="suspend-current">
-                Suspend Current Tab
-            </button>
-            <button class="btn btn-secondary" id="suggest-tabs">
-                Suggest Next Suspend
-            </button>
-            <button class="btn btn-secondary" id="restore-all">
-                Restore All Tabs
-            </button>
-            <button class="btn btn-secondary" id="restore-lost"
-                title="Recreate tabs that were suspended but lost after reload">
-                Restore Lost Tabs
-            </button>
+        <!-- Tab Container (only shown when saved groups is enabled) -->
+        <div class="tab-container" id="tab-container" style="display: none;">
+            <div class="tab-header">
+                <button class="tab-button active" id="tab-suspend" data-tab="suspend">
+                    💤 Tab Suspend
+                </button>
+                <button class="tab-button" id="tab-saved-groups" data-tab="saved-groups">
+                    💾 Saved Groups
+                </button>
+            </div>
+        </div>
 
-            <!-- Combined Tab Group Selector -->
-            <div class="group-selector" id="combined-group-selector" style="display: none;">
-                <label for="combined-group-dropdown"
-                    style="font-size: 0.9rem; font-weight: 500; margin-bottom: 8px; display: block;">Select Tab
-                    Group:</label>
-                <select class="btn btn-secondary" id="combined-group-dropdown" style="width: 100%; text-align: left;">
-                    <option value="">Loading tab groups...</option>
-                </select>
-                <div id="group-action-buttons" style="margin-top: 8px; display: flex; gap: 8px;">
-                    <button class="btn btn-primary" id="suspend-group-btn" style="flex: 1; display: none;">
-                        Suspend Group
-                    </button>
-                    <button class="btn btn-primary" id="restore-group-btn" style="flex: 1; display: none;">
-                        Restore Group
+        <!-- Tab Content for Suspend (default/fallback) -->
+        <div class="tab-content active" id="content-suspend">
+            <div class="actions">
+                <button class="btn btn-secondary" id="suspend-current">
+                    Suspend Current Tab
+                </button>
+                <button class="btn btn-secondary" id="suggest-tabs">
+                    Suggest Next Suspend
+                </button>
+                <button class="btn btn-secondary" id="restore-all">
+                    Restore All Tabs
+                </button>
+                <button class="btn btn-secondary" id="restore-lost"
+                    title="Recreate tabs that were suspended but lost after reload">
+                    Restore Lost Tabs
+                </button>
+                <!-- Combined Tab Group Selector -->
+                <div class="group-selector" id="combined-group-selector" style="display: none;">
+                    <label for="combined-group-dropdown"
+                        style="font-size: 0.9rem; font-weight: 500; margin-bottom: 8px; display: block;">Select Tab
+                        Group:</label>
+                    <select class="btn btn-secondary" id="combined-group-dropdown"
+                        style="width: 100%; text-align: left;">
+                        <option value="">Loading tab groups...</option>
+                    </select>
+                    <div id="group-action-buttons" style="margin-top: 8px; display: flex; gap: 8px;">
+                        <button class="btn btn-primary" id="suspend-group-btn" style="flex: 1; display: none;">
+                            Suspend Group
+                        </button>
+                        <button class="btn btn-primary" id="restore-group-btn" style="flex: 1; display: none;">
+                            Restore Group
+                        </button>
+                    </div>
+                </div>
+
+                <button class="btn btn-secondary" id="toggle-combined-group-selector">
+                    Suspend/Restore Tab Groups
+                </button>
+
+                <!-- Whitelist (Never Suspend) Actions -->
+                <button class="btn btn-secondary" id="never-suspend-url"
+                    title="Add this exact page URL to the whitelist">
+                    Never suspend this URL
+                </button>
+                <button class="btn btn-secondary" id="never-suspend-domain" title="Add this domain to the whitelist">
+                    Never suspend this domain
+                </button>
+            </div>
+        </div>
+
+        <!-- Tab Content for Saved Groups -->
+        <div class="tab-content" id="content-saved-groups">
+            <div class="saved-groups-section">
+                <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 12px;">
+                    <h4 style="margin: 0; font-size: 0.9rem; font-weight: 600;">💾 Saved Groups</h4>
+                    <button class="btn-small btn-primary" id="save-current-group"
+                        style="padding: 4px 8px; font-size: 0.8rem;">
+                        Save Current
                     </button>
                 </div>
+                <div class="saved-groups-list" id="popup-saved-groups-list">
+                    <div style="text-align: center; color: var(--text-secondary); font-size: 0.8rem; padding: 8px;">
+                        Loading...
+                    </div>
+                </div>
             </div>
-
-            <button class="btn btn-secondary" id="toggle-combined-group-selector">
-                Suspend/Restore Tab Groups
-            </button>
-
-            <!-- Whitelist (Never Suspend) Actions -->
-            <button class="btn btn-secondary" id="never-suspend-url" title="Add this exact page URL to the whitelist">
-                Never suspend this URL
-            </button>
-            <button class="btn btn-secondary" id="never-suspend-domain" title="Add this domain to the whitelist">
-                Never suspend this domain
-            </button>
         </div>
 
-        <div class="suggestions" id="suggestions" style="display: none;">
-            <h3 style="margin: 0 0 12px 0; font-size: 0.9rem;">Suggested tabs to suspend:</h3>
-            <div id="suggestion-list"></div>
-        </div>
+
+    </div>
+
+    <div class="suggestions" id="suggestions" style="display: none;">
+        <h3 style="margin: 0 0 12px 0; font-size: 0.9rem;">Suggested tabs to suspend:</h3>
+        <div id="suggestion-list"></div>
+    </div>
     </div>
 
     <script src="popup.js"></script>

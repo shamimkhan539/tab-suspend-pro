@@ -18,6 +18,7 @@ class TabSuspendManager {
                 "edge://",
                 "about:",
             ],
+            savedGroupsEnabled: false,
         };
         this.init();
     }
@@ -497,6 +498,20 @@ class TabSuspendManager {
                 });
 
                 chrome.contextMenus.create({
+                    id: "page-save-group",
+                    title: "Save Tab Group",
+                    contexts: ["page"],
+                    documentUrlPatterns: ["http://*/*", "https://*/*"],
+                });
+
+                chrome.contextMenus.create({
+                    id: "page-save-window",
+                    title: "Save Current Window as Group",
+                    contexts: ["page"],
+                    documentUrlPatterns: ["http://*/*", "https://*/*"],
+                });
+
+                chrome.contextMenus.create({
                     id: "separator3",
                     type: "separator",
                     contexts: ["page"],
@@ -641,6 +656,9 @@ class TabSuspendManager {
     async handleMessage(message, sender, sendResponse) {
         try {
             switch (message.action) {
+                case "ping":
+                    sendResponse({ success: true, ready: true });
+                    break;
                 case "suspendTab":
                     await this.suspendTab(message.tabId);
                     sendResponse({ success: true });
@@ -688,6 +706,44 @@ class TabSuspendManager {
                     await this.addToWhitelist(message.url, message.type);
                     sendResponse({ success: true });
                     break;
+                // Tab Groups Saving Actions
+                case "saveTabGroup":
+                    const savedGroup = await this.saveTabGroup(
+                        message.groupId,
+                        message.options
+                    );
+                    sendResponse({ success: true, group: savedGroup });
+                    break;
+                case "listSavedGroups":
+                    const groups = await this.listSavedGroups();
+                    sendResponse({ success: true, groups: groups });
+                    break;
+                case "getSavedGroup":
+                    const group = await this.getSavedGroup(message.groupId);
+                    sendResponse({ success: true, group: group });
+                    break;
+                case "restoreSavedGroup":
+                    const result = await this.restoreSavedGroup(
+                        message.groupId,
+                        message.options
+                    );
+                    sendResponse({ success: true, result: result });
+                    break;
+                case "deleteSavedGroup":
+                    await this.deleteSavedGroup(message.groupId);
+                    sendResponse({ success: true });
+                    break;
+                case "exportSavedGroups":
+                    const exportResult = await this.exportSavedGroups();
+                    sendResponse({ success: true, result: exportResult });
+                    break;
+                case "importSavedGroups":
+                    const importResult = await this.importSavedGroups(
+                        message.fileContent,
+                        message.mergeMode
+                    );
+                    sendResponse({ success: true, result: importResult });
+                    break;
                 default:
                     sendResponse({ success: false, error: "Unknown action" });
             }
@@ -725,6 +781,22 @@ class TabSuspendManager {
                     if (tab.groupId !== chrome.tabGroups.TAB_GROUP_ID_NONE) {
                         await this.suspendTabGroup(tab.groupId);
                     }
+                    break;
+                case "page-save-group":
+                    if (tab.groupId !== chrome.tabGroups.TAB_GROUP_ID_NONE) {
+                        await this.saveTabGroup(tab.groupId);
+                    } else {
+                        chrome.notifications.create({
+                            type: "basic",
+                            iconUrl: "icons/icon48.png",
+                            title: "Tab Suspend Pro",
+                            message:
+                                'This tab is not in a group. Use "Save Current Window" instead.',
+                        });
+                    }
+                    break;
+                case "page-save-window":
+                    await this.saveTabGroup(null, { windowId: tab.windowId });
                     break;
                 case "suggest-tabs":
                     await this.suggestTabsToSuspend();
@@ -1299,6 +1371,399 @@ class TabSuspendManager {
         }
 
         return Math.min(baseEstimate, 300);
+    }
+
+    // Tab Groups Saving Feature
+    async generateGroupId() {
+        return (
+            "group_" +
+            Date.now() +
+            "_" +
+            Math.random().toString(36).substr(2, 9)
+        );
+    }
+
+    async saveTabGroup(groupId = null, options = {}) {
+        try {
+            const { name, windowId, tabs: customTabs } = options;
+
+            // If groupId is provided, get tabs from that group
+            // If customTabs provided, use those
+            // Otherwise, save all tabs in current window as a group
+            let tabsToSave = [];
+            let groupName = name || "";
+            let groupColor = "grey";
+
+            if (groupId && groupId !== chrome.tabGroups.TAB_GROUP_ID_NONE) {
+                // Save existing tab group
+                tabsToSave = await chrome.tabs.query({ groupId });
+                try {
+                    const group = await chrome.tabGroups.get(groupId);
+                    groupName =
+                        groupName ||
+                        group.title ||
+                        `Saved Group ${new Date().toLocaleDateString()}`;
+                    groupColor = group.color || "grey";
+                } catch (e) {
+                    groupName =
+                        groupName ||
+                        `Saved Group ${new Date().toLocaleDateString()}`;
+                }
+            } else if (customTabs && customTabs.length > 0) {
+                // Save custom set of tabs
+                tabsToSave = customTabs;
+                groupName =
+                    groupName ||
+                    `Custom Group ${new Date().toLocaleDateString()}`;
+            } else {
+                // Save current window as group
+                const currentWindow =
+                    windowId || (await chrome.windows.getCurrent()).id;
+                tabsToSave = await chrome.tabs.query({
+                    windowId: currentWindow,
+                });
+                groupName =
+                    groupName ||
+                    `Window Group ${new Date().toLocaleDateString()}`;
+            }
+
+            if (!tabsToSave || tabsToSave.length === 0) {
+                throw new Error("No tabs to save");
+            }
+
+            // Filter out extension pages and about: pages
+            const validTabs = tabsToSave.filter(
+                (tab) =>
+                    tab.url &&
+                    !tab.url.startsWith("chrome://") &&
+                    !tab.url.startsWith("chrome-extension://") &&
+                    !tab.url.startsWith("about:") &&
+                    !tab.url.startsWith("edge://") &&
+                    !tab.url.includes("suspended.html")
+            );
+
+            if (validTabs.length === 0) {
+                throw new Error(
+                    "No valid tabs to save (filtered out extension and system pages)"
+                );
+            }
+
+            const savedGroup = {
+                id: await this.generateGroupId(),
+                name: groupName,
+                color: groupColor,
+                createdAt: Date.now(),
+                tabCount: validTabs.length,
+                tabs: validTabs.map((tab) => ({
+                    url: tab.url,
+                    title: tab.title || "",
+                    favicon: tab.favIconUrl || "",
+                    pinned: tab.pinned || false,
+                    active: tab.active || false,
+                    index: tab.index || 0,
+                })),
+                windowBounds: null, // Could store window size/position if needed
+            };
+
+            // Get existing saved groups
+            const stored = await chrome.storage.local.get(["savedTabGroups"]);
+            const savedGroups = stored.savedTabGroups || {};
+
+            // Add new group
+            savedGroups[savedGroup.id] = savedGroup;
+
+            // Save to storage
+            await chrome.storage.local.set({ savedTabGroups: savedGroups });
+
+            // Show notification
+            chrome.notifications.create({
+                type: "basic",
+                iconUrl: "icons/icon48.png",
+                title: "Tab Suspend Pro",
+                message: `Saved "${groupName}" with ${validTabs.length} tabs`,
+            });
+
+            console.log(
+                `[SaveGroup] Saved group "${groupName}" with ${validTabs.length} tabs`
+            );
+            return savedGroup;
+        } catch (error) {
+            console.error("Error saving tab group:", error);
+            chrome.notifications.create({
+                type: "basic",
+                iconUrl: "icons/icon48.png",
+                title: "Tab Suspend Pro",
+                message: `Error saving group: ${error.message}`,
+            });
+            throw error;
+        }
+    }
+
+    async listSavedGroups() {
+        try {
+            const stored = await chrome.storage.local.get(["savedTabGroups"]);
+            const savedGroups = stored.savedTabGroups || {};
+            return Object.values(savedGroups).sort(
+                (a, b) => b.createdAt - a.createdAt
+            );
+        } catch (error) {
+            console.error("Error listing saved groups:", error);
+            return [];
+        }
+    }
+
+    async getSavedGroup(groupId) {
+        try {
+            const stored = await chrome.storage.local.get(["savedTabGroups"]);
+            const savedGroups = stored.savedTabGroups || {};
+            return savedGroups[groupId] || null;
+        } catch (error) {
+            console.error("Error getting saved group:", error);
+            return null;
+        }
+    }
+
+    async restoreSavedGroup(groupId, options = {}) {
+        try {
+            const { newWindow = false, activateTabIndex = 0 } = options;
+            const savedGroup = await this.getSavedGroup(groupId);
+
+            if (!savedGroup) {
+                throw new Error("Saved group not found");
+            }
+
+            const { tabs, name, color } = savedGroup;
+            let targetWindowId = null;
+            let createdTabs = [];
+
+            // Determine target window
+            if (newWindow) {
+                const newWin = await chrome.windows.create({
+                    url: tabs[0].url,
+                    focused: true,
+                });
+                targetWindowId = newWin.id;
+                createdTabs.push(newWin.tabs[0]);
+
+                // Create remaining tabs
+                for (let i = 1; i < tabs.length; i++) {
+                    const tab = tabs[i];
+                    const createdTab = await chrome.tabs.create({
+                        windowId: targetWindowId,
+                        url: tab.url,
+                        pinned: tab.pinned,
+                        active: false,
+                    });
+                    createdTabs.push(createdTab);
+                }
+            } else {
+                // Restore to current window
+                const currentWindow = await chrome.windows.getCurrent();
+                targetWindowId = currentWindow.id;
+
+                for (const tab of tabs) {
+                    const createdTab = await chrome.tabs.create({
+                        windowId: targetWindowId,
+                        url: tab.url,
+                        pinned: tab.pinned,
+                        active: false,
+                    });
+                    createdTabs.push(createdTab);
+                }
+            }
+
+            // Group the restored tabs if there are multiple
+            if (createdTabs.length > 1) {
+                try {
+                    const tabIds = createdTabs.map((t) => t.id);
+                    const groupId = await chrome.tabs.group({ tabIds });
+                    await chrome.tabGroups.update(groupId, {
+                        title: name,
+                        color: color || "grey",
+                    });
+                    console.log(
+                        `[RestoreGroup] Created group "${name}" with ${createdTabs.length} tabs`
+                    );
+                } catch (groupError) {
+                    console.warn(
+                        "Could not create tab group after restore:",
+                        groupError
+                    );
+                }
+            }
+
+            // Activate requested tab
+            if (
+                activateTabIndex >= 0 &&
+                activateTabIndex < createdTabs.length
+            ) {
+                await chrome.tabs.update(createdTabs[activateTabIndex].id, {
+                    active: true,
+                });
+            } else if (createdTabs.length > 0) {
+                await chrome.tabs.update(createdTabs[0].id, { active: true });
+            }
+
+            // Update activity for restored tabs
+            for (const tab of createdTabs) {
+                this.updateTabActivity(tab.id);
+            }
+
+            chrome.notifications.create({
+                type: "basic",
+                iconUrl: "icons/icon48.png",
+                title: "Tab Suspend Pro",
+                message: `Restored "${name}" with ${createdTabs.length} tabs`,
+            });
+
+            return {
+                success: true,
+                tabs: createdTabs,
+                groupId:
+                    createdTabs.length > 1
+                        ? await chrome.tabs
+                              .query({ windowId: targetWindowId })
+                              .then(
+                                  (tabs) =>
+                                      tabs.find((t) =>
+                                          createdTabs.some(
+                                              (ct) => ct.id === t.id
+                                          )
+                                      )?.groupId
+                              )
+                        : null,
+            };
+        } catch (error) {
+            console.error("Error restoring saved group:", error);
+            chrome.notifications.create({
+                type: "basic",
+                iconUrl: "icons/icon48.png",
+                title: "Tab Suspend Pro",
+                message: `Error restoring group: ${error.message}`,
+            });
+            throw error;
+        }
+    }
+
+    async deleteSavedGroup(groupId) {
+        try {
+            const stored = await chrome.storage.local.get(["savedTabGroups"]);
+            const savedGroups = stored.savedTabGroups || {};
+
+            if (!savedGroups[groupId]) {
+                throw new Error("Group not found");
+            }
+
+            const groupName = savedGroups[groupId].name;
+            delete savedGroups[groupId];
+
+            await chrome.storage.local.set({ savedTabGroups: savedGroups });
+
+            console.log(`[DeleteGroup] Deleted group "${groupName}"`);
+            return { success: true };
+        } catch (error) {
+            console.error("Error deleting saved group:", error);
+            throw error;
+        }
+    }
+
+    async exportSavedGroups() {
+        try {
+            const groups = await this.listSavedGroups();
+            const exportData = {
+                version: "1.0",
+                exportedAt: Date.now(),
+                groups: groups,
+            };
+
+            const blob = new Blob([JSON.stringify(exportData, null, 2)], {
+                type: "application/json",
+            });
+            const url = URL.createObjectURL(blob);
+
+            await chrome.downloads.download({
+                url: url,
+                filename: `tab-suspend-pro-groups-${
+                    new Date().toISOString().split("T")[0]
+                }.json`,
+                saveAs: true,
+            });
+
+            chrome.notifications.create({
+                type: "basic",
+                iconUrl: "icons/icon48.png",
+                title: "Tab Suspend Pro",
+                message: `Exported ${groups.length} saved groups`,
+            });
+
+            return { success: true, count: groups.length };
+        } catch (error) {
+            console.error("Error exporting saved groups:", error);
+            throw error;
+        }
+    }
+
+    async importSavedGroups(fileContent, mergeMode = true) {
+        try {
+            const importData = JSON.parse(fileContent);
+
+            if (!importData.groups || !Array.isArray(importData.groups)) {
+                throw new Error("Invalid import file format");
+            }
+
+            const stored = await chrome.storage.local.get(["savedTabGroups"]);
+            let savedGroups = mergeMode ? stored.savedTabGroups || {} : {};
+
+            let importedCount = 0;
+            let duplicateCount = 0;
+
+            for (const group of importData.groups) {
+                if (!group.id || !group.name || !group.tabs) continue;
+
+                // Check for duplicates by name and tab count
+                const isDuplicate = Object.values(savedGroups).some(
+                    (existing) =>
+                        existing.name === group.name &&
+                        existing.tabCount === group.tabCount
+                );
+
+                if (isDuplicate && mergeMode) {
+                    duplicateCount++;
+                    continue; // Skip duplicates in merge mode
+                }
+
+                // Generate new ID to avoid conflicts
+                const newId = await this.generateGroupId();
+                savedGroups[newId] = {
+                    ...group,
+                    id: newId,
+                    importedAt: Date.now(),
+                };
+                importedCount++;
+            }
+
+            await chrome.storage.local.set({ savedTabGroups: savedGroups });
+
+            chrome.notifications.create({
+                type: "basic",
+                iconUrl: "icons/icon48.png",
+                title: "Tab Suspend Pro",
+                message: `Imported ${importedCount} groups${
+                    duplicateCount > 0
+                        ? `, skipped ${duplicateCount} duplicates`
+                        : ""
+                }`,
+            });
+
+            return {
+                success: true,
+                imported: importedCount,
+                duplicates: duplicateCount,
+            };
+        } catch (error) {
+            console.error("Error importing saved groups:", error);
+            throw error;
+        }
     }
 }
 
