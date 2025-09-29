@@ -9,11 +9,33 @@ class PopupManager {
     async init() {
         await this.loadSettings();
         await this.loadTheme(); // Load theme before updating UI
+        this.setupTabInterface(); // Setup UI structure first
         await this.updateStats();
         await this.loadTabGroups();
+
+        // Only load saved groups if the feature is enabled AND we can connect to background
+        if (this.settings.savedGroupsEnabled) {
+            await this.ensureBackgroundReady();
+            await this.loadSavedGroups();
+        }
+
         this.setupEventListeners();
         this.updateUI();
         await this.checkForSuggestions();
+    }
+
+    async ensureBackgroundReady() {
+        try {
+            // Send a simple ping to test the connection
+            const response = await chrome.runtime.sendMessage({
+                action: "ping",
+            });
+            console.log("Background script ready:", response);
+        } catch (error) {
+            console.warn("Background script not ready, waiting...", error);
+            // Wait a bit and try again
+            await new Promise((resolve) => setTimeout(resolve, 100));
+        }
     }
 
     async loadSettings() {
@@ -378,6 +400,40 @@ class PopupManager {
                 }
             });
         }
+
+        // Saved Groups functionality
+        const saveCurrentGroup = document.getElementById("save-current-group");
+        if (saveCurrentGroup) {
+            saveCurrentGroup.addEventListener("click", async () => {
+                if (!this.settings.enabled) return;
+                await this.saveCurrentGroupOrWindow();
+            });
+        }
+
+        // Saved groups list event delegation
+        const savedGroupsList = document.getElementById(
+            "popup-saved-groups-list"
+        );
+        if (savedGroupsList) {
+            savedGroupsList.addEventListener("click", async (e) => {
+                if (!this.settings.enabled) return;
+
+                const groupId = e.target.dataset.groupId;
+                const action = e.target.dataset.action;
+
+                if (groupId && action) {
+                    await this.handleSavedGroupAction(groupId, action);
+                }
+            });
+        }
+
+        // Tab interface event listeners
+        const tabButtons = document.querySelectorAll(".tab-button");
+        tabButtons.forEach((button) => {
+            button.addEventListener("click", (e) => {
+                this.switchTab(e.target.dataset.tab);
+            });
+        });
     }
 
     updateUI() {
@@ -646,6 +702,267 @@ class PopupManager {
         }
 
         return Math.min(estimate, 300);
+    }
+
+    // Tab Interface Methods
+    setupTabInterface() {
+        const tabContainer = document.getElementById("tab-container");
+        const content = document.querySelector(".content");
+
+        if (this.settings.savedGroupsEnabled) {
+            // Show tab interface
+            tabContainer.style.display = "block";
+            content.classList.add("has-tabs");
+        } else {
+            // Hide tab interface
+            tabContainer.style.display = "none";
+            content.classList.remove("has-tabs");
+
+            // Show suspend content directly
+            const suspendContent = document.getElementById("content-suspend");
+            const savedGroupsContent = document.getElementById(
+                "content-saved-groups"
+            );
+
+            if (suspendContent) suspendContent.classList.add("active");
+            if (savedGroupsContent)
+                savedGroupsContent.classList.remove("active");
+        }
+    }
+
+    switchTab(tabName) {
+        // Update tab buttons
+        document.querySelectorAll(".tab-button").forEach((btn) => {
+            btn.classList.remove("active");
+        });
+        document
+            .querySelector(`[data-tab="${tabName}"]`)
+            .classList.add("active");
+
+        // Update tab content
+        document.querySelectorAll(".tab-content").forEach((content) => {
+            content.classList.remove("active");
+        });
+        document.getElementById(`content-${tabName}`).classList.add("active");
+
+        // Load saved groups if switching to that tab
+        if (tabName === "saved-groups" && this.settings.savedGroupsEnabled) {
+            this.loadSavedGroups();
+        }
+    }
+
+    // Saved Groups Methods
+    async loadSavedGroups() {
+        try {
+            // Check if saved groups feature is enabled
+            if (!this.settings.savedGroupsEnabled) {
+                console.log("Saved groups feature is disabled, skipping load");
+                return;
+            }
+
+            console.log("Loading saved groups...");
+
+            // Retry mechanism for background script connection
+            let response = null;
+            let retries = 3;
+
+            while (retries > 0 && !response) {
+                try {
+                    response = await chrome.runtime.sendMessage({
+                        action: "listSavedGroups",
+                    });
+                    break;
+                } catch (error) {
+                    retries--;
+                    if (retries > 0) {
+                        console.log(
+                            `Retrying to connect to background script... (${retries} attempts left)`
+                        );
+                        await new Promise((resolve) =>
+                            setTimeout(resolve, 100)
+                        );
+                    } else {
+                        throw error;
+                    }
+                }
+            }
+
+            if (!response) {
+                console.error(
+                    "No response from background script after retries"
+                );
+                this.renderPopupSavedGroups([]);
+                return;
+            }
+
+            const groups = response.success ? response.groups : [];
+            console.log("Loaded saved groups:", groups.length);
+            this.renderPopupSavedGroups(groups.slice(0, 3)); // Show only first 3 groups
+        } catch (error) {
+            console.error("Error loading saved groups:", error);
+            // Only show empty state if the container exists (feature is enabled)
+            if (this.settings.savedGroupsEnabled) {
+                this.renderPopupSavedGroups([]);
+            }
+        }
+    }
+
+    renderPopupSavedGroups(groups) {
+        const container = document.getElementById("popup-saved-groups-list");
+        if (!container) return;
+
+        if (!groups || groups.length === 0) {
+            container.innerHTML = `
+                <div class="popup-saved-groups-empty">
+                    💾 No saved groups yet<br>
+                    <small>Save your first group to see it here</small>
+                </div>
+            `;
+            return;
+        }
+
+        container.innerHTML = groups
+            .map((group) => {
+                const createdDate = new Date(
+                    group.createdAt
+                ).toLocaleDateString();
+                return `
+                <div class="popup-saved-group-item">
+                    <div class="popup-group-info">
+                        <div class="popup-group-name">${this.escapeHtml(
+                            group.name
+                        )}</div>
+                        <div class="popup-group-meta">${
+                            group.tabCount
+                        } tabs • ${createdDate}</div>
+                    </div>
+                    <div class="popup-group-actions">
+                        <button class="btn-small btn-restore-small" data-group-id="${
+                            group.id
+                        }" data-action="restore">
+                            Restore
+                        </button>
+                    </div>
+                </div>
+            `;
+            })
+            .join("");
+    }
+
+    async saveCurrentGroupOrWindow() {
+        try {
+            const [activeTab] = await chrome.tabs.query({
+                active: true,
+                currentWindow: true,
+            });
+            let groupId = null;
+            let groupName = "";
+
+            if (activeTab.groupId !== chrome.tabGroups.TAB_GROUP_ID_NONE) {
+                // Save the current tab group
+                groupId = activeTab.groupId;
+                try {
+                    const group = await chrome.tabGroups.get(groupId);
+                    groupName =
+                        group.title ||
+                        `Group ${new Date().toLocaleDateString()}`;
+                } catch (e) {
+                    groupName = `Group ${new Date().toLocaleDateString()}`;
+                }
+            } else {
+                // Save current window
+                groupName = `Window ${new Date().toLocaleDateString()}`;
+            }
+
+            const response = await chrome.runtime.sendMessage({
+                action: "saveTabGroup",
+                groupId: groupId,
+                options: { name: groupName, windowId: activeTab.windowId },
+            });
+
+            if (response.success) {
+                await this.loadSavedGroups();
+                this.showPopupMessage(`Saved "${groupName}"!`, "success");
+            } else {
+                this.showPopupMessage("Failed to save group", "error");
+            }
+        } catch (error) {
+            console.error("Error saving group:", error);
+            this.showPopupMessage("Error saving group", "error");
+        }
+    }
+
+    async handleSavedGroupAction(groupId, action) {
+        try {
+            switch (action) {
+                case "restore":
+                    const response = await chrome.runtime.sendMessage({
+                        action: "restoreSavedGroup",
+                        groupId: groupId,
+                        options: { newWindow: false },
+                    });
+                    if (response.success) {
+                        this.showPopupMessage("Group restored!", "success");
+                        setTimeout(() => {
+                            this.updateStats();
+                        }, 500);
+                    }
+                    break;
+            }
+        } catch (error) {
+            console.error(`Error with action ${action}:`, error);
+            this.showPopupMessage(`Error: ${error.message}`, "error");
+        }
+    }
+
+    escapeHtml(text) {
+        const div = document.createElement("div");
+        div.textContent = text;
+        return div.innerHTML;
+    }
+
+    showPopupMessage(message, type) {
+        // Create a temporary message element if it doesn't exist
+        let messageEl = document.getElementById("popup-message");
+        if (!messageEl) {
+            messageEl = document.createElement("div");
+            messageEl.id = "popup-message";
+            messageEl.style.cssText = `
+                position: fixed;
+                top: 10px;
+                left: 50%;
+                transform: translateX(-50%);
+                padding: 8px 16px;
+                border-radius: 4px;
+                font-size: 0.8rem;
+                font-weight: 500;
+                z-index: 1000;
+                transition: opacity 0.3s;
+            `;
+            document.body.appendChild(messageEl);
+        }
+
+        messageEl.textContent = message;
+        messageEl.className =
+            type === "success"
+                ? "popup-message-success"
+                : "popup-message-error";
+
+        messageEl.style.backgroundColor =
+            type === "success" ? "#d4edda" : "#f8d7da";
+        messageEl.style.color = type === "success" ? "#155724" : "#721c24";
+        messageEl.style.border =
+            type === "success" ? "1px solid #c3e6cb" : "1px solid #f5c6cb";
+        messageEl.style.opacity = "1";
+
+        setTimeout(() => {
+            messageEl.style.opacity = "0";
+            setTimeout(() => {
+                if (messageEl.parentNode) {
+                    messageEl.parentNode.removeChild(messageEl);
+                }
+            }, 300);
+        }, 2000);
     }
 }
 
