@@ -11,7 +11,19 @@
         "scripting",
         "notifications",
         "contextMenus",
-        "downloads"
+        "downloads",
+        "system.memory",
+        "system.cpu",
+        "idle",
+        "alarms",
+        "identity",
+        "unlimitedStorage"
+    ],
+    "optional_permissions": ["history", "topSites", "bookmarks"],
+    "host_permissions": [
+        "https://drive.google.com/*",
+        "https://www.dropbox.com/*",
+        "https://graph.microsoft.com/*"
     ],
     "background": {
         "service_worker": "background.js"

@@ -454,7 +454,7 @@
 
         .tab-content {
             display: none;
-            padding: 16px;
+            padding: 16px 0;
         }
 
         .tab-content.active {
@@ -472,6 +472,178 @@
 
         .content.has-tabs .stats {
             margin: 16px;
+        }
+
+        /* Advanced Features Styles */
+        .performance-overview {
+            display: grid;
+            grid-template-columns: 1fr 1fr 1fr;
+            gap: 8px;
+        }
+
+        .metric-card {
+            background: var(--card-bg);
+            border: 1px solid var(--border-color);
+            border-radius: 6px;
+            padding: 8px;
+            text-align: center;
+        }
+
+        .metric-label {
+            font-size: 0.7rem;
+            color: var(--text-secondary);
+            margin-bottom: 4px;
+        }
+
+        .metric-value {
+            font-size: 0.9rem;
+            font-weight: 600;
+            color: var(--text-primary);
+        }
+
+        .health-score {
+            background: #10b981;
+            color: white;
+            padding: 4px 8px;
+            border-radius: 12px;
+            font-size: 0.8rem;
+        }
+
+        .health-score.warning {
+            background: #f59e0b;
+        }
+
+        .health-score.critical {
+            background: #ef4444;
+        }
+
+        .analytics-actions .btn {
+            width: 100%;
+            font-size: 0.8rem;
+            padding: 6px 12px;
+        }
+
+        .organization-actions .btn {
+            width: 100%;
+            font-size: 0.8rem;
+            padding: 6px 12px;
+        }
+
+        .form-select {
+            border: 1px solid var(--border-color);
+            background: var(--bg-secondary);
+            color: var(--text-primary);
+            border-radius: 4px;
+            padding: 4px 8px;
+        }
+
+        .session-item,
+        .template-item {
+            background: var(--card-bg);
+            border: 1px solid var(--border-color);
+            border-radius: 6px;
+            padding: 8px;
+            margin-bottom: 6px;
+            cursor: pointer;
+            transition: border-color 0.2s;
+        }
+
+        .session-item:hover,
+        .template-item:hover {
+            border-color: var(--border-hover);
+        }
+
+        .session-title,
+        .template-title {
+            font-weight: 600;
+            font-size: 0.8rem;
+            margin-bottom: 4px;
+        }
+
+        .session-meta,
+        .template-meta {
+            font-size: 0.7rem;
+            color: var(--text-secondary);
+        }
+
+        .session-item,
+        .template-item {
+            position: relative;
+        }
+
+        .session-item-content,
+        .template-item-content {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .session-item-info,
+        .template-item-info {
+            flex: 1;
+        }
+
+        .session-delete-btn,
+        .template-delete-btn {
+            background: none;
+            border: none;
+            color: #dc3545;
+            cursor: pointer;
+            padding: 4px;
+            border-radius: 4px;
+            opacity: 0.7;
+            transition: opacity 0.2s, background-color 0.2s;
+            font-size: 0.8rem;
+            margin-left: 8px;
+        }
+
+        .session-delete-btn:hover,
+        .template-delete-btn:hover {
+            opacity: 1;
+            background-color: rgba(220, 53, 69, 0.1);
+        }
+
+        .top-site-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 4px 0;
+            border-bottom: 1px solid var(--border-color);
+        }
+
+        .top-site-item:last-child {
+            border-bottom: none;
+        }
+
+        .site-domain {
+            font-weight: 500;
+        }
+
+        .site-time {
+            color: var(--text-secondary);
+            font-size: 0.7rem;
+        }
+
+        /* Tab header scroll */
+        .tab-header {
+            display: flex;
+            overflow-x: auto;
+            gap: 2px;
+            padding: 2px;
+            scrollbar-width: none;
+            -ms-overflow-style: none;
+        }
+
+        .tab-header::-webkit-scrollbar {
+            display: none;
+        }
+
+        .tab-button {
+            white-space: nowrap;
+            min-width: fit-content;
+            flex-shrink: 0;
+            font-size: 0.75rem;
+            padding: 6px 8px;
         }
     </style>
 </head>
@@ -508,10 +680,19 @@
         <div class="tab-container" id="tab-container" style="display: none;">
             <div class="tab-header">
                 <button class="tab-button active" id="tab-suspend" data-tab="suspend">
-                    💤 Tab Suspend
+                    💤 Suspend
+                </button>
+                <button class="tab-button" id="tab-sessions" data-tab="sessions">
+                    📋 Sessions
+                </button>
+                <button class="tab-button" id="tab-analytics" data-tab="analytics">
+                    📊 Analytics
+                </button>
+                <button class="tab-button" id="tab-organization" data-tab="organization">
+                    🗂️ Organization
                 </button>
                 <button class="tab-button" id="tab-saved-groups" data-tab="saved-groups">
-                    💾 Saved Groups
+                    💾 Groups
                 </button>
             </div>
         </div>
@@ -563,6 +744,116 @@
                 <button class="btn btn-secondary" id="never-suspend-domain" title="Add this domain to the whitelist">
                     Never suspend this domain
                 </button>
+            </div>
+        </div>
+
+        <!-- Tab Content for Sessions -->
+        <div class="tab-content" id="content-sessions">
+            <div class="sessions-section">
+                <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 12px;">
+                    <h4 style="margin: 0; font-size: 0.9rem; font-weight: 600;">📋 Sessions</h4>
+                    <button class="btn-small btn-primary" id="save-session"
+                        style="padding: 4px 8px; font-size: 0.8rem;">
+                        Save Session
+                    </button>
+                </div>
+
+                <!-- Session Templates -->
+                <div class="session-templates" style="margin-bottom: 15px;">
+                    <h5 style="margin: 0 0 8px 0; font-size: 0.8rem; color: var(--text-secondary);">Templates</h5>
+                    <div id="session-templates-list">
+                        <div style="text-align: center; color: var(--text-secondary); font-size: 0.8rem; padding: 8px;">
+                            Loading templates...
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Recent Sessions -->
+                <div class="recent-sessions">
+                    <h5 style="margin: 0 0 8px 0; font-size: 0.8rem; color: var(--text-secondary);">Recent Sessions</h5>
+                    <div id="recent-sessions-list">
+                        <div style="text-align: center; color: var(--text-secondary); font-size: 0.8rem; padding: 8px;">
+                            Loading sessions...
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Tab Content for Analytics -->
+        <div class="tab-content" id="content-analytics">
+            <div class="analytics-section">
+                <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 12px;">
+                    <h4 style="margin: 0; font-size: 0.9rem; font-weight: 600;">📊 Analytics</h4>
+                    <div class="health-score" id="health-score" style="font-size: 0.8rem; font-weight: 600;">
+                        Loading...
+                    </div>
+                </div>
+
+                <!-- Performance Overview -->
+                <div class="performance-overview" style="margin-bottom: 15px;">
+                    <div class="metric-card">
+                        <div class="metric-label">Memory Usage</div>
+                        <div class="metric-value" id="memory-usage">Loading...</div>
+                    </div>
+                    <div class="metric-card">
+                        <div class="metric-label">Active Tabs</div>
+                        <div class="metric-value" id="active-tabs">Loading...</div>
+                    </div>
+                    <div class="metric-card">
+                        <div class="metric-label">Suspended</div>
+                        <div class="metric-value" id="suspended-tabs">Loading...</div>
+                    </div>
+                </div>
+
+                <!-- Quick Actions -->
+                <div class="analytics-actions">
+                    <button class="btn btn-secondary" id="focus-mode-toggle" style="margin-bottom: 8px;">
+                        🎯 Enable Focus Mode
+                    </button>
+                    <button class="btn btn-secondary" id="export-analytics" style="margin-bottom: 8px;">
+                        📤 Export Data
+                    </button>
+                </div>
+
+                <!-- Top Sites -->
+                <div class="top-sites" style="margin-top: 15px;">
+                    <h5 style="margin: 0 0 8px 0; font-size: 0.8rem; color: var(--text-secondary);">Most Used Sites</h5>
+                    <div id="top-sites-list" style="font-size: 0.8rem;">
+                        Loading...
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Tab Content for Organization -->
+        <div class="tab-content" id="content-organization">
+            <div class="organization-section">
+                <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 12px;">
+                    <h4 style="margin: 0; font-size: 0.9rem; font-weight: 600;">🗂️ Organization</h4>
+                    <select id="workspace-profile" class="form-select" style="font-size: 0.8rem; width: auto;">
+                        <option value="">Loading...</option>
+                    </select>
+                </div>
+
+                <!-- Quick Organization Actions -->
+                <div class="organization-actions" style="margin-bottom: 15px;">
+                    <button class="btn btn-secondary" id="group-by-domain" style="margin-bottom: 5px;">
+                        🌐 Group by Domain
+                    </button>
+                    <button class="btn btn-secondary" id="group-by-time" style="margin-bottom: 5px;">
+                        🕒 Group by Time
+                    </button>
+                    <button class="btn btn-secondary" id="create-tab-stack" style="margin-bottom: 5px;">
+                        📚 Create Tab Stack
+                    </button>
+                </div>
+
+                <!-- Current Profile Info -->
+                <div class="current-profile" id="current-profile-info">
+                    <h5 style="margin: 0 0 8px 0; font-size: 0.8rem; color: var(--text-secondary);">Current Profile</h5>
+                    <div style="font-size: 0.8rem;">Loading profile...</div>
+                </div>
             </div>
         </div>
 
