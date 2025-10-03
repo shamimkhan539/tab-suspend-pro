@@ -1,3 +1,11 @@
+// Import advanced modules
+importScripts(
+    "modules/session-manager.js",
+    "modules/smart-organizer.js",
+    "modules/performance-analytics.js",
+    "modules/activity-analytics.js"
+);
+
 // Background service worker for Tab Suspend Pro
 class TabSuspendManager {
     constructor() {
@@ -20,6 +28,13 @@ class TabSuspendManager {
             ],
             savedGroupsEnabled: false,
         };
+
+        // Initialize advanced modules
+        this.sessionManager = new SessionManager();
+        this.smartOrganizer = new SmartTabOrganizer();
+        this.performanceAnalytics = new PerformanceAnalytics();
+        this.activityAnalytics = new TabActivityAnalytics();
+
         this.init();
     }
 
@@ -66,6 +81,13 @@ class TabSuspendManager {
                 Object.entries(active).forEach(([id, meta]) => {
                     const idNum = parseInt(id, 10);
                     if (!isNaN(idNum) && meta && meta.originalUrl) {
+                        // Ensure suspendedMeta is initialized as a Map
+                        if (
+                            !this.suspendedMeta ||
+                            !(this.suspendedMeta instanceof Map)
+                        ) {
+                            this.suspendedMeta = new Map();
+                        }
                         this.suspendedMeta.set(idNum, meta);
                     }
                 });
@@ -512,6 +534,13 @@ class TabSuspendManager {
                 });
 
                 chrome.contextMenus.create({
+                    id: "page-analytics-dashboard",
+                    title: "Open Analytics Dashboard",
+                    contexts: ["page"],
+                    documentUrlPatterns: ["http://*/*", "https://*/*"],
+                });
+
+                chrome.contextMenus.create({
                     id: "separator3",
                     type: "separator",
                     contexts: ["page"],
@@ -542,6 +571,11 @@ class TabSuspendManager {
 
     setupEventListeners() {
         try {
+            // Add alarm listener for session management
+            chrome.alarms.onAlarm.addListener(async (alarm) => {
+                await this.sessionManager.handleAlarm(alarm);
+            });
+
             chrome.tabs.onActivated.addListener((activeInfo) => {
                 chrome.tabs
                     .get(activeInfo.tabId)
@@ -573,6 +607,15 @@ class TabSuspendManager {
                         tabId
                     );
                     this.suspendedTabs.delete(tabId);
+                }
+            });
+
+            chrome.tabs.onCreated.addListener(async (tab) => {
+                // Auto-group new tabs based on current profile
+                try {
+                    await this.smartOrganizer.autoGroupNewTab(tab);
+                } catch (error) {
+                    console.error("Error auto-grouping new tab:", error);
                 }
             });
 
@@ -744,6 +787,126 @@ class TabSuspendManager {
                     );
                     sendResponse({ success: true, result: importResult });
                     break;
+
+                // Session Management
+                case "saveCompleteSession":
+                    const session =
+                        await this.sessionManager.saveCompleteSession(
+                            message.name
+                        );
+                    sendResponse({ success: true, session });
+                    break;
+                case "restoreSession":
+                    const restoreResult =
+                        await this.sessionManager.restoreSession(
+                            message.sessionId,
+                            message.options
+                        );
+                    sendResponse({ success: true, result: restoreResult });
+                    break;
+                case "getSessions":
+                    const sessions = await this.sessionManager.getSessions(
+                        message.limit
+                    );
+                    sendResponse({ success: true, sessions });
+                    break;
+                case "createSessionTemplate":
+                    const template =
+                        await this.sessionManager.createSessionTemplate(
+                            message.name,
+                            message.workflowType
+                        );
+                    sendResponse({ success: true, template });
+                    break;
+                case "getSessionTemplates":
+                    const templates = await this.sessionManager.getTemplates();
+                    sendResponse({ success: true, templates });
+                    break;
+                case "deleteSessionTemplate":
+                    await this.sessionManager.deleteTemplate(
+                        message.templateId
+                    );
+                    sendResponse({ success: true });
+                    break;
+                case "deleteSession":
+                    await this.sessionManager.deleteSession(message.sessionId);
+                    sendResponse({ success: true });
+                    break;
+
+                // Smart Organization
+                case "switchProfile":
+                    const profile = await this.smartOrganizer.switchProfile(
+                        message.profileId
+                    );
+                    sendResponse({ success: true, profile });
+                    break;
+                case "getProfiles":
+                    const profiles = await this.smartOrganizer.getProfiles();
+                    sendResponse({ success: true, profiles });
+                    break;
+                case "createProfile":
+                    const newProfile = await this.smartOrganizer.createProfile(
+                        message.name,
+                        message.description,
+                        message.rules
+                    );
+                    sendResponse({ success: true, profile: newProfile });
+                    break;
+                case "groupByTimeOpened":
+                    await this.smartOrganizer.groupByTimeOpened(
+                        message.windowId
+                    );
+                    sendResponse({ success: true });
+                    break;
+                case "convertGroupToBookmarks":
+                    const bookmarkFolder =
+                        await this.smartOrganizer.convertGroupToBookmarks(
+                            message.groupId
+                        );
+                    sendResponse({ success: true, folder: bookmarkFolder });
+                    break;
+
+                // Performance Analytics
+                case "getPerformanceDashboard":
+                    const dashboardData =
+                        this.performanceAnalytics.getDashboardData();
+                    sendResponse({ success: true, data: dashboardData });
+                    break;
+                case "exportAnalytics":
+                    const analyticsData =
+                        await this.performanceAnalytics.exportAnalyticsData();
+                    sendResponse({ success: true, data: analyticsData });
+                    break;
+
+                // Activity Analytics
+                case "getActivityDashboard":
+                    const activityData =
+                        this.activityAnalytics.getDashboardData();
+                    sendResponse({ success: true, data: activityData });
+                    break;
+                case "enableFocusMode":
+                    await this.activityAnalytics.enableFocusMode(
+                        message.options
+                    );
+                    sendResponse({ success: true });
+                    break;
+                case "disableFocusMode":
+                    await this.activityAnalytics.disableFocusMode();
+                    sendResponse({ success: true });
+                    break;
+                case "updateDailyGoals":
+                    await this.activityAnalytics.updateDailyGoals(
+                        message.goals
+                    );
+                    sendResponse({ success: true });
+                    break;
+                case "getSiteStats":
+                    const siteStats =
+                        await this.activityAnalytics.getDetailedSiteStats(
+                            message.domain
+                        );
+                    sendResponse({ success: true, stats: siteStats });
+                    break;
                 default:
                     sendResponse({ success: false, error: "Unknown action" });
             }
@@ -797,6 +960,11 @@ class TabSuspendManager {
                     break;
                 case "page-save-window":
                     await this.saveTabGroup(null, { windowId: tab.windowId });
+                    break;
+                case "page-analytics-dashboard":
+                    chrome.tabs.create({
+                        url: chrome.runtime.getURL("dashboard.html"),
+                    });
                     break;
                 case "suggest-tabs":
                     await this.suggestTabsToSuspend();
@@ -899,6 +1067,16 @@ class TabSuspendManager {
                 suspendedAt: Date.now(),
             });
             this.persistSuspendedMeta();
+
+            // Record suspension analytics
+            const estimatedMemory =
+                this.performanceAnalytics.estimateTabMemoryUsage(tab);
+            this.performanceAnalytics.recordSuspension(
+                tabId,
+                tab.url,
+                estimatedMemory
+            );
+
             await chrome.tabs.update(tabId, { url: suspendedUrl });
             this.tabActivity.delete(tabId);
 
@@ -1676,13 +1854,13 @@ class TabSuspendManager {
                 groups: groups,
             };
 
-            const blob = new Blob([JSON.stringify(exportData, null, 2)], {
-                type: "application/json",
-            });
-            const url = URL.createObjectURL(blob);
+            const jsonString = JSON.stringify(exportData, null, 2);
+            const dataUrl =
+                "data:application/json;charset=utf-8," +
+                encodeURIComponent(jsonString);
 
             await chrome.downloads.download({
-                url: url,
+                url: dataUrl,
                 filename: `tab-suspend-pro-groups-${
                     new Date().toISOString().split("T")[0]
                 }.json`,
@@ -1705,10 +1883,25 @@ class TabSuspendManager {
 
     async importSavedGroups(fileContent, mergeMode = true) {
         try {
-            const importData = JSON.parse(fileContent);
+            let importData;
+            try {
+                importData = JSON.parse(fileContent);
+            } catch (parseError) {
+                throw new Error(
+                    "Invalid JSON format. Please select a valid export file."
+                );
+            }
+
+            if (!importData || typeof importData !== "object") {
+                throw new Error(
+                    "Invalid import file structure. Expected JSON object."
+                );
+            }
 
             if (!importData.groups || !Array.isArray(importData.groups)) {
-                throw new Error("Invalid import file format");
+                throw new Error(
+                    "Invalid import file format. Missing 'groups' array."
+                );
             }
 
             const stored = await chrome.storage.local.get(["savedTabGroups"]);
