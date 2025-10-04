@@ -1,7 +1,7 @@
 {
     "manifest_version": 3,
     "name": "Tab Suspend Pro",
-    "version": "2.0.6",
+    "version": "2.0.7",
     "description": "Automatically suspend inactive tabs and save up to 80% of memory",
     "permissions": [
         "tabs",
