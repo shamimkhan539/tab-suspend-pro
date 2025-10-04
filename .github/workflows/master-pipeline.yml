@@ -217,6 +217,33 @@ jobs:
               env:
                   GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
+            - name: Validate manifest version for release
+              if: steps.tag_check.outputs.exists == 'false'
+              run: |
+                  MANIFEST_VERSION=$(grep -o '"version": "[^"]*"' manifest.json | grep -o '[0-9.]*')
+                  TAG_VERSION=${{ needs.validate-and-test.outputs.version }}
+                  TAG_VERSION=${TAG_VERSION#v}
+                  echo "Manifest version: $MANIFEST_VERSION"
+                  echo "Tag version: $TAG_VERSION"
+                  if [ "$MANIFEST_VERSION" != "$TAG_VERSION" ]; then
+                    echo "Error: Manifest version ($MANIFEST_VERSION) doesn't match tag version ($TAG_VERSION)"
+                    exit 1
+                  fi
+
+            - name: Create extension package (release copy)
+              if: steps.tag_check.outputs.exists == 'false'
+              run: |
+                  mkdir -p extension-package
+                  cp manifest.json extension-package/ || true
+                  cp *.js extension-package/ 2>/dev/null || true
+                  cp *.html extension-package/ 2>/dev/null || true
+                  cp -r icons extension-package/ 2>/dev/null || true
+                  cp LICENSE extension-package/ 2>/dev/null || true
+                  cd extension-package
+                  zip -r ../tab-suspend-pro-${{ needs.validate-and-test.outputs.version }}.zip .
+                  cd ..
+                  echo "✅ Release package created: tab-suspend-pro-${{ needs.validate-and-test.outputs.version }}.zip"
+
             - name: Tag already exists
               if: steps.tag_check.outputs.exists == 'true'
               run: |
