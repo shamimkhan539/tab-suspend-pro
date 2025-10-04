@@ -196,6 +196,7 @@ jobs:
               if: steps.tag_check.outputs.exists == 'false'
               uses: softprops/action-gh-release@v2
               with:
+                  tag_name: ${{ needs.validate-and-test.outputs.version }}
                   files: tab-suspend-pro-${{ needs.validate-and-test.outputs.version }}.zip
                   generate_release_notes: true
                   draft: false
