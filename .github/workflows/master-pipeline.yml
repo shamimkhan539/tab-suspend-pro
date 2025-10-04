@@ -1,0 +1,164 @@
+name: Master Branch Pipeline
+
+on:
+    push:
+        branches:
+            - master
+        paths-ignore:
+            - "**.md"
+            - "LICENSE"
+            - ".gitignore"
+            - ".github/**"
+
+jobs:
+    # First, run all validations and tests
+    validate-and-test:
+        runs-on: ubuntu-latest
+        outputs:
+            version: ${{ steps.version.outputs.version }}
+            manifest-version: ${{ steps.version.outputs.manifest_version }}
+        steps:
+            - name: Checkout code
+              uses: actions/checkout@v4
+
+            - name: Get version from manifest
+              id: version
+              run: |
+                  MANIFEST_VERSION=$(grep -o '"version": "[^"]*"' manifest.json | grep -o '[0-9.]*')
+                  echo "version=v$MANIFEST_VERSION" >> $GITHUB_OUTPUT
+                  echo "manifest_version=$MANIFEST_VERSION" >> $GITHUB_OUTPUT
+                  echo "📋 Current version: $MANIFEST_VERSION"
+
+            - name: Validate manifest.json
+              run: |
+                  echo "🔍 Validating manifest.json..."
+                  if ! cat manifest.json | python -m json.tool > /dev/null 2>&1; then
+                    echo "❌ manifest.json is not valid JSON"
+                    exit 1
+                  fi
+                  echo "✅ manifest.json is valid JSON"
+
+            - name: Check required files
+              run: |
+                  echo "🔍 Checking required files..."
+                  required_files=("manifest.json" "background.js" "content.js" "popup.html" "popup.js" "options.html" "options.js" "suspended.html" "suspended.js")
+
+                  for file in "${required_files[@]}"; do
+                    if [ ! -f "$file" ]; then
+                      echo "❌ Required file missing: $file"
+                      exit 1
+                    else
+                      echo "✅ Found: $file"
+                    fi
+                  done
+
+            - name: Check icons
+              run: |
+                  echo "🔍 Checking icons..."
+                  required_icons=("icons/icon16.png" "icons/icon32.png" "icons/icon48.png" "icons/icon128.png")
+                  for icon in "${required_icons[@]}"; do
+                    if [ ! -f "$icon" ]; then
+                      echo "❌ Required icon missing: $icon"
+                      exit 1
+                    else
+                      echo "✅ Found: $icon"
+                    fi
+                  done
+
+            - name: Validate JavaScript syntax
+              run: |
+                  echo "🔍 Checking JavaScript syntax..."
+                  js_files=("background.js" "content.js" "popup.js" "options.js" "suspended.js")
+
+                  for file in "${js_files[@]}"; do
+                    if ! node -c "$file" 2>/dev/null; then
+                      echo "❌ Syntax error in: $file"
+                      exit 1
+                    else
+                      echo "✅ Syntax OK: $file"
+                    fi
+                  done
+
+            - name: Create test build
+              run: |
+                  echo "🔨 Creating test build..."
+                  mkdir -p build-test
+                  cp manifest.json build-test/
+                  cp *.js build-test/
+                  cp *.html build-test/
+                  cp -r icons build-test/
+                  cp LICENSE build-test/
+                  echo "✅ Test build created successfully"
+
+    # After validation passes, create tag and trigger release
+    auto-tag-and-release:
+        runs-on: ubuntu-latest
+        needs: validate-and-test
+        permissions:
+            contents: write
+        steps:
+            - name: Checkout code
+              uses: actions/checkout@v4
+              with:
+                  fetch-depth: 0
+                  token: ${{ secrets.GITHUB_TOKEN }}
+
+            - name: Check if tag already exists
+              id: tag_check
+              run: |
+                  if git rev-parse "refs/tags/${{ needs.validate-and-test.outputs.version }}" >/dev/null 2>&1; then
+                    echo "exists=true" >> $GITHUB_OUTPUT
+                    echo "🏷️  Tag ${{ needs.validate-and-test.outputs.version }} already exists"
+                  else
+                    echo "exists=false" >> $GITHUB_OUTPUT
+                    echo "🏷️  Tag ${{ needs.validate-and-test.outputs.version }} does not exist - will create"
+                  fi
+
+            - name: Create and push tag
+              if: steps.tag_check.outputs.exists == 'false'
+              run: |
+                  git config user.name "github-actions[bot]"
+                  git config user.email "github-actions[bot]@users.noreply.github.com"
+
+                  # Create annotated tag with commit message info
+                  COMMIT_MSG=$(git log -1 --pretty=%B)
+                  git tag -a "${{ needs.validate-and-test.outputs.version }}" -m "Release ${{ needs.validate-and-test.outputs.version }}" -m "Auto-tagged from master branch" -m "Latest commit: $COMMIT_MSG"
+
+                  git push origin "${{ needs.validate-and-test.outputs.version }}"
+
+                  echo "🎉 Created and pushed tag: ${{ needs.validate-and-test.outputs.version }}"
+                  echo "🚀 This will trigger the release workflow automatically"
+
+            - name: Tag already exists
+              if: steps.tag_check.outputs.exists == 'true'
+              run: |
+                  echo "⚠️  Tag ${{ needs.validate-and-test.outputs.version }} already exists"
+                  echo "💡 If you want to create a new release, please:"
+                  echo "   1. Update the version in manifest.json"
+                  echo "   2. Push the changes to master"
+                  echo "   3. A new tag will be created automatically"
+
+    # Summary job
+    pipeline-summary:
+        runs-on: ubuntu-latest
+        needs: [validate-and-test, auto-tag-and-release]
+        if: always()
+        steps:
+            - name: Pipeline Summary
+              run: |
+                  echo "## 🚀 Master Branch Pipeline Summary"
+                  echo ""
+                  echo "**Version:** ${{ needs.validate-and-test.outputs.version }}"
+                  echo "**Validation:** ${{ needs.validate-and-test.result == 'success' && '✅ Passed' || '❌ Failed' }}"
+                  echo "**Auto-tagging:** ${{ needs.auto-tag-and-release.result == 'success' && '✅ Completed' || needs.auto-tag-and-release.result == 'skipped' && '⏭️ Skipped' || '❌ Failed' }}"
+                  echo ""
+                  if [ "${{ needs.validate-and-test.result }}" = "success" ] && [ "${{ needs.auto-tag-and-release.result }}" = "success" ]; then
+                    echo "🎉 **Pipeline completed successfully!**"
+                    echo "🏷️  New tag created: ${{ needs.validate-and-test.outputs.version }}"
+                    echo "📦 Release workflow will be triggered automatically"
+                  elif [ "${{ needs.validate-and-test.result }}" = "success" ] && [ "${{ needs.auto-tag-and-release.result }}" = "skipped" ]; then
+                    echo "✅ **Validation passed, but tag already exists**"
+                    echo "💡 Update version in manifest.json for new release"
+                  else
+                    echo "❌ **Pipeline failed - please check the logs above**"
+                  fi
