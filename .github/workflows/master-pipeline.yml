@@ -177,6 +177,45 @@ jobs:
                   echo "🎉 Created and pushed tag: ${{ needs.validate-and-test.outputs.version }}"
                   echo "🚀 This will trigger the release workflow automatically"
 
+            - name: Create extension package
+              if: steps.tag_check.outputs.exists == 'false'
+              run: |
+                  echo "🔨 Creating extension package for release..."
+                  mkdir -p extension-package
+                  cp manifest.json extension-package/ || true
+                  cp *.js extension-package/ 2>/dev/null || true
+                  cp *.html extension-package/ 2>/dev/null || true
+                  cp -r icons extension-package/ 2>/dev/null || true
+                  cp LICENSE extension-package/ 2>/dev/null || true
+                  cd extension-package
+                  zip -r ../tab-suspend-pro-${{ needs.validate-and-test.outputs.version }}.zip .
+                  cd ..
+                  echo "✅ Package created: tab-suspend-pro-${{ needs.validate-and-test.outputs.version }}.zip"
+
+            - name: Create GitHub Release (direct)
+              if: steps.tag_check.outputs.exists == 'false'
+              uses: softprops/action-gh-release@v2
+              with:
+                  files: tab-suspend-pro-${{ needs.validate-and-test.outputs.version }}.zip
+                  generate_release_notes: true
+                  draft: false
+                  prerelease: false
+                  name: "tab-suspend-pro-${{ needs.validate-and-test.outputs.version }}"
+                  body: |
+                      ## Chrome Extension Release ${{ needs.validate-and-test.outputs.version }}
+
+                      ### Installation
+                      1. Download the `tab-suspend-pro-${{ needs.validate-and-test.outputs.version }}.zip` file
+                      2. Extract the contents
+                      3. Open Chrome and go to `chrome://extensions/`
+                      4. Enable "Developer mode"
+                      5. Click "Load unpacked" and select the extracted folder
+
+                      ### What's Changed
+                      See the auto-generated release notes below for detailed changes.
+              env:
+                  GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
             - name: Tag already exists
               if: steps.tag_check.outputs.exists == 'true'
               run: |
