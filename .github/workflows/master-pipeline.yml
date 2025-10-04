@@ -26,21 +26,40 @@ jobs:
                   # Get all existing tags
                   git fetch --tags
 
-                  # Get the latest tag version
-                  LATEST_TAG=$(git tag --list --sort=-version:refname | head -n1)
-                  echo "📋 Latest existing tag: $LATEST_TAG"
+                  # Get all tags and find the highest semantic version
+                  echo "🔍 Finding latest semantic version..."
+                  HIGHEST_MAJOR=0
+                  HIGHEST_MINOR=0
+                  HIGHEST_PATCH=0
 
-                  if [ -z "$LATEST_TAG" ]; then
-                    # No tags exist, start with v1.0.0
+                  # Loop through all tags to find the highest version
+                  for tag in $(git tag --list | grep -E '^v[0-9]+\.[0-9]+\.[0-9]+$'); do
+                    VERSION_NUM=$(echo $tag | sed 's/v//')
+                    MAJOR=$(echo $VERSION_NUM | cut -d. -f1)
+                    MINOR=$(echo $VERSION_NUM | cut -d. -f2)
+                    PATCH=$(echo $VERSION_NUM | cut -d. -f3)
+                    
+                    # Compare versions
+                    if [ $MAJOR -gt $HIGHEST_MAJOR ] || 
+                       ([ $MAJOR -eq $HIGHEST_MAJOR ] && [ $MINOR -gt $HIGHEST_MINOR ]) || 
+                       ([ $MAJOR -eq $HIGHEST_MAJOR ] && [ $MINOR -eq $HIGHEST_MINOR ] && [ $PATCH -gt $HIGHEST_PATCH ]); then
+                      HIGHEST_MAJOR=$MAJOR
+                      HIGHEST_MINOR=$MINOR
+                      HIGHEST_PATCH=$PATCH
+                    fi
+                  done
+
+                  if [ $HIGHEST_MAJOR -eq 0 ] && [ $HIGHEST_MINOR -eq 0 ] && [ $HIGHEST_PATCH -eq 0 ]; then
+                    # No valid tags exist, start with v1.0.0
                     NEXT_VERSION="v1.0.0"
+                    echo "📋 No existing tags found, starting with v1.0.0"
                   else
-                    # Extract version numbers from latest tag
-                    VERSION_NUMBERS=$(echo $LATEST_TAG | sed 's/v//' | tr '.' ' ')
-                    read -r MAJOR MINOR PATCH <<< "$VERSION_NUMBERS"
+                    LATEST_TAG="v$HIGHEST_MAJOR.$HIGHEST_MINOR.$HIGHEST_PATCH"
+                    echo "📋 Latest existing tag: $LATEST_TAG"
                     
                     # Increment patch version
-                    PATCH=$((PATCH + 1))
-                    NEXT_VERSION="v$MAJOR.$MINOR.$PATCH"
+                    HIGHEST_PATCH=$((HIGHEST_PATCH + 1))
+                    NEXT_VERSION="v$HIGHEST_MAJOR.$HIGHEST_MINOR.$HIGHEST_PATCH"
                   fi
 
                   echo "🚀 Next version will be: $NEXT_VERSION"
