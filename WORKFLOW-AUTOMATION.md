@@ -18,12 +18,12 @@ This repository now has a complete automated workflow system that handles taggin
     - Ensures all required icons are present
     - Creates a test build
 
-2. **Auto-creates tags:**
+2. **Auto-creates tags and versions:**
 
-    - Reads version from `manifest.json`
-    - Creates a tag like `v2.0.3` (based on manifest version)
-    - Only creates tag if it doesn't already exist
-    - Pushes the tag to GitHub
+    - Automatically calculates the next version (increments patch version)
+    - Updates `manifest.json` with the new version
+    - Creates a tag like `v2.0.30` (auto-incremented from latest tag)
+    - Pushes both the version update and the tag to GitHub
 
 3. **Triggers release:**
     - The new tag automatically triggers the existing `release.yml` workflow
@@ -66,15 +66,18 @@ Push to Master → Validation → Auto-Tag Creation → Release Workflow → Git
 3. ✅ Validation runs automatically
 4. ⏭️ No new tag created (version unchanged)
 
-### For New Releases:
+### For New Releases (AUTOMATIC VERSIONING):
 
 1. Make your changes
-2. **Update version in `manifest.json`** (e.g., `2.0.3` → `2.0.4`)
-3. Push to master
-4. ✅ Validation runs
-5. 🏷️ Tag `v2.0.4` created automatically
-6. 📦 Release workflow triggered
-7. 🚀 GitHub release published with zip file
+2. Push to master
+3. ✅ Validation runs
+4. 📝 Version automatically incremented (e.g., `v2.0.29` → `v2.0.30`)
+5. 📄 `manifest.json` updated with new version
+6. 🏷️ Tag created automatically
+7. 📦 Release workflow triggered
+8. 🚀 GitHub release published with zip file
+
+**No manual version updates needed!** The system automatically increments the patch version.
 
 ### For Pull Requests:
 

@@ -8,7 +8,6 @@ on:
             - "**.md"
             - "LICENSE"
             - ".gitignore"
-            - ".github/**"
 
 jobs:
     # First, run all validations and tests
@@ -21,13 +20,32 @@ jobs:
             - name: Checkout code
               uses: actions/checkout@v4
 
-            - name: Get version from manifest
+            - name: Calculate next version
               id: version
               run: |
-                  MANIFEST_VERSION=$(grep -o '"version": "[^"]*"' manifest.json | grep -o '[0-9.]*')
-                  echo "version=v$MANIFEST_VERSION" >> $GITHUB_OUTPUT
-                  echo "manifest_version=$MANIFEST_VERSION" >> $GITHUB_OUTPUT
-                  echo "📋 Current version: $MANIFEST_VERSION"
+                  # Get all existing tags
+                  git fetch --tags
+
+                  # Get the latest tag version
+                  LATEST_TAG=$(git tag --list --sort=-version:refname | head -n1)
+                  echo "📋 Latest existing tag: $LATEST_TAG"
+
+                  if [ -z "$LATEST_TAG" ]; then
+                    # No tags exist, start with v1.0.0
+                    NEXT_VERSION="v1.0.0"
+                  else
+                    # Extract version numbers from latest tag
+                    VERSION_NUMBERS=$(echo $LATEST_TAG | sed 's/v//' | tr '.' ' ')
+                    read -r MAJOR MINOR PATCH <<< "$VERSION_NUMBERS"
+                    
+                    # Increment patch version
+                    PATCH=$((PATCH + 1))
+                    NEXT_VERSION="v$MAJOR.$MINOR.$PATCH"
+                  fi
+
+                  echo "🚀 Next version will be: $NEXT_VERSION"
+                  echo "version=$NEXT_VERSION" >> $GITHUB_OUTPUT
+                  echo "manifest_version=$(echo $NEXT_VERSION | sed 's/v//')" >> $GITHUB_OUTPUT
 
             - name: Validate manifest.json
               run: |
@@ -114,11 +132,22 @@ jobs:
                     echo "🏷️  Tag ${{ needs.validate-and-test.outputs.version }} does not exist - will create"
                   fi
 
-            - name: Create and push tag
+            - name: Update manifest and create tag
               if: steps.tag_check.outputs.exists == 'false'
               run: |
                   git config user.name "github-actions[bot]"
                   git config user.email "github-actions[bot]@users.noreply.github.com"
+
+                  # Update manifest.json with new version
+                  NEW_VERSION="${{ needs.validate-and-test.outputs.manifest-version }}"
+                  sed -i "s/\"version\": \"[^\"]*\"/\"version\": \"$NEW_VERSION\"/" manifest.json
+
+                  echo "📝 Updated manifest.json to version $NEW_VERSION"
+
+                  # Commit the version update
+                  git add manifest.json
+                  git commit -m "chore: bump version to $NEW_VERSION [skip ci]"
+                  git push origin master
 
                   # Create annotated tag with commit message info
                   COMMIT_MSG=$(git log -1 --pretty=%B)

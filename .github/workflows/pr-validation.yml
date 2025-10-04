@@ -13,21 +13,38 @@ jobs:
             - name: Checkout code
               uses: actions/checkout@v4
 
-            - name: Get version info
+            - name: Calculate next version
               id: version
               run: |
-                  MANIFEST_VERSION=$(grep -o '"version": "[^"]*"' manifest.json | grep -o '[0-9.]*')
-                  echo "version=v$MANIFEST_VERSION" >> $GITHUB_OUTPUT
-                  echo "manifest_version=$MANIFEST_VERSION" >> $GITHUB_OUTPUT
+                  # Get all existing tags
+                  git fetch --tags
 
-            - name: Check if version was updated
+                  # Get the latest tag version
+                  LATEST_TAG=$(git tag --list --sort=-version:refname | head -n1)
+                  echo "📋 Latest existing tag: $LATEST_TAG"
+
+                  if [ -z "$LATEST_TAG" ]; then
+                    # No tags exist, start with v1.0.0
+                    NEXT_VERSION="v1.0.0"
+                  else
+                    # Extract version numbers from latest tag
+                    VERSION_NUMBERS=$(echo $LATEST_TAG | sed 's/v//' | tr '.' ' ')
+                    read -r MAJOR MINOR PATCH <<< "$VERSION_NUMBERS"
+                    
+                    # Increment patch version
+                    PATCH=$((PATCH + 1))
+                    NEXT_VERSION="v$MAJOR.$MINOR.$PATCH"
+                  fi
+
+                  echo "🚀 Next version will be: $NEXT_VERSION"
+                  echo "version=$NEXT_VERSION" >> $GITHUB_OUTPUT
+                  echo "manifest_version=$(echo $NEXT_VERSION | sed 's/v//')" >> $GITHUB_OUTPUT
+
+            - name: Check version status
               id: version_check
               run: |
-                  git fetch origin master
-                  OLD_VERSION=$(git show origin/master:manifest.json | grep -o '"version": "[^"]*"' | grep -o '[0-9.]*')
-                  NEW_VERSION="${{ steps.version.outputs.manifest_version }}"
-
-                  echo "old_version=$OLD_VERSION" >> $GITHUB_OUTPUT
+                  echo "latest_tag=$(git tag --list --sort=-version:refname | head -n1)" >> $GITHUB_OUTPUT
+                  echo "next_version=${{ steps.version.outputs.version }}" >> $GITHUB_OUTPUT
                   echo "new_version=$NEW_VERSION" >> $GITHUB_OUTPUT
 
                   if [ "$OLD_VERSION" != "$NEW_VERSION" ]; then
@@ -124,21 +141,14 @@ jobs:
               run: |
                   echo "## 📋 Pull Request Validation Summary"
                   echo ""
-                  echo "**Current Version:** ${{ steps.version.outputs.version }}"
-                  echo "**Version Changed:** ${{ steps.version_check.outputs.version_changed == 'true' && '✅ Yes' || '⏭️ No' }}"
-                  if [ "${{ steps.version_check.outputs.version_changed }}" = "true" ]; then
-                    echo "**Version Update:** ${{ steps.version_check.outputs.old_version }} → ${{ steps.version_check.outputs.new_version }}"
-                    echo ""
-                    echo "🎉 **When this PR is merged to master:**"
-                    echo "- ✅ All validations will run"
-                    echo "- 🏷️ Tag ${{ steps.version.outputs.version }} will be created automatically"
-                    echo "- 📦 Release workflow will be triggered"
-                    echo "- 🚀 GitHub release will be published"
-                  else
-                    echo ""
-                    echo "💡 **Note:** Since version wasn't changed, merging this PR will:"
-                    echo "- ✅ Run all validations"
-                    echo "- ⏭️ Skip tag creation (version already exists)"
-                  fi
+                  echo "**Latest Tag:** ${{ steps.version_check.outputs.latest_tag }}"
+                  echo "**Next Version:** ${{ steps.version_check.outputs.next_version }}"
+                  echo ""
+                  echo "🎉 **When this PR is merged to master:**"
+                  echo "- ✅ All validations will run"
+                  echo "- 📝 Manifest.json will be updated to version ${{ steps.version.outputs.manifest_version }}"
+                  echo "- 🏷️ Tag ${{ steps.version.outputs.version }} will be created automatically"
+                  echo "- 📦 Release workflow will be triggered"
+                  echo "- 🚀 GitHub release will be published"
                   echo ""
                   echo "**All Checks:** ✅ Passed"
