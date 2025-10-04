@@ -86,20 +86,27 @@ The extension will be available on the Chrome Web Store.
 
 ```
 tab-suspend-pro/
-├── manifest.json          # Extension configuration
-├── background.js           # Main extension logic
-├── popup.html             # Extension popup interface
-├── popup.js               # Popup functionality
-├── options.html           # Settings page
-├── options.js             # Settings functionality
-├── suspended.html         # Suspended tab page
-├── content.js             # Activity tracking
-├── icons/                 # Extension icons
+├── manifest.json              # Extension configuration
+├── background.js               # Main extension logic & session management
+├── popup.html                 # Extension popup interface
+├── popup.js                   # Popup functionality & toggle controls
+├── options.html               # Settings & backup page
+├── options.js                 # Settings functionality & export/import
+├── suspended.html             # Suspended tab page
+├── suspended.js               # Tab restoration logic
+├── content.js                 # Activity tracking & user interaction
+├── dashboard.html             # Analytics dashboard
+├── dashboard.js               # Performance metrics & charts
+├── advanced-options.html      # Advanced configuration
+├── session-manager-enhanced.js # Enhanced session management
+├── icons/                     # Extension icons
 │   ├── icon16.png
 │   ├── icon32.png
 │   ├── icon48.png
 │   └── icon128.png
-└── README.md              # This file
+├── modules/                   # Shared modules
+├── README.md                  # User documentation
+└── CHANGELOG.md               # Version history & technical changes
 ```
 
 ## 🎮 Usage
@@ -243,16 +250,71 @@ tab-suspend-pro/
 
 ## 🔄 Updates & Changelog
 
-### Version 1.0.0
+### Version 2.0.0 (Latest) - October 4, 2024
 
--   Initial release
--   Basic tab suspension functionality
--   Context menu integration
--   Settings page
--   Auto-suspension timer
--   Tab group support
--   URL whitelist
--   Memory statistics
+#### 🚀 Major Features Added
+
+-   **Extension Toggle Functionality**: Complete enable/disable functionality in popup with visual feedback
+-   **Backup & Sync System**: Export/import settings, auto-backup configuration, Chrome sync integration
+-   **Advanced Analytics Dashboard**: Comprehensive memory usage tracking, performance insights
+-   **Smart Session Management**: Enhanced session snapshots with scheduler and templates
+
+#### 🛠️ Critical Fixes
+
+-   **Duplicate Tab Restoration**: Fixed major issue where browser session restore created duplicate tabs
+-   **Button Overlap**: Resolved UI overlap between settings and theme toggle buttons
+-   **Group Preservation**: Tab groups now properly maintained after browser restart
+-   **Session Restore Detection**: Intelligent detection of Chrome session restoration
+
+#### 🎨 UI/UX Improvements
+
+-   **Glassmorphism Design**: Beautiful glass effect throughout popup and options pages
+-   **Enhanced Backgrounds**: Rich gradient backgrounds with layered visual effects
+-   **Responsive Layout**: Improved responsive design for all screen sizes
+-   **Theme Support**: Enhanced light/dark mode with proper contrast ratios
+
+#### ⚡ Performance Enhancements
+
+-   **Badge Counter**: Real-time display of suspended tabs count in extension badge
+-   **Smart Timing**: Delayed initialization to avoid Chrome session restore conflicts
+-   **Better Error Handling**: Graceful fallbacks and comprehensive error management
+-   **Notification System**: Rich user feedback for all operations
+
+### Version 1.0.0 - September 15, 2024
+
+-   Initial release with basic tab suspension functionality
+-   Context menu integration and settings page
+-   Auto-suspension timer and tab group support
+-   URL whitelist and memory statistics
+
+**📋 [View Complete Changelog](CHANGELOG.md)** - See detailed version history, technical improvements, and planned features.
+
+## 📝 Changelog Maintenance
+
+This project maintains a comprehensive changelog following industry standards:
+
+-   **[CHANGELOG.md](CHANGELOG.md)**: Complete version history with detailed technical changes
+-   **README.md**: Latest version highlights and major feature summaries
+-   **Automatic Updates**: Changelog is updated with every release and major improvement
+-   **Semantic Versioning**: Follows [semver.org](https://semver.org/) for version numbering
+-   **Standard Format**: Based on [Keep a Changelog](https://keepachangelog.com/) best practices
+
+### For Developers: Updating Changelog
+
+```bash
+# Interactive mode
+node update-changelog.js
+
+# Command line mode
+node update-changelog.js "2.1.0" "Added" "New AI-powered suspension feature"
+```
+
+### Recent Development Summary
+
+-   **8 unnecessary .md files removed**: Cleaned up development documentation files
+-   **Automated changelog system**: Script for maintaining version history
+-   **Streamlined documentation**: User-facing README + detailed technical CHANGELOG
+-   **Better organization**: Clear separation between user docs and technical changes
 
 ## 🤝 Contributing
 

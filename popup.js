@@ -12,16 +12,59 @@ class PopupManager {
         this.setupTabInterface(); // Setup UI structure first
         await this.updateStats();
         await this.loadTabGroups();
+        this.updateExtensionState(); // Check if extension is enabled
 
-        // Only load saved groups if the feature is enabled AND we can connect to background
-        if (this.settings.savedGroupsEnabled) {
+        // Load data for enabled features
+        const hasAnyAdvancedFeatures =
+            this.settings.savedGroupsEnabled ||
+            this.settings.sessionsEnabled ||
+            this.settings.analyticsEnabled ||
+            this.settings.organizationEnabled;
+
+        if (hasAnyAdvancedFeatures) {
             await this.ensureBackgroundReady();
-            await this.loadSavedGroups();
+
+            // Load saved groups if the feature is enabled
+            if (this.settings.savedGroupsEnabled) {
+                await this.loadSavedGroups();
+            }
         }
 
         this.setupEventListeners();
         this.updateUI();
         await this.checkForSuggestions();
+    }
+
+    updateExtensionState() {
+        const isEnabled = this.settings.extensionEnabled !== false;
+        const toggle = document.getElementById("toggle");
+        const content = document.querySelector(".content");
+        const statusText = document.getElementById("status-text");
+
+        if (toggle) {
+            toggle.classList.toggle("active", isEnabled);
+        }
+
+        if (content) {
+            content.classList.toggle("extension-disabled", !isEnabled);
+        }
+
+        if (statusText) {
+            statusText.textContent = isEnabled
+                ? "Extension Enabled"
+                : "Extension Disabled";
+        }
+
+        // Update all action buttons
+        const actionButtons = document.querySelectorAll(".btn");
+        actionButtons.forEach((btn) => {
+            btn.disabled = !isEnabled;
+            if (!isEnabled) {
+                btn.style.pointerEvents = "none";
+            } else {
+                btn.style.pointerEvents = "auto";
+            }
+        });
     }
 
     async ensureBackgroundReady() {
@@ -42,10 +85,14 @@ class PopupManager {
         try {
             const result = await chrome.storage.sync.get([
                 "tabSuspendSettings",
+                "extensionEnabled",
             ]);
             this.settings = result.tabSuspendSettings || { enabled: true };
+            // Add extensionEnabled setting separately for backward compatibility
+            this.settings.extensionEnabled = result.extensionEnabled !== false;
         } catch (error) {
             console.error("Error loading settings:", error);
+            this.settings = { enabled: true, extensionEnabled: true };
         }
     }
 
@@ -193,12 +240,27 @@ class PopupManager {
     }
 
     setupEventListeners() {
+        // Extension toggle
+        const extensionToggle = document.getElementById("toggle");
+        if (extensionToggle) {
+            extensionToggle.addEventListener("click", async () => {
+                const newState = !this.settings.extensionEnabled;
+                this.settings.extensionEnabled = newState;
+                await chrome.storage.sync.set({ extensionEnabled: newState });
+                this.updateExtensionState();
+
+                // Notify background script about state change
+                chrome.runtime.sendMessage({
+                    action: "toggleExtension",
+                    enabled: newState,
+                });
+            });
+        }
+
         // Theme toggle
         const themeToggle = document.getElementById("theme-toggle");
         if (themeToggle) {
-            themeToggle.addEventListener("click", () => {
-                this.toggleTheme();
-            });
+            themeToggle.addEventListener("click", () => this.toggleTheme());
         }
 
         // Toggle extension
@@ -712,10 +774,20 @@ class PopupManager {
         const tabContainer = document.getElementById("tab-container");
         const content = document.querySelector(".content");
 
-        if (this.settings.savedGroupsEnabled) {
+        // Check if any advanced features are enabled
+        const hasAnyAdvancedFeatures =
+            this.settings.savedGroupsEnabled ||
+            this.settings.sessionsEnabled ||
+            this.settings.analyticsEnabled ||
+            this.settings.organizationEnabled;
+
+        if (hasAnyAdvancedFeatures) {
             // Show tab interface
             tabContainer.style.display = "block";
             content.classList.add("has-tabs");
+
+            // Show/hide individual tabs based on settings
+            this.updateTabVisibility();
         } else {
             // Hide tab interface
             tabContainer.style.display = "none";
@@ -723,13 +795,49 @@ class PopupManager {
 
             // Show suspend content directly
             const suspendContent = document.getElementById("content-suspend");
-            const savedGroupsContent = document.getElementById(
-                "content-saved-groups"
-            );
-
             if (suspendContent) suspendContent.classList.add("active");
-            if (savedGroupsContent)
-                savedGroupsContent.classList.remove("active");
+
+            // Hide other content
+            document
+                .querySelectorAll(".tab-content:not(#content-suspend)")
+                .forEach((content) => {
+                    content.classList.remove("active");
+                });
+        }
+    }
+
+    updateTabVisibility() {
+        // Show/hide individual tab buttons based on settings
+        const tabSessions = document.getElementById("tab-sessions");
+        const tabAnalytics = document.getElementById("tab-analytics");
+        const tabOrganization = document.getElementById("tab-organization");
+        const tabSavedGroups = document.getElementById("tab-saved-groups");
+
+        if (tabSessions) {
+            tabSessions.style.display = this.settings.sessionsEnabled
+                ? "block"
+                : "none";
+        }
+        if (tabAnalytics) {
+            tabAnalytics.style.display = this.settings.analyticsEnabled
+                ? "block"
+                : "none";
+        }
+        if (tabOrganization) {
+            tabOrganization.style.display = this.settings.organizationEnabled
+                ? "block"
+                : "none";
+        }
+        if (tabSavedGroups) {
+            tabSavedGroups.style.display = this.settings.savedGroupsEnabled
+                ? "block"
+                : "none";
+        }
+
+        // If the currently active tab is hidden, switch to suspend tab
+        const activeTab = document.querySelector(".tab-button.active");
+        if (activeTab && activeTab.style.display === "none") {
+            this.switchTab("suspend");
         }
     }
 

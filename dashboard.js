@@ -1,16 +1,19 @@
-// Dashboard JavaScript for Tab Suspend Pro Analytics
-class AnalyticsDashboard {
+// Enhanced Dashboard JavaScript for Tab Suspend Pro
+class MainDashboard {
     constructor() {
         this.refreshInterval = null;
+        this.focusModeActive = false;
         this.init();
     }
 
     async init() {
         await this.loadTheme();
-        await this.loadDashboardData();
+        await this.loadQuickStats();
+        await this.loadFeatures();
+        await this.checkFocusMode();
         this.setupEventListeners();
         this.startAutoRefresh();
-        console.log("Analytics Dashboard initialized");
+        console.log("Main Dashboard initialized");
     }
 
     async loadTheme() {
@@ -25,48 +28,237 @@ class AnalyticsDashboard {
         }
     }
 
-    async loadDashboardData() {
+    async loadQuickStats() {
         try {
-            // Load performance analytics
-            const performanceResponse = await chrome.runtime.sendMessage({
-                action: "getPerformanceDashboard",
+            const response = await chrome.runtime.sendMessage({
+                action: "dashboard-get-quick-stats",
             });
 
-            if (performanceResponse.success) {
-                this.updatePerformanceMetrics(performanceResponse.data);
-            }
+            const container = document.getElementById("quick-stats");
 
-            // Load activity analytics
-            const activityResponse = await chrome.runtime.sendMessage({
-                action: "getActivityDashboard",
-            });
-
-            if (activityResponse.success) {
-                this.updateActivityMetrics(activityResponse.data);
-            }
-
-            // Load sessions
-            const sessionsResponse = await chrome.runtime.sendMessage({
-                action: "getSessions",
-                limit: 5,
-            });
-
-            if (sessionsResponse.success) {
-                this.updateRecentSessions(sessionsResponse.sessions);
-            }
-
-            // Load profiles
-            const profilesResponse = await chrome.runtime.sendMessage({
-                action: "getProfiles",
-            });
-
-            if (profilesResponse.success) {
-                this.updateProfileSelector(profilesResponse.profiles);
+            if (response && response.success) {
+                const stats = response.stats;
+                container.innerHTML = `
+                    <div class="stat-card">
+                        <div class="stat-icon">🔒</div>
+                        <div class="stat-value">${
+                            stats.suspendedTabs || 0
+                        }</div>
+                        <div class="stat-label">Suspended Today</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-icon">💾</div>
+                        <div class="stat-value">${this.formatBytes(
+                            stats.memorySaved || 0
+                        )}</div>
+                        <div class="stat-label">Memory Saved</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-icon">📋</div>
+                        <div class="stat-value">${
+                            stats.activeSessions || 0
+                        }</div>
+                        <div class="stat-label">Active Sessions</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-icon">⚡</div>
+                        <div class="stat-value">${
+                            stats.performanceGain || 0
+                        }%</div>
+                        <div class="stat-label">Performance Boost</div>
+                    </div>
+                `;
+            } else {
+                container.innerHTML =
+                    '<div class="loading">Unable to load statistics</div>';
             }
         } catch (error) {
-            console.error("Error loading dashboard data:", error);
-            this.showError("Failed to load dashboard data");
+            console.error("Error loading quick stats:", error);
+            document.getElementById("quick-stats").innerHTML =
+                '<div class="loading">Error loading statistics</div>';
         }
+    }
+
+    async loadFeatures() {
+        try {
+            const response = await chrome.runtime.sendMessage({
+                action: "dashboard-get-features",
+            });
+
+            const container = document.getElementById("features-grid");
+
+            if (response && response.success) {
+                const features = response.features;
+                container.innerHTML = features
+                    .map(
+                        (feature) => `
+                    <div class="feature-card">
+                        <div class="status-indicator ${feature.status}"></div>
+                        <div class="feature-icon">${feature.icon}</div>
+                        <h4 class="feature-title">${feature.title}</h4>
+                        <p class="feature-description">${feature.description}</p>
+                    </div>
+                `
+                    )
+                    .join("");
+            } else {
+                // Default features if no response
+                container.innerHTML = `
+                    <div class="feature-card">
+                        <div class="status-indicator"></div>
+                        <div class="feature-icon">🔒</div>
+                        <h4 class="feature-title">Auto Tab Suspension</h4>
+                        <p class="feature-description">Automatically suspend inactive tabs to save memory and improve performance</p>
+                    </div>
+                    <div class="feature-card">
+                        <div class="status-indicator"></div>
+                        <div class="feature-icon">📋</div>
+                        <h4 class="feature-title">Session Management</h4>
+                        <p class="feature-description">Save and restore tab sessions with templates for common workflows</p>
+                    </div>
+                    <div class="feature-card">
+                        <div class="status-indicator"></div>
+                        <div class="feature-icon">🎯</div>
+                        <h4 class="feature-title">Focus Mode</h4>
+                        <p class="feature-description">Block distracting websites and track productivity sessions</p>
+                    </div>
+                    <div class="feature-card">
+                        <div class="status-indicator"></div>
+                        <div class="feature-icon">☁️</div>
+                        <h4 class="feature-title">Cloud Sync</h4>
+                        <p class="feature-description">Backup and sync sessions across devices with cloud storage</p>
+                    </div>
+                    <div class="feature-card">
+                        <div class="status-indicator"></div>
+                        <div class="feature-icon">📊</div>
+                        <h4 class="feature-title">Analytics</h4>
+                        <p class="feature-description">Track usage patterns and productivity metrics with insights</p>
+                    </div>
+                    <div class="feature-card">
+                        <div class="status-indicator"></div>
+                        <div class="feature-icon">🔒</div>
+                        <h4 class="feature-title">Privacy Protection</h4>
+                        <p class="feature-description">GDPR-compliant data handling with encryption and retention policies</p>
+                    </div>
+                `;
+            }
+        } catch (error) {
+            console.error("Error loading features:", error);
+            document.getElementById("features-grid").innerHTML =
+                '<div class="loading">Error loading features</div>';
+        }
+    }
+
+    async checkFocusMode() {
+        try {
+            const response = await chrome.runtime.sendMessage({
+                action: "focus-get-status",
+            });
+
+            if (response && response.success) {
+                this.focusModeActive = response.active;
+                this.updateFocusButton();
+            }
+        } catch (error) {
+            console.error("Error checking focus mode:", error);
+        }
+    }
+
+    updateFocusButton() {
+        const focusBtn = document.getElementById("focus-btn-text");
+        if (focusBtn) {
+            if (this.focusModeActive) {
+                focusBtn.textContent = "🛑 Stop Focus";
+            } else {
+                focusBtn.textContent = "🎯 Start Focus";
+            }
+        }
+    }
+
+    formatBytes(bytes) {
+        if (bytes === 0) return "0 B";
+        const k = 1024;
+        const sizes = ["B", "KB", "MB", "GB"];
+        const i = Math.floor(Math.log(bytes) / Math.log(k));
+        return parseFloat((bytes / Math.pow(k, i)).toFixed(1)) + " " + sizes[i];
+    }
+
+    startAutoRefresh() {
+        this.refreshInterval = setInterval(() => {
+            this.loadQuickStats();
+        }, 30000); // Refresh every 30 seconds
+    }
+
+    stopAutoRefresh() {
+        if (this.refreshInterval) {
+            clearInterval(this.refreshInterval);
+        }
+    }
+
+    setupEventListeners() {
+        // Save session button
+        const saveSessionBtn = document.getElementById("save-session");
+        if (saveSessionBtn) {
+            saveSessionBtn.addEventListener("click", async () => {
+                const name = prompt(
+                    "Enter session name:",
+                    `Session ${new Date().toLocaleDateString()}`
+                );
+                if (name) {
+                    try {
+                        const response = await chrome.runtime.sendMessage({
+                            action: "saveCompleteSession",
+                            name: name,
+                        });
+
+                        if (response.success) {
+                            this.showNotification(
+                                "Session saved successfully!",
+                                "success"
+                            );
+                            await this.loadQuickStats();
+                        }
+                    } catch (error) {
+                        this.showNotification(
+                            "Failed to save session",
+                            "error"
+                        );
+                    }
+                }
+            });
+        }
+
+        // Focus mode toggle
+        const focusModeBtn = document.getElementById("focus-mode-toggle");
+        if (focusModeBtn) {
+            focusModeBtn.addEventListener("click", async () => {
+                try {
+                    const response = await chrome.runtime.sendMessage({
+                        action: this.focusModeActive
+                            ? "focus-stop"
+                            : "focus-start",
+                    });
+
+                    if (response.success) {
+                        this.focusModeActive = !this.focusModeActive;
+                        this.updateFocusButton();
+                        this.showNotification(
+                            this.focusModeActive
+                                ? "Focus mode enabled"
+                                : "Focus mode disabled",
+                            "success"
+                        );
+                    }
+                } catch (error) {
+                    this.showNotification(
+                        "Failed to toggle focus mode",
+                        "error"
+                    );
+                }
+            });
+        }
+
+        console.log("Dashboard event listeners setup complete");
     }
 
     updatePerformanceMetrics(data) {
@@ -323,158 +515,6 @@ class AnalyticsDashboard {
             .join("");
     }
 
-    setupEventListeners() {
-        // Save session button
-        const saveSessionBtn = document.getElementById("save-session");
-        if (saveSessionBtn) {
-            saveSessionBtn.addEventListener("click", async () => {
-                const name = prompt(
-                    "Enter session name:",
-                    `Session ${new Date().toLocaleDateString()}`
-                );
-                if (name) {
-                    try {
-                        const response = await chrome.runtime.sendMessage({
-                            action: "saveCompleteSession",
-                            name: name,
-                        });
-
-                        if (response.success) {
-                            this.showSuccess("Session saved successfully!");
-                            await this.loadDashboardData();
-                        }
-                    } catch (error) {
-                        this.showError("Failed to save session");
-                    }
-                }
-            });
-        }
-
-        // Profile selector
-        const profileSelector = document.getElementById("workspace-profile");
-        if (profileSelector) {
-            profileSelector.addEventListener("change", async (e) => {
-                try {
-                    const response = await chrome.runtime.sendMessage({
-                        action: "switchProfile",
-                        profileId: e.target.value,
-                    });
-
-                    if (response.success) {
-                        this.showSuccess(
-                            `Switched to ${response.profile.name} profile`
-                        );
-                    }
-                } catch (error) {
-                    this.showError("Failed to switch profile");
-                }
-            });
-        }
-
-        // Group by domain button
-        const groupByDomainBtn = document.getElementById("group-by-domain");
-        if (groupByDomainBtn) {
-            groupByDomainBtn.addEventListener("click", async () => {
-                try {
-                    await chrome.runtime.sendMessage({
-                        action: "groupByTimeOpened",
-                    });
-                    this.showSuccess("Tabs grouped by domain");
-                } catch (error) {
-                    this.showError("Failed to group tabs");
-                }
-            });
-        }
-
-        // Focus mode toggle
-        const focusModeBtn = document.getElementById("focus-mode-toggle");
-        if (focusModeBtn) {
-            focusModeBtn.addEventListener("click", async () => {
-                try {
-                    // Check current focus mode status first
-                    const activityResponse = await chrome.runtime.sendMessage({
-                        action: "getActivityDashboard",
-                    });
-
-                    const isEnabled =
-                        activityResponse.success &&
-                        activityResponse.data.focusMode.enabled;
-
-                    const response = await chrome.runtime.sendMessage({
-                        action: isEnabled
-                            ? "disableFocusMode"
-                            : "enableFocusMode",
-                        options: {},
-                    });
-
-                    if (response.success) {
-                        this.showSuccess(
-                            isEnabled
-                                ? "Focus mode disabled"
-                                : "Focus mode enabled"
-                        );
-                        await this.loadDashboardData();
-                    }
-                } catch (error) {
-                    this.showError("Failed to toggle focus mode");
-                }
-            });
-        }
-
-        // Export data button
-        const exportBtn = document.getElementById("export-data");
-        if (exportBtn) {
-            exportBtn.addEventListener("click", async () => {
-                try {
-                    const response = await chrome.runtime.sendMessage({
-                        action: "exportAnalytics",
-                    });
-
-                    if (response.success) {
-                        this.downloadData(
-                            response.data,
-                            "tab-suspend-pro-analytics.json"
-                        );
-                        this.showSuccess("Analytics data exported");
-                    }
-                } catch (error) {
-                    this.showError("Failed to export data");
-                }
-            });
-        }
-
-        // Optimize performance button
-        const optimizeBtn = document.getElementById("optimize-performance");
-        if (optimizeBtn) {
-            optimizeBtn.addEventListener("click", async () => {
-                try {
-                    // Get current tabs and suggest suspensions
-                    const response = await chrome.runtime.sendMessage({
-                        action: "suggestTabs",
-                    });
-
-                    if (response.success) {
-                        this.showSuccess(
-                            "Performance optimization suggestions sent"
-                        );
-                    }
-                } catch (error) {
-                    this.showError("Failed to optimize performance");
-                }
-            });
-        }
-
-        // Open options button
-        const optionsBtn = document.getElementById("open-options");
-        if (optionsBtn) {
-            optionsBtn.addEventListener("click", () => {
-                chrome.tabs.create({
-                    url: chrome.runtime.getURL("options.html"),
-                });
-            });
-        }
-    }
-
     async restoreSession(sessionId) {
         try {
             const response = await chrome.runtime.sendMessage({
@@ -484,36 +524,14 @@ class AnalyticsDashboard {
             });
 
             if (response.success) {
-                this.showSuccess(
-                    `Session restored: ${response.result.restoredTabs} tabs in ${response.result.restoredWindows} windows`
+                this.showNotification(
+                    `Session restored: ${response.result.restoredTabs} tabs in ${response.result.restoredWindows} windows`,
+                    "success"
                 );
             }
         } catch (error) {
-            this.showError("Failed to restore session");
+            this.showNotification("Failed to restore session", "error");
         }
-    }
-
-    startAutoRefresh() {
-        // Refresh dashboard every 30 seconds
-        this.refreshInterval = setInterval(() => {
-            this.loadDashboardData();
-        }, 30000);
-    }
-
-    stopAutoRefresh() {
-        if (this.refreshInterval) {
-            clearInterval(this.refreshInterval);
-            this.refreshInterval = null;
-        }
-    }
-
-    // Utility methods
-    formatBytes(bytes) {
-        if (bytes === 0) return "0 B";
-        const k = 1024;
-        const sizes = ["B", "KB", "MB", "GB"];
-        const i = Math.floor(Math.log(bytes) / Math.log(k));
-        return parseFloat((bytes / Math.pow(k, i)).toFixed(1)) + " " + sizes[i];
     }
 
     formatMinutes(minutes) {
@@ -548,85 +566,210 @@ class AnalyticsDashboard {
         a.click();
         document.body.removeChild(a);
     }
+}
 
-    showSuccess(message) {
-        this.showNotification(message, "success");
-    }
+// Global functions for HTML event handlers
+let dashboardInstance;
 
-    showError(message) {
-        this.showNotification(message, "error");
-    }
+async function openPopup() {
+    chrome.action.openPopup();
+}
 
-    showNotification(message, type) {
-        // Create notification element
-        const notification = document.createElement("div");
-        notification.style.cssText = `
-            position: fixed;
-            top: 20px;
-            right: 20px;
-            background: ${
-                type === "success"
-                    ? "var(--success-color)"
-                    : "var(--danger-color)"
-            };
-            color: white;
-            padding: 1rem 1.5rem;
-            border-radius: 8px;
-            box-shadow: 0 4px 12px rgba(0,0,0,0.15);
-            z-index: 1000;
-            animation: slideIn 0.3s ease-out;
-        `;
+async function saveCurrentSession() {
+    try {
+        const response = await chrome.runtime.sendMessage({
+            action: "saveCurrentSession",
+            name: `Session ${new Date().toLocaleString()}`,
+        });
 
-        notification.textContent = message;
-        document.body.appendChild(notification);
-
-        // Remove after 3 seconds
-        setTimeout(() => {
-            notification.style.animation = "slideOut 0.3s ease-in forwards";
-            setTimeout(() => {
-                if (notification.parentNode) {
-                    notification.parentNode.removeChild(notification);
-                }
-            }, 300);
-        }, 3000);
+        if (response && response.success) {
+            showNotification("Current session saved successfully!", "success");
+        } else {
+            showNotification("Failed to save session", "error");
+        }
+    } catch (error) {
+        console.error("Error saving session:", error);
+        showNotification("Error saving session", "error");
     }
 }
 
-// Add CSS animations
+async function generateReport() {
+    try {
+        const response = await chrome.runtime.sendMessage({
+            action: "analytics-generate-report",
+        });
+
+        if (response && response.success) {
+            const blob = new Blob([response.report], { type: "text/html" });
+            const url = URL.createObjectURL(blob);
+            window.open(url, "_blank");
+            showNotification("Analytics report generated!", "success");
+        } else {
+            showNotification("Failed to generate report", "error");
+        }
+    } catch (error) {
+        console.error("Error generating report:", error);
+        showNotification("Error generating report", "error");
+    }
+}
+
+async function exportData() {
+    try {
+        const response = await chrome.runtime.sendMessage({
+            action: "privacy-export-data",
+        });
+
+        if (response && response.success) {
+            const blob = new Blob([response.data], {
+                type: "application/json",
+            });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement("a");
+            a.href = url;
+            a.download = `tab-suspend-pro-data-${
+                new Date().toISOString().split("T")[0]
+            }.json`;
+            a.click();
+            URL.revokeObjectURL(url);
+            showNotification("Data exported successfully!", "success");
+        } else {
+            showNotification("Failed to export data", "error");
+        }
+    } catch (error) {
+        console.error("Error exporting data:", error);
+        showNotification("Error exporting data", "error");
+    }
+}
+
+async function setupCloudSync() {
+    try {
+        window.open("privacy-dashboard.html#cloud-section", "_blank");
+    } catch (error) {
+        console.error("Error opening cloud setup:", error);
+    }
+}
+
+async function createBackup() {
+    try {
+        const response = await chrome.runtime.sendMessage({
+            action: "cloud-create-backup",
+        });
+
+        if (response && response.success) {
+            showNotification("Backup created successfully!", "success");
+        } else {
+            showNotification("Failed to create backup", "error");
+        }
+    } catch (error) {
+        console.error("Error creating backup:", error);
+        showNotification("Error creating backup", "error");
+    }
+}
+
+async function toggleFocusMode() {
+    try {
+        const response = await chrome.runtime.sendMessage({
+            action: dashboardInstance.focusModeActive
+                ? "focus-stop"
+                : "focus-start",
+        });
+
+        if (response && response.success) {
+            dashboardInstance.focusModeActive =
+                !dashboardInstance.focusModeActive;
+            dashboardInstance.updateFocusButton();
+            showNotification(
+                dashboardInstance.focusModeActive
+                    ? "Focus mode activated!"
+                    : "Focus mode deactivated!",
+                "success"
+            );
+        } else {
+            showNotification("Failed to toggle focus mode", "error");
+        }
+    } catch (error) {
+        console.error("Error toggling focus mode:", error);
+        showNotification("Error toggling focus mode", "error");
+    }
+}
+
+async function configureFocus() {
+    window.open("options.html#focus-settings", "_blank");
+}
+
+async function resetSettings() {
+    if (
+        confirm(
+            "Are you sure you want to reset all settings to default? This action cannot be undone."
+        )
+    ) {
+        try {
+            const response = await chrome.runtime.sendMessage({
+                action: "resetAllSettings",
+            });
+
+            if (response && response.success) {
+                showNotification(
+                    "Settings reset to default successfully!",
+                    "success"
+                );
+                setTimeout(() => location.reload(), 2000);
+            } else {
+                showNotification("Failed to reset settings", "error");
+            }
+        } catch (error) {
+            console.error("Error resetting settings:", error);
+            showNotification("Error resetting settings", "error");
+        }
+    }
+}
+
+function showNotification(message, type) {
+    const notification = document.createElement("div");
+    notification.className = "notification";
+    notification.style.cssText = `
+        position: fixed;
+        top: 20px;
+        right: 20px;
+        padding: 1rem 1.5rem;
+        border-radius: 8px;
+        color: white;
+        font-weight: 500;
+        z-index: 1000;
+        animation: slideIn 0.3s ease;
+        ${
+            type === "success"
+                ? "background: #10b981;"
+                : type === "error"
+                ? "background: #ef4444;"
+                : "background: #3b82f6;"
+        }
+    `;
+    notification.textContent = message;
+
+    document.body.appendChild(notification);
+
+    setTimeout(() => {
+        notification.style.animation = "slideOut 0.3s ease";
+        setTimeout(() => notification.remove(), 300);
+    }, 3000);
+}
+
+// Add CSS for animations
 const style = document.createElement("style");
 style.textContent = `
     @keyframes slideIn {
-        from {
-            transform: translateX(100%);
-            opacity: 0;
-        }
-        to {
-            transform: translateX(0);
-            opacity: 1;
-        }
+        from { transform: translateX(100%); opacity: 0; }
+        to { transform: translateX(0); opacity: 1; }
     }
-    
     @keyframes slideOut {
-        from {
-            transform: translateX(0);
-            opacity: 1;
-        }
-        to {
-            transform: translateX(100%);
-            opacity: 0;
-        }
+        from { transform: translateX(0); opacity: 1; }
+        to { transform: translateX(100%); opacity: 0; }
     }
 `;
 document.head.appendChild(style);
 
 // Initialize dashboard when DOM is loaded
 document.addEventListener("DOMContentLoaded", () => {
-    new AnalyticsDashboard();
-});
-
-// Clean up on page unload
-window.addEventListener("beforeunload", () => {
-    if (window.dashboard) {
-        window.dashboard.stopAutoRefresh();
-    }
+    dashboardInstance = new MainDashboard();
 });

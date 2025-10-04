@@ -16,6 +16,20 @@ class OptionsManager {
             showNotifications: true,
             aggressiveMode: false,
             savedGroupsEnabled: false,
+            // Individual feature controls
+            sessionsEnabled: true,
+            analyticsEnabled: true,
+            organizationEnabled: true,
+            // New advanced settings
+            performanceMonitoring: true,
+            dataExportInterval: "never",
+            autoFocusModeEnabled: false,
+            workStartTime: "09:00",
+            workEndTime: "17:00",
+            focusModeAction: "warn",
+            smartGroupingEnabled: false,
+            sessionAutoSaveInterval: "never",
+            predictiveSuspension: false,
         };
         this.init();
     }
@@ -26,7 +40,9 @@ class OptionsManager {
         await this.loadSavedGroups();
         this.setupEventListeners();
         this.setupSavedGroupsEventListeners();
+        this.setupBackupEventListeners();
         this.updateUI();
+        this.updateLastBackupTime();
     }
 
     async loadSettings() {
@@ -108,14 +124,6 @@ class OptionsManager {
     }
 
     setupEventListeners() {
-        // Enable toggle
-        document
-            .getElementById("enable-toggle")
-            .addEventListener("click", () => {
-                this.settings.enabled = !this.settings.enabled;
-                this.updateUI();
-            });
-
         // Suspend time input
         document
             .getElementById("suspend-time")
@@ -139,6 +147,42 @@ class OptionsManager {
                 this.saveSettings();
                 this.updateUI();
                 this.updateSavedGroupsVisibility();
+            });
+        }
+
+        // Sessions toggle
+        const sessionsToggle = document.getElementById("sessions-toggle");
+        if (sessionsToggle) {
+            sessionsToggle.addEventListener("click", () => {
+                this.settings.sessionsEnabled = !this.settings.sessionsEnabled;
+                this.saveSettings();
+                this.updateUI();
+            });
+        }
+
+        // Analytics enabled toggle
+        const analyticsEnabledToggle = document.getElementById(
+            "analytics-enabled-toggle"
+        );
+        if (analyticsEnabledToggle) {
+            analyticsEnabledToggle.addEventListener("click", () => {
+                this.settings.analyticsEnabled =
+                    !this.settings.analyticsEnabled;
+                this.saveSettings();
+                this.updateUI();
+            });
+        }
+
+        // Organization toggle
+        const organizationToggle = document.getElementById(
+            "organization-toggle"
+        );
+        if (organizationToggle) {
+            organizationToggle.addEventListener("click", () => {
+                this.settings.organizationEnabled =
+                    !this.settings.organizationEnabled;
+                this.saveSettings();
+                this.updateUI();
             });
         }
 
@@ -204,6 +248,98 @@ class OptionsManager {
                 this.saveSettings();
             });
 
+        // New advanced settings event listeners
+        const analyticsToggle = document.getElementById("analytics-toggle");
+        if (analyticsToggle) {
+            analyticsToggle.addEventListener("click", () => {
+                this.settings.analyticsEnabled =
+                    !this.settings.analyticsEnabled;
+                this.updateUI();
+            });
+        }
+
+        const performanceToggle = document.getElementById("performance-toggle");
+        if (performanceToggle) {
+            performanceToggle.addEventListener("click", () => {
+                this.settings.performanceMonitoring =
+                    !this.settings.performanceMonitoring;
+                this.updateUI();
+            });
+        }
+
+        const exportInterval = document.getElementById("export-interval");
+        if (exportInterval) {
+            exportInterval.addEventListener("change", (e) => {
+                this.settings.dataExportInterval = e.target.value;
+            });
+        }
+
+        const autoFocusToggle = document.getElementById("auto-focus-toggle");
+        if (autoFocusToggle) {
+            autoFocusToggle.addEventListener("click", () => {
+                this.settings.autoFocusModeEnabled =
+                    !this.settings.autoFocusModeEnabled;
+                this.updateUI();
+            });
+        }
+
+        const workStart = document.getElementById("work-start");
+        if (workStart) {
+            workStart.addEventListener("change", (e) => {
+                this.settings.workStartTime = e.target.value;
+            });
+        }
+
+        const workEnd = document.getElementById("work-end");
+        if (workEnd) {
+            workEnd.addEventListener("change", (e) => {
+                this.settings.workEndTime = e.target.value;
+            });
+        }
+
+        const focusAction = document.getElementById("focus-action");
+        if (focusAction) {
+            focusAction.addEventListener("change", (e) => {
+                this.settings.focusModeAction = e.target.value;
+            });
+        }
+
+        const smartGroupingToggle = document.getElementById(
+            "smart-grouping-toggle"
+        );
+        if (smartGroupingToggle) {
+            smartGroupingToggle.addEventListener("click", () => {
+                this.settings.smartGroupingEnabled =
+                    !this.settings.smartGroupingEnabled;
+                this.updateUI();
+            });
+        }
+
+        const sessionInterval = document.getElementById("session-interval");
+        if (sessionInterval) {
+            sessionInterval.addEventListener("change", (e) => {
+                this.settings.sessionAutoSaveInterval = e.target.value;
+            });
+        }
+
+        const predictiveToggle = document.getElementById("predictive-toggle");
+        if (predictiveToggle) {
+            predictiveToggle.addEventListener("click", () => {
+                this.settings.predictiveSuspension =
+                    !this.settings.predictiveSuspension;
+                this.updateUI();
+            });
+        }
+
+        const customizeShortcuts = document.getElementById(
+            "customize-shortcuts"
+        );
+        if (customizeShortcuts) {
+            customizeShortcuts.addEventListener("click", () => {
+                chrome.tabs.create({ url: "chrome://extensions/shortcuts" });
+            });
+        }
+
         // Auto-save on changes
         document.addEventListener("change", () => {
             setTimeout(() => this.saveSettings(), 500);
@@ -229,10 +365,6 @@ class OptionsManager {
     }
 
     updateUI() {
-        // Enable toggle
-        const enableToggle = document.getElementById("enable-toggle");
-        enableToggle.classList.toggle("active", this.settings.enabled);
-
         // Suspend time
         document.getElementById("suspend-time").value =
             this.settings.autoSuspendTime;
@@ -269,7 +401,104 @@ class OptionsManager {
             );
         }
 
-        // Update whitelist
+        // Feature control toggles
+        const sessionsToggle = document.getElementById("sessions-toggle");
+        if (sessionsToggle) {
+            sessionsToggle.classList.toggle(
+                "active",
+                this.settings.sessionsEnabled
+            );
+        }
+
+        const analyticsEnabledToggle = document.getElementById(
+            "analytics-enabled-toggle"
+        );
+        if (analyticsEnabledToggle) {
+            analyticsEnabledToggle.classList.toggle(
+                "active",
+                this.settings.analyticsEnabled
+            );
+        }
+
+        const organizationToggle = document.getElementById(
+            "organization-toggle"
+        );
+        if (organizationToggle) {
+            organizationToggle.classList.toggle(
+                "active",
+                this.settings.organizationEnabled
+            );
+        }
+
+        // New advanced settings
+        const analyticsToggle = document.getElementById("analytics-toggle");
+        if (analyticsToggle) {
+            analyticsToggle.classList.toggle(
+                "active",
+                this.settings.analyticsEnabled
+            );
+        }
+
+        const performanceToggle = document.getElementById("performance-toggle");
+        if (performanceToggle) {
+            performanceToggle.classList.toggle(
+                "active",
+                this.settings.performanceMonitoring
+            );
+        }
+
+        const exportInterval = document.getElementById("export-interval");
+        if (exportInterval) {
+            exportInterval.value = this.settings.dataExportInterval;
+        }
+
+        const autoFocusToggle = document.getElementById("auto-focus-toggle");
+        if (autoFocusToggle) {
+            autoFocusToggle.classList.toggle(
+                "active",
+                this.settings.autoFocusModeEnabled
+            );
+        }
+
+        const workStart = document.getElementById("work-start");
+        if (workStart) {
+            workStart.value = this.settings.workStartTime;
+        }
+
+        const workEnd = document.getElementById("work-end");
+        if (workEnd) {
+            workEnd.value = this.settings.workEndTime;
+        }
+
+        const focusAction = document.getElementById("focus-action");
+        if (focusAction) {
+            focusAction.value = this.settings.focusModeAction;
+        }
+
+        const smartGroupingToggle = document.getElementById(
+            "smart-grouping-toggle"
+        );
+        if (smartGroupingToggle) {
+            smartGroupingToggle.classList.toggle(
+                "active",
+                this.settings.smartGroupingEnabled
+            );
+        }
+
+        const sessionInterval = document.getElementById("session-interval");
+        if (sessionInterval) {
+            sessionInterval.value = this.settings.sessionAutoSaveInterval;
+        }
+
+        const predictiveToggle = document.getElementById("predictive-toggle");
+        if (predictiveToggle) {
+            predictiveToggle.classList.toggle(
+                "active",
+                this.settings.predictiveSuspension
+            );
+        }
+
+        // Update existing elements
         this.updateWhitelistUI();
         this.updateSavedGroupsVisibility();
     }
@@ -657,6 +886,198 @@ class OptionsManager {
                     this.showStatusMessage(`Error: ${error.message}`, "error");
                 }
             });
+    }
+
+    setupBackupEventListeners() {
+        // Export settings
+        const exportBtn = document.getElementById("export-settings");
+        if (exportBtn) {
+            exportBtn.addEventListener("click", () => this.exportSettings());
+        }
+
+        // Import settings
+        const importBtn = document.getElementById("import-settings");
+        const importFile = document.getElementById("import-file");
+        if (importBtn && importFile) {
+            importBtn.addEventListener("click", () => importFile.click());
+            importFile.addEventListener("change", (e) =>
+                this.importSettings(e)
+            );
+        }
+
+        // Backup now
+        const backupBtn = document.getElementById("backup-now");
+        if (backupBtn) {
+            backupBtn.addEventListener("click", () => this.backupNow());
+        }
+
+        // Google Drive toggle
+        const driveToggle = document.getElementById("google-drive-toggle");
+        if (driveToggle) {
+            driveToggle.addEventListener("click", () =>
+                this.toggleGoogleDrive()
+            );
+        }
+
+        // Sync toggle
+        const syncToggle = document.getElementById("sync-toggle");
+        if (syncToggle) {
+            syncToggle.addEventListener("click", () => this.toggleSync());
+        }
+    }
+
+    async exportSettings() {
+        try {
+            // Get all settings and saved groups
+            const [settingsResult, groupsResult] = await Promise.all([
+                chrome.storage.sync.get(null),
+                chrome.runtime.sendMessage({ action: "getAllSavedGroups" }),
+            ]);
+
+            const exportData = {
+                settings: settingsResult,
+                savedGroups: groupsResult.success ? groupsResult.groups : [],
+                exportDate: new Date().toISOString(),
+                version: "1.0",
+            };
+
+            // Create and download file
+            const blob = new Blob([JSON.stringify(exportData, null, 2)], {
+                type: "application/json",
+            });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement("a");
+            a.href = url;
+            a.download = `tab-suspend-pro-backup-${
+                new Date().toISOString().split("T")[0]
+            }.json`;
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+            URL.revokeObjectURL(url);
+
+            this.showStatusMessage(
+                "Settings exported successfully!",
+                "success"
+            );
+            this.updateLastBackupTime();
+        } catch (error) {
+            console.error("Export failed:", error);
+            this.showStatusMessage("Export failed: " + error.message, "error");
+        }
+    }
+
+    async importSettings(event) {
+        const file = event.target.files[0];
+        if (!file) return;
+
+        try {
+            const text = await file.text();
+            const importData = JSON.parse(text);
+
+            if (!importData.settings || !importData.version) {
+                throw new Error("Invalid backup file format");
+            }
+
+            // Confirm import
+            const confirmed = confirm(
+                "This will replace all current settings and saved groups. Are you sure you want to continue?"
+            );
+            if (!confirmed) return;
+
+            // Import settings
+            await chrome.storage.sync.clear();
+            await chrome.storage.sync.set(importData.settings);
+
+            // Import saved groups
+            if (importData.savedGroups && importData.savedGroups.length > 0) {
+                for (const group of importData.savedGroups) {
+                    await chrome.runtime.sendMessage({
+                        action: "saveTabGroup",
+                        group: group,
+                    });
+                }
+            }
+
+            this.showStatusMessage(
+                "Settings imported successfully! Please refresh the page.",
+                "success"
+            );
+
+            // Reload the page after a delay
+            setTimeout(() => {
+                window.location.reload();
+            }, 2000);
+        } catch (error) {
+            console.error("Import failed:", error);
+            this.showStatusMessage("Import failed: " + error.message, "error");
+        }
+    }
+
+    async backupNow() {
+        try {
+            // For now, this is the same as export
+            // In the future, this could backup to Google Drive
+            await this.exportSettings();
+
+            // Update last backup time
+            await chrome.storage.sync.set({
+                lastBackupTime: new Date().toISOString(),
+            });
+            this.updateLastBackupTime();
+        } catch (error) {
+            console.error("Backup failed:", error);
+            this.showStatusMessage("Backup failed: " + error.message, "error");
+        }
+    }
+
+    async toggleGoogleDrive() {
+        // Placeholder for Google Drive integration
+        this.showStatusMessage("Google Drive integration coming soon!", "info");
+    }
+
+    async toggleSync() {
+        // This enables Chrome's built-in sync
+        try {
+            const syncEnabled = !this.settings.syncEnabled;
+            this.settings.syncEnabled = syncEnabled;
+            await this.saveSettings();
+
+            const syncToggle = document.getElementById("sync-toggle");
+            if (syncToggle) {
+                syncToggle.classList.toggle("active", syncEnabled);
+            }
+
+            this.showStatusMessage(
+                syncEnabled ? "Chrome sync enabled!" : "Chrome sync disabled!",
+                "success"
+            );
+        } catch (error) {
+            console.error("Sync toggle failed:", error);
+            this.showStatusMessage(
+                "Sync toggle failed: " + error.message,
+                "error"
+            );
+        }
+    }
+
+    async updateLastBackupTime() {
+        try {
+            const result = await chrome.storage.sync.get(["lastBackupTime"]);
+            const lastBackupElement =
+                document.getElementById("last-backup-time");
+
+            if (lastBackupElement) {
+                if (result.lastBackupTime) {
+                    const date = new Date(result.lastBackupTime);
+                    lastBackupElement.textContent = `Last backup: ${date.toLocaleString()}`;
+                } else {
+                    lastBackupElement.textContent = "Never backed up";
+                }
+            }
+        } catch (error) {
+            console.error("Failed to update last backup time:", error);
+        }
     }
 
     showStatusMessage(message, type) {

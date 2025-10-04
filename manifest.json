@@ -1,7 +1,7 @@
 {
     "manifest_version": 3,
     "name": "Tab Suspend Pro",
-    "version": "2.1.01",
+    "version": "2.0.0",
     "description": "Automatically suspend inactive tabs and save up to 80% of memory",
     "permissions": [
         "tabs",
@@ -48,19 +48,26 @@
             },
             "description": "Suspend current tab"
         },
-        "suspend-tab-group": {
-            "suggested_key": {
-                "default": "Ctrl+Shift+G",
-                "mac": "Command+Shift+G"
-            },
-            "description": "Suspend current tab group"
-        },
         "restore-all-tabs": {
             "suggested_key": {
                 "default": "Ctrl+Shift+R",
                 "mac": "Command+Shift+R"
             },
             "description": "Restore all suspended tabs"
+        },
+        "open-dashboard": {
+            "suggested_key": {
+                "default": "Ctrl+Shift+D",
+                "mac": "Command+Shift+D"
+            },
+            "description": "Open analytics dashboard"
+        },
+        "save-session": {
+            "suggested_key": {
+                "default": "Ctrl+Shift+A",
+                "mac": "Command+Shift+A"
+            },
+            "description": "Save current session"
         }
     },
     "icons": {
