@@ -1,0 +1,1013 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Tab Suspend Pro - Advanced Options</title>
+    <style>
+        :root {
+            --primary-color: #2563eb;
+            --primary-hover: #1d4ed8;
+            --success-color: #10b981;
+            --danger-color: #dc2626;
+            --warning-color: #f59e0b;
+            --gray-50: #f9fafb;
+            --gray-100: #f3f4f6;
+            --gray-200: #e5e7eb;
+            --gray-300: #d1d5db;
+            --gray-400: #9ca3af;
+            --gray-500: #6b7280;
+            --gray-600: #4b5563;
+            --gray-700: #374151;
+            --gray-800: #1f2937;
+            --gray-900: #111827;
+        }
+
+        * {
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            margin: 0;
+            padding: 0;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            color: var(--gray-800);
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 2rem;
+        }
+
+        .header {
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(10px);
+            border-radius: 16px;
+            padding: 2rem;
+            margin-bottom: 2rem;
+            text-align: center;
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
+        }
+
+        .header h1 {
+            margin: 0 0 0.5rem 0;
+            font-size: 2.5rem;
+            background: linear-gradient(135deg, var(--primary-color), #7c3aed);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+
+        .header p {
+            margin: 0;
+            color: var(--gray-600);
+            font-size: 1.1rem;
+        }
+
+        .tabs {
+            display: flex;
+            background: rgba(255, 255, 255, 0.9);
+            backdrop-filter: blur(10px);
+            border-radius: 12px;
+            padding: 0.5rem;
+            margin-bottom: 2rem;
+            box-shadow: 0 4px 16px rgba(0, 0, 0, 0.1);
+            overflow-x: auto;
+        }
+
+        .tab {
+            padding: 0.75rem 1.5rem;
+            cursor: pointer;
+            border-radius: 8px;
+            transition: all 0.2s;
+            font-weight: 500;
+            white-space: nowrap;
+            flex-shrink: 0;
+        }
+
+        .tab:hover {
+            background: rgba(37, 99, 235, 0.1);
+        }
+
+        .tab.active {
+            background: var(--primary-color);
+            color: white;
+            box-shadow: 0 2px 8px rgba(37, 99, 235, 0.3);
+        }
+
+        .tab-content {
+            display: none;
+            animation: fadeIn 0.3s ease;
+        }
+
+        .tab-content.active {
+            display: block;
+        }
+
+        @keyframes fadeIn {
+            from {
+                opacity: 0;
+                transform: translateY(10px);
+            }
+
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .settings-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(400px, 1fr));
+            gap: 1.5rem;
+        }
+
+        .settings-section {
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(10px);
+            border-radius: 16px;
+            padding: 2rem;
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+        }
+
+        .section-title {
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+            margin: 0 0 1.5rem 0;
+            font-size: 1.3rem;
+            font-weight: 600;
+            color: var(--gray-800);
+        }
+
+        .section-icon {
+            width: 24px;
+            height: 24px;
+            background: var(--primary-color);
+            border-radius: 6px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-size: 14px;
+        }
+
+        .setting-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+            padding: 1rem 0;
+            border-bottom: 1px solid var(--gray-200);
+        }
+
+        .setting-item:last-child {
+            border-bottom: none;
+            padding-bottom: 0;
+        }
+
+        .setting-info {
+            flex: 1;
+            margin-right: 1rem;
+        }
+
+        .setting-label {
+            font-weight: 500;
+            color: var(--gray-800);
+            margin-bottom: 0.25rem;
+        }
+
+        .setting-description {
+            font-size: 0.9rem;
+            color: var(--gray-600);
+            line-height: 1.4;
+        }
+
+        .setting-control {
+            flex-shrink: 0;
+        }
+
+        .toggle-switch {
+            position: relative;
+            width: 52px;
+            height: 28px;
+            background: var(--gray-300);
+            border-radius: 14px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .toggle-switch.active {
+            background: var(--primary-color);
+        }
+
+        .toggle-slider {
+            position: absolute;
+            top: 2px;
+            left: 2px;
+            width: 24px;
+            height: 24px;
+            background: white;
+            border-radius: 50%;
+            transition: all 0.3s ease;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+        }
+
+        .toggle-switch.active .toggle-slider {
+            transform: translateX(24px);
+        }
+
+        .range-control {
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+        }
+
+        input[type="range"] {
+            width: 120px;
+            height: 6px;
+            border-radius: 3px;
+            background: var(--gray-200);
+            outline: none;
+            -webkit-appearance: none;
+        }
+
+        input[type="range"]::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            width: 18px;
+            height: 18px;
+            border-radius: 50%;
+            background: var(--primary-color);
+            cursor: pointer;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+        }
+
+        input[type="range"]::-moz-range-thumb {
+            width: 18px;
+            height: 18px;
+            border-radius: 50%;
+            background: var(--primary-color);
+            cursor: pointer;
+            border: none;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+        }
+
+        .range-value {
+            min-width: 40px;
+            font-weight: 600;
+            color: var(--primary-color);
+            text-align: center;
+        }
+
+        select {
+            padding: 0.5rem 0.75rem;
+            border: 1px solid var(--gray-300);
+            border-radius: 6px;
+            background: white;
+            font-size: 0.9rem;
+            min-width: 120px;
+        }
+
+        .btn {
+            background: var(--primary-color);
+            color: white;
+            border: none;
+            padding: 0.75rem 1.5rem;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 0.9rem;
+            font-weight: 500;
+            transition: all 0.2s;
+            display: inline-flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .btn:hover {
+            background: var(--primary-hover);
+            transform: translateY(-1px);
+            box-shadow: 0 4px 12px rgba(37, 99, 235, 0.3);
+        }
+
+        .btn-secondary {
+            background: var(--gray-500);
+        }
+
+        .btn-secondary:hover {
+            background: var(--gray-600);
+            box-shadow: 0 4px 12px rgba(107, 114, 128, 0.3);
+        }
+
+        .btn-success {
+            background: var(--success-color);
+        }
+
+        .btn-success:hover {
+            background: #059669;
+            box-shadow: 0 4px 12px rgba(16, 185, 129, 0.3);
+        }
+
+        .btn-danger {
+            background: var(--danger-color);
+        }
+
+        .btn-danger:hover {
+            background: #b91c1c;
+            box-shadow: 0 4px 12px rgba(220, 38, 38, 0.3);
+        }
+
+        .action-buttons {
+            display: flex;
+            gap: 1rem;
+            margin-top: 2rem;
+            flex-wrap: wrap;
+        }
+
+        .file-input-wrapper {
+            position: relative;
+            overflow: hidden;
+            display: inline-block;
+        }
+
+        .file-input-wrapper input[type=file] {
+            position: absolute;
+            left: -9999px;
+        }
+
+        .advanced-section {
+            grid-column: 1 / -1;
+        }
+
+        .feature-highlight {
+            background: linear-gradient(135deg, rgba(37, 99, 235, 0.1), rgba(124, 58, 237, 0.1));
+            border: 1px solid rgba(37, 99, 235, 0.2);
+        }
+
+        .warning-box {
+            background: rgba(245, 158, 11, 0.1);
+            border: 1px solid rgba(245, 158, 11, 0.3);
+            border-radius: 8px;
+            padding: 1rem;
+            margin: 1rem 0;
+        }
+
+        .warning-box h4 {
+            margin: 0 0 0.5rem 0;
+            color: var(--warning-color);
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .info-box {
+            background: rgba(37, 99, 235, 0.1);
+            border: 1px solid rgba(37, 99, 235, 0.3);
+            border-radius: 8px;
+            padding: 1rem;
+            margin: 1rem 0;
+        }
+
+        .info-box h4 {
+            margin: 0 0 0.5rem 0;
+            color: var(--primary-color);
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        @media (max-width: 768px) {
+            .container {
+                padding: 1rem;
+            }
+
+            .settings-grid {
+                grid-template-columns: 1fr;
+            }
+
+            .setting-item {
+                flex-direction: column;
+                align-items: stretch;
+                gap: 1rem;
+            }
+
+            .setting-control {
+                align-self: flex-start;
+            }
+
+            .action-buttons {
+                flex-direction: column;
+            }
+        }
+    </style>
+</head>
+
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>🚀 Tab Suspend Pro</h1>
+            <p>Advanced Settings & Configuration</p>
+        </div>
+
+        <div class="tabs">
+            <div class="tab active" data-tab="core">🎯 Core Settings</div>
+            <div class="tab" data-tab="dashboard">📊 Dashboard</div>
+            <div class="tab" data-tab="analytics">📈 Analytics</div>
+            <div class="tab" data-tab="privacy">🔒 Privacy</div>
+            <div class="tab" data-tab="focus">🎯 Focus Mode</div>
+            <div class="tab" data-tab="cloud">☁️ Cloud Backup</div>
+            <div class="tab" data-tab="performance">⚡ Performance</div>
+            <div class="tab" data-tab="interface">🎨 Interface</div>
+        </div>
+
+        <!-- Core Settings Tab -->
+        <div class="tab-content active" id="core">
+            <div class="settings-grid">
+                <div class="settings-section">
+                    <h3 class="section-title">
+                        <div class="section-icon">⚙️</div>
+                        Basic Suspension
+                    </h3>
+
+                    <div class="setting-item">
+                        <div class="setting-info">
+                            <div class="setting-label">Auto Suspend Time</div>
+                            <div class="setting-description">Automatically suspend tabs after this many minutes of
+                                inactivity</div>
+                        </div>
+                        <div class="setting-control">
+                            <div class="range-control">
+                                <input type="range" id="core-auto-suspend-time" min="1" max="120" value="30">
+                                <span class="range-value" id="core-auto-suspend-time-value">30</span>
+                                <span>min</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="setting-item">
+                        <div class="setting-info">
+                            <div class="setting-label">Suspend Pinned Tabs</div>
+                            <div class="setting-description">Allow suspension of pinned tabs</div>
+                        </div>
+                        <div class="setting-control">
+                            <div class="toggle-switch" id="core-suspend-pinned">
+                                <div class="toggle-slider"></div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="setting-item">
+                        <div class="setting-info">
+                            <div class="setting-label">Suspend Audible Tabs</div>
+                            <div class="setting-description">Allow suspension of tabs playing audio</div>
+                        </div>
+                        <div class="setting-control">
+                            <div class="toggle-switch" id="core-suspend-audible">
+                                <div class="toggle-slider"></div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="setting-item">
+                        <div class="setting-info">
+                            <div class="setting-label">Memory-Based Suspension</div>
+                            <div class="setting-description">Automatically suspend tabs when system memory is low</div>
+                        </div>
+                        <div class="setting-control">
+                            <div class="toggle-switch active" id="core-suspend-on-low-memory">
+                                <div class="toggle-slider"></div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Dashboard Settings Tab -->
+        <div class="tab-content" id="dashboard">
+            <div class="settings-grid">
+                <div class="settings-section feature-highlight">
+                    <h3 class="section-title">
+                        <div class="section-icon">📊</div>
+                        Dashboard Configuration
+                    </h3>
+
+                    <div class="setting-item">
+                        <div class="setting-info">
+                            <div class="setting-label">Auto Refresh</div>
+                            <div class="setting-description">Automatically refresh dashboard statistics</div>
+                        </div>
+                        <div class="setting-control">
+                            <div class="toggle-switch active" id="dashboard-auto-refresh">
+                                <div class="toggle-slider"></div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="setting-item">
+                        <div class="setting-info">
+                            <div class="setting-label">Refresh Interval</div>
+                            <div class="setting-description">How often to refresh dashboard data (seconds)</div>
+                        </div>
+                        <div class="setting-control">
+                            <div class="range-control">
+                                <input type="range" id="dashboard-refresh-interval" min="10" max="300" value="30">
+                                <span class="range-value" id="dashboard-refresh-interval-value">30</span>
+                                <span>sec</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="setting-item">
+                        <div class="setting-info">
+                            <div class="setting-label">Compact Mode</div>
+                            <div class="setting-description">Use compact layout for dashboard</div>
+                        </div>
+                        <div class="setting-control">
+                            <div class="toggle-switch" id="dashboard-compact-mode">
+                                <div class="toggle-slider"></div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="setting-item">
+                        <div class="setting-info">
+                            <div class="setting-label">Theme</div>
+                            <div class="setting-description">Dashboard color theme</div>
+                        </div>
+                        <div class="setting-control">
+                            <select id="dashboard-theme">
+                                <option value="auto">Auto</option>
+                                <option value="light">Light</option>
+                                <option value="dark">Dark</option>
+                            </select>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Analytics Settings Tab -->
+        <div class="tab-content" id="analytics">
+            <div class="settings-grid">
+                <div class="settings-section">
+                    <h3 class="section-title">
+                        <div class="section-icon">📈</div>
+                        Analytics & Tracking
+                    </h3>
+
+                    <div class="info-box">
+                        <h4>ℹ️ Privacy Notice</h4>
+                        <p>All analytics data is stored locally on your device and never transmitted to external
+                            servers.</p>
+                    </div>
+
+                    <div class="setting-item">
+                        <div class="setting-info">
+                            <div class="setting-label">Enable Tracking</div>
+                            <div class="setting-description">Collect usage statistics and performance metrics</div>
+                        </div>
+                        <div class="setting-control">
+                            <div class="toggle-switch active" id="analytics-enable-tracking">
+                                <div class="toggle-slider"></div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="setting-item">
+                        <div class="setting-info">
+                            <div class="setting-label">Performance Tracking</div>
+                            <div class="setting-description">Monitor system performance and memory usage</div>
+                        </div>
+                        <div class="setting-control">
+                            <div class="toggle-switch active" id="analytics-track-performance">
+                                <div class="toggle-slider"></div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="setting-item">
+                        <div class="setting-info">
+                            <div class="setting-label">Productivity Tracking</div>
+                            <div class="setting-description">Track browsing patterns and productivity metrics</div>
+                        </div>
+                        <div class="setting-control">
+                            <div class="toggle-switch active" id="analytics-track-productivity">
+                                <div class="toggle-slider"></div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="setting-item">
+                        <div class="setting-info">
+                            <div class="setting-label">Data Retention</div>
+                            <div class="setting-description">How long to keep analytics data (days)</div>
+                        </div>
+                        <div class="setting-control">
+                            <div class="range-control">
+                                <input type="range" id="analytics-retention-days" min="7" max="365" value="90">
+                                <span class="range-value" id="analytics-retention-days-value">90</span>
+                                <span>days</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Privacy Settings Tab -->
+        <div class="tab-content" id="privacy">
+            <div class="settings-grid">
+                <div class="settings-section">
+                    <h3 class="section-title">
+                        <div class="section-icon">🔒</div>
+                        Privacy & Data Protection
+                    </h3>
+
+                    <div class="info-box">
+                        <h4>🛡️ GDPR Compliance</h4>
+                        <p>We respect your privacy rights. You have full control over your data with export, deletion,
+                            and retention options.</p>
+                    </div>
+
+                    <div class="setting-item">
+                        <div class="setting-info">
+                            <div class="setting-label">Data Retention</div>
+                            <div class="setting-description">Automatically delete old data based on retention policy
+                            </div>
+                        </div>
+                        <div class="setting-control">
+                            <div class="toggle-switch active" id="privacy-data-retention">
+                                <div class="toggle-slider"></div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="setting-item">
+                        <div class="setting-info">
+                            <div class="setting-label">Retention Period</div>
+                            <div class="setting-description">How long to keep your data (days)</div>
+                        </div>
+                        <div class="setting-control">
+                            <div class="range-control">
+                                <input type="range" id="privacy-retention-days" min="7" max="1095" value="365">
+                                <span class="range-value" id="privacy-retention-days-value">365</span>
+                                <span>days</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="setting-item">
+                        <div class="setting-info">
+                            <div class="setting-label">Data Encryption</div>
+                            <div class="setting-description">Encrypt sensitive data stored locally</div>
+                        </div>
+                        <div class="setting-control">
+                            <div class="toggle-switch active" id="privacy-encryption">
+                                <div class="toggle-slider"></div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="setting-item">
+                        <div class="setting-info">
+                            <div class="setting-label">Auto Cleanup</div>
+                            <div class="setting-description">Automatically clean up temporary files and logs</div>
+                        </div>
+                        <div class="setting-control">
+                            <div class="toggle-switch active" id="privacy-auto-cleanup">
+                                <div class="toggle-slider"></div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Focus Mode Settings Tab -->
+        <div class="tab-content" id="focus">
+            <div class="settings-grid">
+                <div class="settings-section feature-highlight">
+                    <h3 class="section-title">
+                        <div class="section-icon">🎯</div>
+                        Focus Mode Configuration
+                    </h3>
+
+                    <div class="setting-item">
+                        <div class="setting-info">
+                            <div class="setting-label">Enable Focus Mode</div>
+                            <div class="setting-description">Activate productivity-focused browsing restrictions</div>
+                        </div>
+                        <div class="setting-control">
+                            <div class="toggle-switch" id="focus-enabled">
+                                <div class="toggle-slider"></div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="setting-item">
+                        <div class="setting-info">
+                            <div class="setting-label">Block Social Media</div>
+                            <div class="setting-description">Block access to social media sites during focus sessions
+                            </div>
+                        </div>
+                        <div class="setting-control">
+                            <div class="toggle-switch active" id="focus-block-social">
+                                <div class="toggle-slider"></div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="setting-item">
+                        <div class="setting-info">
+                            <div class="setting-label">Block News Sites</div>
+                            <div class="setting-description">Block access to news websites during focus sessions</div>
+                        </div>
+                        <div class="setting-control">
+                            <div class="toggle-switch" id="focus-block-news">
+                                <div class="toggle-slider"></div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="setting-item">
+                        <div class="setting-info">
+                            <div class="setting-label">Session Duration</div>
+                            <div class="setting-description">Length of each focus session (minutes)</div>
+                        </div>
+                        <div class="setting-control">
+                            <div class="range-control">
+                                <input type="range" id="focus-session-duration" min="15" max="90" value="25">
+                                <span class="range-value" id="focus-session-duration-value">25</span>
+                                <span>min</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="setting-item">
+                        <div class="setting-info">
+                            <div class="setting-label">Daily Goal</div>
+                            <div class="setting-description">Target number of focus sessions per day</div>
+                        </div>
+                        <div class="setting-control">
+                            <div class="range-control">
+                                <input type="range" id="focus-daily-goal" min="1" max="12" value="4">
+                                <span class="range-value" id="focus-daily-goal-value">4</span>
+                                <span>sessions</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Cloud Backup Settings Tab -->
+        <div class="tab-content" id="cloud">
+            <div class="settings-grid">
+                <div class="settings-section">
+                    <h3 class="section-title">
+                        <div class="section-icon">☁️</div>
+                        Cloud Backup & Sync
+                    </h3>
+
+                    <div class="warning-box">
+                        <h4>⚠️ Cloud Storage Notice</h4>
+                        <p>Cloud backup requires authentication with your chosen provider. Data is encrypted before
+                            upload.</p>
+                    </div>
+
+                    <div class="setting-item">
+                        <div class="setting-info">
+                            <div class="setting-label">Cloud Provider</div>
+                            <div class="setting-description">Choose your preferred cloud storage service</div>
+                        </div>
+                        <div class="setting-control">
+                            <select id="cloud-provider">
+                                <option value="">None</option>
+                                <option value="google">Google Drive</option>
+                                <option value="dropbox">Dropbox</option>
+                                <option value="onedrive">OneDrive</option>
+                            </select>
+                        </div>
+                    </div>
+
+                    <div class="setting-item">
+                        <div class="setting-info">
+                            <div class="setting-label">Auto Sync</div>
+                            <div class="setting-description">Automatically sync data to cloud storage</div>
+                        </div>
+                        <div class="setting-control">
+                            <div class="toggle-switch" id="cloud-auto-sync">
+                                <div class="toggle-slider"></div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="setting-item">
+                        <div class="setting-info">
+                            <div class="setting-label">Sync Interval</div>
+                            <div class="setting-description">How often to sync with cloud storage</div>
+                        </div>
+                        <div class="setting-control">
+                            <select id="cloud-sync-interval">
+                                <option value="hourly">Hourly</option>
+                                <option value="daily" selected>Daily</option>
+                                <option value="weekly">Weekly</option>
+                            </select>
+                        </div>
+                    </div>
+
+                    <div class="setting-item">
+                        <div class="setting-info">
+                            <div class="setting-label">Encrypt Backups</div>
+                            <div class="setting-description">Encrypt data before uploading to cloud storage</div>
+                        </div>
+                        <div class="setting-control">
+                            <div class="toggle-switch active" id="cloud-encrypt-backups">
+                                <div class="toggle-slider"></div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Performance Settings Tab -->
+        <div class="tab-content" id="performance">
+            <div class="settings-grid">
+                <div class="settings-section">
+                    <h3 class="section-title">
+                        <div class="section-icon">⚡</div>
+                        Performance Optimization
+                    </h3>
+
+                    <div class="setting-item">
+                        <div class="setting-info">
+                            <div class="setting-label">Aggressive Mode</div>
+                            <div class="setting-description">More aggressive tab suspension for maximum performance
+                            </div>
+                        </div>
+                        <div class="setting-control">
+                            <div class="toggle-switch" id="performance-aggressive-mode">
+                                <div class="toggle-slider"></div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="setting-item">
+                        <div class="setting-info">
+                            <div class="setting-label">Memory Threshold</div>
+                            <div class="setting-description">Trigger suspension when memory usage exceeds this
+                                percentage</div>
+                        </div>
+                        <div class="setting-control">
+                            <div class="range-control">
+                                <input type="range" id="performance-memory-threshold" min="50" max="95" value="80">
+                                <span class="range-value" id="performance-memory-threshold-value">80</span>
+                                <span>%</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="setting-item">
+                        <div class="setting-info">
+                            <div class="setting-label">CPU Threshold</div>
+                            <div class="setting-description">Trigger suspension when CPU usage exceeds this percentage
+                            </div>
+                        </div>
+                        <div class="setting-control">
+                            <div class="range-control">
+                                <input type="range" id="performance-cpu-threshold" min="50" max="95" value="70">
+                                <span class="range-value" id="performance-cpu-threshold-value">70</span>
+                                <span>%</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="setting-item">
+                        <div class="setting-info">
+                            <div class="setting-label">Optimize Images</div>
+                            <div class="setting-description">Compress and optimize images in suspended tabs</div>
+                        </div>
+                        <div class="setting-control">
+                            <div class="toggle-switch active" id="performance-optimize-images">
+                                <div class="toggle-slider"></div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Interface Settings Tab -->
+        <div class="tab-content" id="interface">
+            <div class="settings-grid">
+                <div class="settings-section">
+                    <h3 class="section-title">
+                        <div class="section-icon">🎨</div>
+                        User Interface
+                    </h3>
+
+                    <div class="setting-item">
+                        <div class="setting-info">
+                            <div class="setting-label">Show Notifications</div>
+                            <div class="setting-description">Display system notifications for tab events</div>
+                        </div>
+                        <div class="setting-control">
+                            <div class="toggle-switch active" id="interface-show-notifications">
+                                <div class="toggle-slider"></div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="setting-item">
+                        <div class="setting-info">
+                            <div class="setting-label">Notification Duration</div>
+                            <div class="setting-description">How long to show notifications (seconds)</div>
+                        </div>
+                        <div class="setting-control">
+                            <div class="range-control">
+                                <input type="range" id="interface-notification-duration" min="1" max="10" value="3">
+                                <span class="range-value" id="interface-notification-duration-value">3</span>
+                                <span>sec</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="setting-item">
+                        <div class="setting-info">
+                            <div class="setting-label">Sound Effects</div>
+                            <div class="setting-description">Play audio feedback for extension actions</div>
+                        </div>
+                        <div class="setting-control">
+                            <div class="toggle-switch" id="interface-sound-effects">
+                                <div class="toggle-slider"></div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="setting-item">
+                        <div class="setting-info">
+                            <div class="setting-label">Animations</div>
+                            <div class="setting-description">Enable smooth animations and transitions</div>
+                        </div>
+                        <div class="setting-control">
+                            <div class="toggle-switch active" id="interface-animations">
+                                <div class="toggle-slider"></div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Action Buttons -->
+        <div class="action-buttons advanced-section">
+            <button class="btn btn-success" onclick="exportAdvancedSettings()">
+                📤 Export Settings
+            </button>
+
+            <div class="file-input-wrapper">
+                <input type="file" id="import-file" accept=".json" onchange="importAdvancedSettings(event)">
+                <button class="btn btn-secondary">
+                    📥 Import Settings
+                </button>
+            </div>
+
+            <button class="btn" onclick="window.open('main-dashboard.html', '_blank')">
+                📊 Open Dashboard
+            </button>
+
+            <button class="btn btn-danger" onclick="resetAdvancedSettings()">
+                🔄 Reset All Settings
+            </button>
+        </div>
+    </div>
+
+    <script src="advanced-settings.js"></script>
+    <script>
+        // Tab switching functionality
+        document.querySelectorAll('.tab').forEach(tab => {
+            tab.addEventListener('click', () => {
+                // Remove active from all tabs and content
+                document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+                document.querySelectorAll('.tab-content').forEach(tc => tc.classList.remove('active'));
+
+                // Add active to clicked tab and corresponding content
+                tab.classList.add('active');
+                const tabId = tab.getAttribute('data-tab');
+                document.getElementById(tabId).classList.add('active');
+            });
+        });
+
+        // File input wrapper click handler
+        document.querySelector('.file-input-wrapper').addEventListener('click', () => {
+            document.getElementById('import-file').click();
+        });
+    </script>
+</body>
+
+</html>
