@@ -244,6 +244,14 @@ jobs:
                   cd ..
                   echo "✅ Release package created: tab-suspend-pro-${{ needs.validate-and-test.outputs.version }}.zip"
 
+            - name: Cleanup generated artifacts
+              if: steps.tag_check.outputs.exists == 'false'
+              run: |
+                  echo "🧹 Cleaning up generated zip files..."
+                  rm -f tab-suspend-pro-${{ needs.validate-and-test.outputs.version }}.zip || true
+                  rm -rf extension-package || true
+                  echo "✅ Cleanup complete"
+
             - name: Tag already exists
               if: steps.tag_check.outputs.exists == 'true'
               run: |
