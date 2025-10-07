@@ -1,5 +1,6 @@
 # Tab Suspend Pro 💤⚡
 
+![App Icon](icons/icon128.png)
 A comprehensive Chrome extension with advanced tab management, analytics, and productivity features. Save up to 80% memory usage while boosting your browser performance with intelligent automation and detailed insights.
 
 ## 🌟 Core Features
@@ -250,7 +251,15 @@ tab-suspend-pro/
 
 ## 🔄 Updates & Changelog
 
-### Version 2.0.0 (Latest) - October 4, 2024
+### Version 2.0.10 (Latest) — 2025-10-08
+
+-   Removed the Google Drive backup option and cleaned related code paths for simpler maintenance and better CSP compliance.
+-   Moved inline scripts from `options.html` into `options.js` to comply with Chrome extension CSP and implemented vertical tabs driven by section titles.
+-   Added quick Copy-to-Clipboard backup on the Options page and fixed options initialization timing issues.
+
+See full details in the [CHANGELOG.md](CHANGELOG.md).
+
+### Version 2.0.0 - October 4, 2024
 
 #### 🚀 Major Features Added
 

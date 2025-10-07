@@ -50,6 +50,49 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 -   **Performance Insights**: CPU usage and network activity tracking per tab
 -   **Browser Health Score**: Overall performance rating system (0-100)
 
+## [2.0.10] - 2025-10-08
+
+### Maintenance
+
+-   Release focused on maintenance, CSP compliance, and options UI improvements.
+
+### Removed
+
+-   Removed the built-in Google Drive backup option and all associated OAuth flows and UI to reduce complexity and CSP surface area.
+
+### Added
+
+-   Quick "Copy-to-Clipboard" backup action on the Options page for easy export of settings and saved groups.
+
+### Changed
+
+-   Moved inline scripts from `options.html` into `options.js` to comply with Chrome extension CSP (no inline scripts). Implemented vertical tabs driven by `.section-title` elements and wired keyboard navigation and state persistence.
+-   Cleaned `modules/cloud-backup.js` to remove Google Drive-specific code paths; Dropbox and OneDrive scaffolding remain for future work.
+
+### Fixed
+
+-   Fixed options page initialization timing and DOM visibility issues so controls and tabs reliably initialize across environments.
+-   Resolved several small syntax and event wiring issues introduced during earlier refactors.
+
+## [2.0.1] - 2025-10-08
+
+### Removed
+
+-   Removed built-in Google Drive backup option due to CSP and maintenance concerns. The UI and code paths related to Google Drive backup have been removed to simplify maintenance and reduce OAuth surface area.
+
+### Added
+
+-   Copy-to-Clipboard backup: quick one-click copy of backup JSON to clipboard from the Options page.
+
+### Changed
+
+-   Moved inline scripts from `options.html` into `options.js` to comply with Chrome extension CSP (no inline scripts allowed). This included implementing vertical tabs from `.section-title` and wiring tab behavior in `options.js`.
+-   Cleaned `modules/cloud-backup.js` to remove Google Drive-specific code paths; Dropbox and OneDrive scaffolding remain.
+
+### Fixed
+
+-   Fixed several options page initialization timing issues and cleaned up leftover UI/DOM timing bugs so tabs and controls reliably initialize.
+
 ## [1.0.0] - 2024-09-15
 
 ### Added
