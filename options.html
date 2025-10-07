@@ -40,28 +40,11 @@
             padding: 2rem;
         }
 
-        .header {
-            background: rgba(255, 255, 255, 0.25);
-            backdrop-filter: blur(20px);
-            -webkit-backdrop-filter: blur(20px);
-            border: 1px solid rgba(255, 255, 255, 0.3);
-            color: #2d3748;
-            padding: 2rem;
-            border-radius: 16px;
-            text-align: center;
-            margin-bottom: 2rem;
-            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
-        }
-
-        .header h1 {
-            margin: 0;
-            font-size: 2rem;
-            font-weight: 600;
-        }
-
-        .header p {
-            margin: 0.5rem 0 0 0;
-            opacity: 0.9;
+        .header-section {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            gap: 16px;
         }
 
         .settings-section {
@@ -341,7 +324,9 @@
         }
 
         .save-section {
-            text-align: center;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
             padding: 1.5rem;
             background: rgba(255, 255, 255, 0.25);
             backdrop-filter: blur(20px);
@@ -349,6 +334,7 @@
             border: 1px solid rgba(255, 255, 255, 0.3);
             border-radius: 16px;
             box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
+            margin-bottom: 2rem;
         }
 
         .btn-save {
@@ -544,385 +530,480 @@
             height: 100%;
             cursor: pointer;
         }
+
+        /* Vertical tabs styles */
+        .settings-tabs {
+            display: flex;
+            gap: 20px;
+            align-items: flex-start;
+        }
+
+        .tabs-nav {
+            width: 220px;
+            min-width: 180px;
+            background: rgba(0, 0, 0, 0.12);
+            border: 1px solid rgba(255, 255, 255, 0.08);
+            border-radius: 12px;
+            padding: 8px;
+            display: flex;
+            flex-direction: column;
+            gap: 6px;
+            max-height: 75vh;
+            overflow-y: auto;
+        }
+
+        .tabs-nav button {
+            text-align: left;
+            background: transparent;
+            border: none;
+            color: #eef2ff;
+            padding: 10px 12px;
+            border-radius: 8px;
+            cursor: pointer;
+            font-weight: 600;
+            display: flex;
+            gap: 8px;
+            align-items: center;
+            transition: background 0.15s, transform 0.08s;
+        }
+
+        .tabs-nav button:hover {
+            background: rgba(255, 255, 255, 0.06);
+        }
+
+        .tabs-nav button[aria-selected="true"] {
+            background: rgba(255, 255, 255, 0.16);
+            color: #2d3748;
+            box-shadow: 0 6px 18px rgba(0, 0, 0, 0.12);
+            transform: translateY(-1px);
+        }
+
+        .tabs-content {
+            flex: 1;
+            min-width: 0;
+        }
+
+        /* Hide non-active sections */
+        .settings-section {
+            display: none;
+        }
+
+        .settings-section.active {
+            display: block;
+        }
+
+        @media (max-width: 880px) {
+            .settings-tabs {
+                flex-direction: column;
+            }
+
+            .tabs-nav {
+                width: 100%;
+                display: flex;
+                flex-direction: row;
+                overflow-x: auto;
+            }
+
+            .tabs-nav button {
+                white-space: nowrap;
+            }
+        }
     </style>
 </head>
 
 <body>
     <div class="container">
-        <div class="header">
-            <h1>💤 Tab Suspend Pro Settings</h1>
-            <p>Configure how tabs are automatically suspended to save memory</p>
-        </div>
-
         <div class="save-section">
-            <button class="btn btn-primary btn-save" id="save-settings">💾 Save Settings</button>
-            <div class="status-message" id="status-message"></div>
+            <div class="header-section">
+                <div class="icon"><img class="logo" src="icons/icon128.png" alt=""></div>
+                <div class="header">
+                    <h1>Tab Suspend Pro Settings</h1>
+                    <p>Configure how tabs are automatically suspended to save memory</p>
+                </div>
+            </div>
+            <div class="header-button">
+                <button class="btn btn-primary btn-save" id="save-settings">Save Settings</button>
+                <div class="status-message" id="status-message"></div>
+            </div>
         </div>
 
-        <div class="settings-section">
-            <h2 class="section-title">🔧 General Settings</h2>
+        <!-- Tabs container start -->
+        <div class="settings-tabs">
+            <nav class="tabs-nav" role="tablist" aria-orientation="vertical" id="tabs-nav">
+                <!-- Buttons will be injected here -->
+            </nav>
+            <div class="tabs-content">
+                <div class="settings-section">
+                    <h2 class="section-title">🔧 General Settings</h2>
 
-            <div class="setting-item">
-                <div class="setting-info">
-                    <div class="setting-label">Auto-suspend inactive tabs after</div>
-                    <div class="setting-description">Automatically suspend tabs that haven't been used for this amount
-                        of time</div>
-                </div>
-                <div class="setting-control">
-                    <div class="time-input">
-                        <input type="number" id="suspend-time" min="1" max="1440" value="30">
-                        <select id="time-unit">
-                            <option value="minutes">minutes</option>
-                            <option value="hours">hours</option>
-                        </select>
+                    <div class="setting-item">
+                        <div class="setting-info">
+                            <div class="setting-label">Auto-suspend inactive tabs after</div>
+                            <div class="setting-description">Automatically suspend tabs that haven't been used for this
+                                amount
+                                of time</div>
+                        </div>
+                        <div class="setting-control">
+                            <div class="time-input">
+                                <input type="number" id="suspend-time" min="1" max="1440" value="30">
+                                <select id="time-unit">
+                                    <option value="minutes">minutes</option>
+                                    <option value="hours">hours</option>
+                                </select>
+                            </div>
+                        </div>
                     </div>
                 </div>
-            </div>
-        </div>
 
-        <div class="settings-section">
-            <h2 class="section-title">👥 Tab Groups</h2>
+                <div class="settings-section">
+                    <h2 class="section-title">👥 Tab Groups</h2>
 
-            <div class="setting-item">
-                <div class="setting-info">
-                    <div class="setting-label">Excluded Tab Groups</div>
-                    <div class="setting-description">Select tab groups that should never be automatically suspended
+                    <div class="setting-item">
+                        <div class="setting-info">
+                            <div class="setting-label">Excluded Tab Groups</div>
+                            <div class="setting-description">Select tab groups that should never be automatically
+                                suspended
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="group-list" id="group-list">
+                        <div style="padding: 20px; text-align: center; color: #6c757d;">
+                            Loading tab groups...
+                        </div>
                     </div>
                 </div>
-            </div>
 
-            <div class="group-list" id="group-list">
-                <div style="padding: 20px; text-align: center; color: #6c757d;">
-                    Loading tab groups...
-                </div>
-            </div>
-        </div>
+                <div class="settings-section">
+                    <h2 class="section-title">💾 Saved Tab Groups</h2>
 
-        <div class="settings-section">
-            <h2 class="section-title">💾 Saved Tab Groups</h2>
+                    <div class="setting-item">
+                        <div class="setting-info">
+                            <div class="setting-label">Enable Saved Groups</div>
+                            <div class="setting-description">Save your tab groups for later restoration. Groups are
+                                saved
+                                locally and can be exported/imported.</div>
+                        </div>
+                        <div class="setting-control">
+                            <div class="toggle" id="saved-groups-toggle"></div>
+                        </div>
+                    </div>
 
-            <div class="setting-item">
-                <div class="setting-info">
-                    <div class="setting-label">Enable Saved Groups</div>
-                    <div class="setting-description">Save your tab groups for later restoration. Groups are saved
-                        locally and can be exported/imported.</div>
-                </div>
-                <div class="setting-control">
-                    <div class="toggle" id="saved-groups-toggle"></div>
-                </div>
-            </div>
+                    <div class="saved-groups-actions" style="margin: 1rem 0; display: flex; gap: 8px; flex-wrap: wrap;">
+                        <button class="btn btn-primary" id="save-current-window">Save Current Window</button>
+                        <button class="btn btn-secondary" id="export-groups">Export Groups</button>
+                        <button class="btn btn-secondary" id="import-groups">Import Groups</button>
+                    </div>
 
-            <div class="saved-groups-actions" style="margin: 1rem 0; display: flex; gap: 8px; flex-wrap: wrap;">
-                <button class="btn btn-primary" id="save-current-window">Save Current Window</button>
-                <button class="btn btn-secondary" id="export-groups">Export Groups</button>
-                <button class="btn btn-secondary" id="import-groups">Import Groups</button>
-            </div>
-
-            <div class="saved-groups-list" id="saved-groups-list">
-                <div style="padding: 20px; text-align: center; color: #6c757d;">
-                    Loading saved groups...
-                </div>
-            </div>
-        </div>
-
-        <div class="settings-section">
-            <h2 class="section-title">🎛️ Feature Controls</h2>
-
-            <div class="setting-item">
-                <div class="setting-info">
-                    <div class="setting-label">Enable Sessions</div>
-                    <div class="setting-description">Show the Sessions tab in popup for saving and restoring browser
-                        sessions</div>
-                </div>
-                <div class="setting-control">
-                    <div class="toggle active" id="sessions-toggle"></div>
-                </div>
-            </div>
-
-            <div class="setting-item">
-                <div class="setting-info">
-                    <div class="setting-label">Enable Analytics</div>
-                    <div class="setting-description">Show the Analytics tab in popup for browsing statistics and
-                        insights</div>
-                </div>
-                <div class="setting-control">
-                    <div class="toggle active" id="analytics-enabled-toggle"></div>
-                </div>
-            </div>
-
-            <div class="setting-item">
-                <div class="setting-info">
-                    <div class="setting-label">Enable Organization</div>
-                    <div class="setting-description">Show the Organization tab in popup for smart tab grouping and
-                        management</div>
-                </div>
-                <div class="setting-control">
-                    <div class="toggle active" id="organization-toggle"></div>
-                </div>
-            </div>
-        </div>
-
-        <div class="settings-section">
-            <h2 class="section-title">🔗 URL Whitelist</h2>
-
-            <div class="setting-item">
-                <div class="setting-info">
-                    <div class="setting-label">Never suspend these URLs</div>
-                    <div class="setting-description">Add URL patterns that should never be suspended (e.g.,
-                        meet.google.com, localhost:)</div>
-                </div>
-            </div>
-
-            <div class="whitelist-section">
-                <div class="url-input">
-                    <input type="text" id="new-url" placeholder="Enter URL pattern (e.g., github.com, localhost:)">
-                    <button class="btn btn-primary" id="add-url">Add</button>
-                </div>
-
-                <ul class="url-list" id="url-list"></ul>
-            </div>
-        </div>
-
-        <div class="settings-section">
-            <h2 class="section-title">📊 Advanced Options</h2>
-
-            <div class="setting-item">
-                <div class="setting-info">
-                    <div class="setting-label">Suspend tabs playing audio</div>
-                    <div class="setting-description">Allow suspension of tabs that are playing audio or video</div>
-                </div>
-                <div class="setting-control">
-                    <div class="toggle" id="audio-toggle"></div>
-                </div>
-            </div>
-
-            <div class="setting-item">
-                <div class="setting-info">
-                    <div class="setting-label">Show suspension notifications</div>
-                    <div class="setting-description">Display notifications when tabs are automatically suspended</div>
-                </div>
-                <div class="setting-control">
-                    <div class="toggle active" id="notifications-toggle"></div>
-                </div>
-            </div>
-
-            <div class="setting-item">
-                <div class="setting-info">
-                    <div class="setting-label">Aggressive memory saving</div>
-                    <div class="setting-description">Use more aggressive suspension methods (may affect tab restoration)
+                    <div class="saved-groups-list" id="saved-groups-list">
+                        <div style="padding: 20px; text-align: center; color: #6c757d;">
+                            Loading saved groups...
+                        </div>
                     </div>
                 </div>
-                <div class="setting-control">
-                    <div class="toggle" id="aggressive-toggle"></div>
-                </div>
-            </div>
-        </div>
 
-        <div class="settings-section">
-            <h2 class="section-title">📊 Analytics & Privacy</h2>
+                <div class="settings-section">
+                    <h2 class="section-title">🎛️ Feature Controls</h2>
 
-            <div class="setting-item">
-                <div class="setting-info">
-                    <div class="setting-label">Activity Tracking</div>
-                    <div class="setting-description">Track tab usage for analytics and productivity insights</div>
-                </div>
-                <div class="setting-control">
-                    <div class="toggle active" id="analytics-toggle"></div>
-                </div>
-            </div>
+                    <div class="setting-item">
+                        <div class="setting-info">
+                            <div class="setting-label">Enable Sessions</div>
+                            <div class="setting-description">Show the Sessions tab in popup for saving and restoring
+                                browser
+                                sessions</div>
+                        </div>
+                        <div class="setting-control">
+                            <div class="toggle active" id="sessions-toggle"></div>
+                        </div>
+                    </div>
 
-            <div class="setting-item">
-                <div class="setting-info">
-                    <div class="setting-label">Performance Monitoring</div>
-                    <div class="setting-description">Monitor browser performance and memory usage</div>
-                </div>
-                <div class="setting-control">
-                    <div class="toggle active" id="performance-toggle"></div>
-                </div>
-            </div>
+                    <div class="setting-item">
+                        <div class="setting-info">
+                            <div class="setting-label">Enable Analytics</div>
+                            <div class="setting-description">Show the Analytics tab in popup for browsing statistics and
+                                insights</div>
+                        </div>
+                        <div class="setting-control">
+                            <div class="toggle active" id="analytics-enabled-toggle"></div>
+                        </div>
+                    </div>
 
-            <div class="setting-item">
-                <div class="setting-info">
-                    <div class="setting-label">Data Export Interval</div>
-                    <div class="setting-description">Automatically export analytics data for backup</div>
-                </div>
-                <div class="setting-control">
-                    <select id="export-interval">
-                        <option value="never">Never</option>
-                        <option value="daily">Daily</option>
-                        <option value="weekly">Weekly</option>
-                        <option value="monthly">Monthly</option>
-                    </select>
-                </div>
-            </div>
-        </div>
-
-        <div class="settings-section">
-            <h2 class="section-title">🎯 Focus Mode</h2>
-
-            <div class="setting-item">
-                <div class="setting-info">
-                    <div class="setting-label">Auto-enable Focus Mode</div>
-                    <div class="setting-description">Automatically enable focus mode during work hours</div>
-                </div>
-                <div class="setting-control">
-                    <div class="toggle" id="auto-focus-toggle"></div>
-                </div>
-            </div>
-
-            <div class="setting-item">
-                <div class="setting-info">
-                    <div class="setting-label">Work Hours</div>
-                    <div class="setting-description">Define your work hours for automatic focus mode</div>
-                </div>
-                <div class="setting-control">
-                    <div class="time-range">
-                        <input type="time" id="work-start" value="09:00">
-                        <span>to</span>
-                        <input type="time" id="work-end" value="17:00">
+                    <div class="setting-item">
+                        <div class="setting-info">
+                            <div class="setting-label">Enable Organization</div>
+                            <div class="setting-description">Show the Organization tab in popup for smart tab grouping
+                                and
+                                management</div>
+                        </div>
+                        <div class="setting-control">
+                            <div class="toggle active" id="organization-toggle"></div>
+                        </div>
                     </div>
                 </div>
-            </div>
 
-            <div class="setting-item">
-                <div class="setting-info">
-                    <div class="setting-label">Focus Mode Actions</div>
-                    <div class="setting-description">What to do when accessing blocked sites</div>
-                </div>
-                <div class="setting-control">
-                    <select id="focus-action">
-                        <option value="warn">Show warning</option>
-                        <option value="block">Block completely</option>
-                        <option value="suspend">Auto-suspend tab</option>
-                    </select>
-                </div>
-            </div>
-        </div>
+                <div class="settings-section">
+                    <h2 class="section-title">🔗 URL Whitelist</h2>
 
-        <!-- Backup & Sync Section -->
-        <div class="settings-section">
-            <h2 class="section-title">☁️ Backup & Sync</h2>
+                    <div class="setting-item">
+                        <div class="setting-info">
+                            <div class="setting-label">Never suspend these URLs</div>
+                            <div class="setting-description">Add URL patterns that should never be suspended (e.g.,
+                                meet.google.com, localhost:)</div>
+                        </div>
+                    </div>
 
-            <div class="setting-item">
-                <div class="setting-info">
-                    <div class="setting-label">Google Drive Backup</div>
-                    <div class="setting-description">Automatically backup your settings and saved groups to Google Drive
+                    <div class="whitelist-section">
+                        <div class="url-input">
+                            <input type="text" id="new-url"
+                                placeholder="Enter URL pattern (e.g., github.com, localhost:)">
+                            <button class="btn btn-primary" id="add-url">Add</button>
+                        </div>
+
+                        <ul class="url-list" id="url-list"></ul>
                     </div>
                 </div>
-                <div class="setting-control">
-                    <div class="toggle" id="google-drive-toggle"></div>
-                </div>
-            </div>
 
-            <div class="setting-item">
-                <div class="setting-info">
-                    <div class="setting-label">Auto Backup Frequency</div>
-                    <div class="setting-description">How often to automatically backup your data</div>
-                </div>
-                <div class="setting-control">
-                    <select id="backup-frequency">
-                        <option value="never">Never</option>
-                        <option value="daily">Daily</option>
-                        <option value="weekly" selected>Weekly</option>
-                        <option value="monthly">Monthly</option>
-                    </select>
-                </div>
-            </div>
+                <div class="settings-section">
+                    <h2 class="section-title">📊 Advanced Options</h2>
 
-            <div class="setting-item">
-                <div class="setting-info">
-                    <div class="setting-label">Export Settings</div>
-                    <div class="setting-description">Export all settings and saved groups to a file</div>
-                </div>
-                <div class="setting-control">
-                    <button class="btn btn-primary" id="export-settings">📤 Export</button>
-                </div>
-            </div>
+                    <div class="setting-item">
+                        <div class="setting-info">
+                            <div class="setting-label">Suspend tabs playing audio</div>
+                            <div class="setting-description">Allow suspension of tabs that are playing audio or video
+                            </div>
+                        </div>
+                        <div class="setting-control">
+                            <div class="toggle" id="audio-toggle"></div>
+                        </div>
+                    </div>
 
-            <div class="setting-item">
-                <div class="setting-info">
-                    <div class="setting-label">Import Settings</div>
-                    <div class="setting-description">Import settings and saved groups from a backup file</div>
-                </div>
-                <div class="setting-control">
-                    <input type="file" id="import-file" accept=".json" style="display: none;">
-                    <button class="btn btn-secondary" id="import-settings">📥 Import</button>
-                </div>
-            </div>
+                    <div class="setting-item">
+                        <div class="setting-info">
+                            <div class="setting-label">Show suspension notifications</div>
+                            <div class="setting-description">Display notifications when tabs are automatically suspended
+                            </div>
+                        </div>
+                        <div class="setting-control">
+                            <div class="toggle active" id="notifications-toggle"></div>
+                        </div>
+                    </div>
 
-            <div class="setting-item">
-                <div class="setting-info">
-                    <div class="setting-label">Sync Across Devices</div>
-                    <div class="setting-description">Sync settings across all your Chrome installations</div>
-                </div>
-                <div class="setting-control">
-                    <div class="toggle" id="sync-toggle"></div>
-                </div>
-            </div>
-
-            <div class="setting-item">
-                <div class="setting-info">
-                    <div class="setting-label">Last Backup</div>
-                    <div class="setting-description" id="last-backup-time">Never backed up</div>
-                </div>
-                <div class="setting-control">
-                    <button class="btn btn-secondary" id="backup-now">Backup Now</button>
-                </div>
-            </div>
-        </div>
-
-        <div class="settings-section">
-            <h2 class="section-title">⚡ Advanced Features</h2>
-
-            <div class="setting-item">
-                <div class="setting-info">
-                    <div class="setting-label">Smart Tab Grouping</div>
-                    <div class="setting-description">Automatically group tabs by domain and content type</div>
-                </div>
-                <div class="setting-control">
-                    <div class="toggle" id="smart-grouping-toggle"></div>
-                </div>
-            </div>
-
-            <div class="setting-item">
-                <div class="setting-info">
-                    <div class="setting-label">Session Auto-save</div>
-                    <div class="setting-description">Automatically save sessions at regular intervals</div>
-                </div>
-                <div class="setting-control">
-                    <select id="session-interval">
-                        <option value="never">Never</option>
-                        <option value="hourly">Every hour</option>
-                        <option value="daily">Daily</option>
-                        <option value="weekly">Weekly</option>
-                    </select>
-                </div>
-            </div>
-
-            <div class="setting-item">
-                <div class="setting-info">
-                    <div class="setting-label">Predictive Suspension</div>
-                    <div class="setting-description">Use AI to predict which tabs to suspend based on usage patterns
+                    <div class="setting-item">
+                        <div class="setting-info">
+                            <div class="setting-label">Aggressive memory saving</div>
+                            <div class="setting-description">Use more aggressive suspension methods (may affect tab
+                                restoration)
+                            </div>
+                        </div>
+                        <div class="setting-control">
+                            <div class="toggle" id="aggressive-toggle"></div>
+                        </div>
                     </div>
                 </div>
-                <div class="setting-control">
-                    <div class="toggle" id="predictive-toggle"></div>
-                </div>
-            </div>
 
-            <div class="setting-item">
-                <div class="setting-info">
-                    <div class="setting-label">Keyboard Shortcuts</div>
-                    <div class="setting-description">Customize keyboard shortcuts for quick actions</div>
-                </div>
-                <div class="setting-control">
-                    <button class="btn btn-secondary" id="customize-shortcuts">Customize</button>
-                </div>
-            </div>
-        </div>
-    </div>
+                <div class="settings-section">
+                    <h2 class="section-title">📊 Analytics & Privacy</h2>
 
-    <script src="options.js"></script>
+                    <div class="setting-item">
+                        <div class="setting-info">
+                            <div class="setting-label">Activity Tracking</div>
+                            <div class="setting-description">Track tab usage for analytics and productivity insights
+                            </div>
+                        </div>
+                        <div class="setting-control">
+                            <div class="toggle active" id="analytics-toggle"></div>
+                        </div>
+                    </div>
+
+                    <div class="setting-item">
+                        <div class="setting-info">
+                            <div class="setting-label">Performance Monitoring</div>
+                            <div class="setting-description">Monitor browser performance and memory usage</div>
+                        </div>
+                        <div class="setting-control">
+                            <div class="toggle active" id="performance-toggle"></div>
+                        </div>
+                    </div>
+
+                    <div class="setting-item">
+                        <div class="setting-info">
+                            <div class="setting-label">Data Export Interval</div>
+                            <div class="setting-description">Automatically export analytics data for backup</div>
+                        </div>
+                        <div class="setting-control">
+                            <select id="export-interval">
+                                <option value="never">Never</option>
+                                <option value="daily">Daily</option>
+                                <option value="weekly">Weekly</option>
+                                <option value="monthly">Monthly</option>
+                            </select>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="settings-section">
+                    <h2 class="section-title">🎯 Focus Mode</h2>
+
+                    <div class="setting-item">
+                        <div class="setting-info">
+                            <div class="setting-label">Auto-enable Focus Mode</div>
+                            <div class="setting-description">Automatically enable focus mode during work hours</div>
+                        </div>
+                        <div class="setting-control">
+                            <div class="toggle" id="auto-focus-toggle"></div>
+                        </div>
+                    </div>
+
+                    <div class="setting-item">
+                        <div class="setting-info">
+                            <div class="setting-label">Work Hours</div>
+                            <div class="setting-description">Define your work hours for automatic focus mode</div>
+                        </div>
+                        <div class="setting-control">
+                            <div class="time-range">
+                                <input type="time" id="work-start" value="09:00">
+                                <span>to</span>
+                                <input type="time" id="work-end" value="17:00">
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="setting-item">
+                        <div class="setting-info">
+                            <div class="setting-label">Focus Mode Actions</div>
+                            <div class="setting-description">What to do when accessing blocked sites</div>
+                        </div>
+                        <div class="setting-control">
+                            <select id="focus-action">
+                                <option value="warn">Show warning</option>
+                                <option value="block">Block completely</option>
+                                <option value="suspend">Auto-suspend tab</option>
+                            </select>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Backup & Sync Section -->
+                <div class="settings-section">
+                    <h2 class="section-title">☁️ Backup & Sync</h2>
+
+                    <div class="setting-item">
+                        <div class="setting-info">
+                            <div class="setting-label">Auto Backup Frequency</div>
+                            <div class="setting-description">How often to automatically backup your data</div>
+                        </div>
+                        <div class="setting-control">
+                            <select id="backup-frequency">
+                                <option value="never">Never</option>
+                                <option value="daily">Daily</option>
+                                <option value="weekly" selected>Weekly</option>
+                                <option value="monthly">Monthly</option>
+                            </select>
+                        </div>
+                    </div>
+
+                    <div class="setting-item"
+                        style="flex-direction: column; justify-content: start; align-items: start;">
+                        <div class="setting-info">
+                            <div class="setting-label">Export Settings</div>
+                            <div class="setting-description">Export all settings and saved groups to a file</div>
+                        </div>
+                        <div class="setting-control" style="margin-left: 0; margin-top: 8px;">
+                            <div style="display:flex; gap:8px; align-items:center;">
+                                <button class="btn btn-primary" id="export-settings">📤 Export</button>
+                                <button class="btn btn-secondary" id="copy-settings">📋 Copy</button>
+                                <button class="btn btn-primary" id="export-drive">☁️ Backup to Drive</button>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="setting-item">
+                        <div class="setting-info">
+                            <div class="setting-label">Import Settings</div>
+                            <div class="setting-description">Import settings and saved groups from a backup file</div>
+                        </div>
+                        <div class="setting-control">
+                            <input type="file" id="import-file" accept=".json" style="display: none;">
+                            <button class="btn btn-secondary" id="import-settings">📥 Import</button>
+                        </div>
+                    </div>
+
+                    <div class="setting-item">
+                        <div class="setting-info">
+                            <div class="setting-label">Sync Across Devices</div>
+                            <div class="setting-description">Sync settings across all your Chrome installations</div>
+                        </div>
+                        <div class="setting-control">
+                            <div class="toggle" id="sync-toggle"></div>
+                        </div>
+                    </div>
+
+                    <div class="setting-item">
+                        <div class="setting-info">
+                            <div class="setting-label">Last Backup</div>
+                            <div class="setting-description" id="last-backup-time">Never backed up</div>
+                        </div>
+                        <div class="setting-control">
+                            <button class="btn btn-secondary" id="backup-now">Backup Now</button>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="settings-section">
+                    <h2 class="section-title">⚡ Advanced Features</h2>
+
+                    <div class="setting-item">
+                        <div class="setting-info">
+                            <div class="setting-label">Smart Tab Grouping</div>
+                            <div class="setting-description">Automatically group tabs by domain and content type</div>
+                        </div>
+                        <div class="setting-control">
+                            <div class="toggle" id="smart-grouping-toggle"></div>
+                        </div>
+                    </div>
+
+                    <div class="setting-item">
+                        <div class="setting-info">
+                            <div class="setting-label">Session Auto-save</div>
+                            <div class="setting-description">Automatically save sessions at regular intervals</div>
+                        </div>
+                        <div class="setting-control">
+                            <select id="session-interval">
+                                <option value="never">Never</option>
+                                <option value="hourly">Every hour</option>
+                                <option value="daily">Daily</option>
+                                <option value="weekly">Weekly</option>
+                            </select>
+                        </div>
+                    </div>
+
+                    <div class="setting-item">
+                        <div class="setting-info">
+                            <div class="setting-label">Predictive Suspension</div>
+                            <div class="setting-description">Use AI to predict which tabs to suspend based on usage
+                                patterns
+                            </div>
+                        </div>
+                        <div class="setting-control">
+                            <div class="toggle" id="predictive-toggle"></div>
+                        </div>
+                    </div>
+
+                    <div class="setting-item">
+                        <div class="setting-info">
+                            <div class="setting-label">Keyboard Shortcuts</div>
+                            <div class="setting-description">Customize keyboard shortcuts for quick actions</div>
+                        </div>
+                        <div class="setting-control">
+                            <button class="btn btn-secondary" id="customize-shortcuts">Customize</button>
+                        </div>
+                    </div>
+                </div>
+            </div> <!-- .tabs-content -->
+        </div> <!-- .settings-tabs -->
+
+        <!-- Tab setup moved to external options.js to comply with extension CSP (no inline scripts) -->
+        <script src="options.js"></script>
 </body>
 
 </html>

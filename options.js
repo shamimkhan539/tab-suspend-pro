@@ -31,7 +31,89 @@ class OptionsManager {
             sessionAutoSaveInterval: "never",
             predictiveSuspension: false,
         };
+        // Setup the vertical tabs UI before initializing the rest of the page logic.
+        // options.html loads this file at the end of the body so DOM nodes exist.
+        try {
+            this.setupTabs();
+        } catch (e) {
+            // If tab setup fails, continue so other UI still loads.
+            console.error("setupTabs error", e);
+        }
+
         this.init();
+    }
+
+    // Build vertical tabs from .settings-section elements.
+    setupTabs() {
+        // Prefer sections within .tabs-content, fallback to document-wide
+        const content = document.querySelector(".tabs-content");
+        const sections = content
+            ? Array.from(content.querySelectorAll(".settings-section"))
+            : Array.from(document.querySelectorAll(".settings-section"));
+        const nav = document.getElementById("tabs-nav");
+        if (!nav || sections.length === 0) return;
+
+        // Clear nav
+        nav.innerHTML = "";
+
+        // Create a button for each section using its title
+        sections.forEach((sec, idx) => {
+            const titleEl = sec.querySelector(".section-title");
+            // Prefer explicit data-tab-title, otherwise use the visible innerText of the .section-title
+            const title = titleEl
+                ? titleEl.dataset.tabTitle || titleEl.innerText.trim()
+                : `Section ${idx + 1}`;
+            const btn = document.createElement("button");
+            btn.type = "button";
+            btn.textContent = title;
+            btn.title = title;
+            btn.setAttribute("role", "tab");
+            btn.id = `tab-btn-${idx}`;
+            btn.dataset.index = idx;
+            btn.setAttribute("aria-controls", `tab-panel-${idx}`);
+            btn.tabIndex = 0;
+
+            // Assign panel id
+            sec.id = `tab-panel-${idx}`;
+            sec.setAttribute("role", "tabpanel");
+
+            btn.addEventListener("click", () => activate(idx));
+            btn.addEventListener("keydown", (e) => {
+                if (e.key === "ArrowDown" || e.key === "ArrowRight") {
+                    e.preventDefault();
+                    activate((idx + 1) % sections.length);
+                }
+                if (e.key === "ArrowUp" || e.key === "ArrowLeft") {
+                    e.preventDefault();
+                    activate((idx - 1 + sections.length) % sections.length);
+                }
+            });
+
+            nav.appendChild(btn);
+        });
+
+        function activate(index) {
+            sections.forEach((s, i) =>
+                s.classList.toggle("active", i === index)
+            );
+            const buttons = Array.from(nav.querySelectorAll("button"));
+            buttons.forEach((b, i) =>
+                b.setAttribute("aria-selected", i === index)
+            );
+            // Persist last tab
+            try {
+                localStorage.setItem("options-last-tab", index);
+            } catch (e) {}
+        }
+
+        // Activate saved tab or first
+        const last = parseInt(
+            localStorage.getItem("options-last-tab") || "0",
+            10
+        );
+        activate(
+            !isNaN(last) && last >= 0 && last < sections.length ? last : 0
+        );
     }
 
     async init() {
@@ -895,6 +977,16 @@ class OptionsManager {
             exportBtn.addEventListener("click", () => this.exportSettings());
         }
 
+        // Copy to clipboard
+        const copyBtn = document.getElementById("copy-settings");
+        if (copyBtn) {
+            copyBtn.addEventListener("click", () =>
+                this.copySettingsToClipboard()
+            );
+        }
+
+        // (Google Drive backup removed)
+
         // Import settings
         const importBtn = document.getElementById("import-settings");
         const importFile = document.getElementById("import-file");
@@ -965,6 +1057,164 @@ class OptionsManager {
             console.error("Export failed:", error);
             this.showStatusMessage("Export failed: " + error.message, "error");
         }
+    }
+
+    async copySettingsToClipboard() {
+        try {
+            const [settingsResult, groupsResult] = await Promise.all([
+                chrome.storage.sync.get(null),
+                chrome.runtime.sendMessage({ action: "getAllSavedGroups" }),
+            ]);
+
+            const exportData = {
+                settings: settingsResult,
+                savedGroups: groupsResult.success ? groupsResult.groups : [],
+                exportDate: new Date().toISOString(),
+                version: "1.0",
+            };
+
+            const text = JSON.stringify(exportData, null, 2);
+            await navigator.clipboard.writeText(text);
+            this.showStatusMessage("Backup copied to clipboard", "success");
+        } catch (error) {
+            console.error("Copy failed:", error);
+            this.showStatusMessage("Copy failed: " + error.message, "error");
+        }
+    }
+
+    // Google Drive integration
+    async uploadSettingsToDrive() {
+        try {
+            // Retrieve export content
+            const [settingsResult, groupsResult] = await Promise.all([
+                chrome.storage.sync.get(null),
+                chrome.runtime.sendMessage({ action: "getAllSavedGroups" }),
+            ]);
+
+            const exportData = {
+                settings: settingsResult,
+                savedGroups: groupsResult.success ? groupsResult.groups : [],
+                exportDate: new Date().toISOString(),
+                version: "1.0",
+            };
+
+            const text = JSON.stringify(exportData, null, 2);
+
+            // Ensure we have an OAuth token
+            const token = await this.ensureDriveToken();
+            if (!token) {
+                this.showStatusMessage("Drive backup cancelled", "error");
+                return;
+            }
+
+            await this.uploadToDrive(text, token);
+            this.showStatusMessage(
+                "Backup uploaded to Google Drive",
+                "success"
+            );
+        } catch (error) {
+            console.error("Drive upload failed:", error);
+            this.showStatusMessage(
+                "Drive upload failed: " + error.message,
+                "error"
+            );
+        }
+    }
+
+    // Obtain an OAuth token via chrome.identity.launchWebAuthFlow using a stored client ID
+    async ensureDriveToken() {
+        // Check for stored client ID
+        const stored = await chrome.storage.local.get(["driveClientId"]);
+        let clientId = stored.driveClientId;
+        if (!clientId) {
+            // Prompt developer to enter OAuth client ID (one-time)
+            clientId = prompt(
+                "Enter your Google OAuth Client ID (Web application) to enable Drive backups:"
+            );
+            if (!clientId) return null;
+            await chrome.storage.local.set({ driveClientId: clientId });
+        }
+
+        const redirectUri = chrome.identity.getRedirectURL();
+        const scope = encodeURIComponent(
+            "https://www.googleapis.com/auth/drive.file"
+        );
+        const authUrl = `https://accounts.google.com/o/oauth2/v2/auth?client_id=${encodeURIComponent(
+            clientId
+        )}&response_type=token&redirect_uri=${encodeURIComponent(
+            redirectUri
+        )}&scope=${scope}`;
+
+        return new Promise((resolve, reject) => {
+            chrome.identity.launchWebAuthFlow(
+                { url: authUrl, interactive: true },
+                (redirectResponse) => {
+                    if (chrome.runtime.lastError) {
+                        return reject(
+                            new Error(chrome.runtime.lastError.message)
+                        );
+                    }
+                    if (!redirectResponse) return resolve(null);
+
+                    // Extract access_token from redirect fragment
+                    try {
+                        const m = redirectResponse.match(
+                            /[#&]access_token=([^&]+)/
+                        );
+                        if (!m) return resolve(null);
+                        const token = m[1];
+                        resolve(token);
+                    } catch (e) {
+                        reject(e);
+                    }
+                }
+            );
+        });
+    }
+
+    async uploadToDrive(content, token) {
+        // Create multipart upload for Drive v3
+        const metadata = {
+            name: `tab-suspend-pro-backup-${
+                new Date().toISOString().split("T")[0]
+            }.json`,
+            mimeType: "application/json",
+        };
+
+        const boundary =
+            "-------tabsuspendpro" + Math.random().toString(36).slice(2);
+        const delimiter = `\r\n--${boundary}\r\n`;
+        const closeDelimiter = `\r\n--${boundary}--`;
+
+        const bodyParts = [];
+        bodyParts.push(delimiter);
+        bodyParts.push("Content-Type: application/json; charset=UTF-8\r\n\r\n");
+        bodyParts.push(JSON.stringify(metadata));
+        bodyParts.push(delimiter);
+        bodyParts.push("Content-Type: application/json\r\n\r\n");
+        bodyParts.push(content);
+        bodyParts.push(closeDelimiter);
+
+        const body = bodyParts.join("");
+
+        const resp = await fetch(
+            "https://www.googleapis.com/upload/drive/v3/files?uploadType=multipart",
+            {
+                method: "POST",
+                headers: {
+                    Authorization: `Bearer ${token}`,
+                    "Content-Type": `multipart/related; boundary=${boundary}`,
+                },
+                body,
+            }
+        );
+
+        if (!resp.ok) {
+            const txt = await resp.text();
+            throw new Error(`Drive API error: ${resp.status} ${txt}`);
+        }
+
+        return resp.json();
     }
 
     async importSettings(event) {
