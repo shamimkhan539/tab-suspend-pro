@@ -1,6 +1,5 @@
-# Tab Suspend Pro 💤⚡
-
 ![App Icon](icons/icon128.png)
+# Tab Suspend Pro 💤⚡
 A comprehensive Chrome extension with advanced tab management, analytics, and productivity features. Save up to 80% memory usage while boosting your browser performance with intelligent automation and detailed insights.
 
 ## 🌟 Core Features
