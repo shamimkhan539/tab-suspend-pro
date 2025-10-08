@@ -1,5 +1,5 @@
 ![App Icon](icons/icon128.png)
-# Tab Suspend Pro 💤⚡
+# Tab Suspender Pro 💤⚡
 A comprehensive Chrome extension with advanced tab management, analytics, and productivity features. Save up to 80% memory usage while boosting your browser performance with intelligent automation and detailed insights.
 
 ## 🌟 Core Features
@@ -80,12 +80,12 @@ The extension will be available on the Chrome Web Store.
 
 4. **Pin the Extension**
     - Click the puzzle piece icon in the toolbar
-    - Pin "Tab Suspend Pro" for easy access
+    - Pin "Tab Suspender Pro" for easy access
 
 ## 📁 File Structure
 
 ```
-tab-suspend-pro/
+tab-suspender-pro/
 ├── manifest.json              # Extension configuration
 ├── background.js               # Main extension logic & session management
 ├── popup.html                 # Extension popup interface
@@ -345,4 +345,4 @@ This project is open source and available under the MIT License.
 
 ---
 
-**Save memory. Stay productive. Suspend smartly with Tab Suspend Pro! 💤**
+**Save memory. Stay productive. Suspend smartly with Tab Suspender Pro! 💤**
