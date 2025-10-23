@@ -6,7 +6,8 @@ importScripts(
     "src/modules/analytics/activity-analytics.js",
     "src/modules/privacy/privacy-manager.js",
     "src/modules/cloud-sync/cloud-backup.js",
-    "src/modules/tracker-blocker/tracker-blocker.js"
+    "src/modules/tracker-blocker/tracker-blocker.js",
+    "src/modules/ads-blocker/ads-blocker.js"
 );
 
 // Background service worker for BrowserGuard Pro
@@ -44,6 +45,7 @@ class TabSuspendManager {
         this.privacyManager = new PrivacyManager();
         this.cloudBackup = new CloudBackupManager();
         this.trackerBlocker = new TrackerBlocker();
+        this.adsBlocker = new AdsBlocker();
 
         this.init();
     }
@@ -791,6 +793,13 @@ class TabSuspendManager {
                 });
 
                 chrome.contextMenus.create({
+                    id: "page-ads-blocker",
+                    title: "Open Ads Blocker Dashboard",
+                    contexts: ["page"],
+                    documentUrlPatterns: ["http://*/*", "https://*/*"],
+                });
+
+                chrome.contextMenus.create({
                     id: "separator3",
                     type: "separator",
                     contexts: ["page"],
@@ -1429,6 +1438,93 @@ class TabSuspendManager {
                     sendResponse({ success: true });
                     break;
 
+                // Ads Blocker Management
+                case "get-ads-blocker-data":
+                    const adsData = this.adsBlocker.getDashboardData();
+                    sendResponse({ success: true, ...adsData });
+                    break;
+                case "update-ads-blocker-settings":
+                    await this.adsBlocker.updateSettings(message.settings);
+
+                    // Broadcast YouTube blocker settings to all tabs
+                    if (
+                        message.settings.blockYoutubeAds !== undefined ||
+                        message.settings.blockYoutubeMusicAds !== undefined
+                    ) {
+                        const tabs = await chrome.tabs.query({});
+                        tabs.forEach((tab) => {
+                            chrome.tabs.sendMessage(
+                                tab.id,
+                                {
+                                    action: "update-youtube-blocker",
+                                    blockYoutubeAds:
+                                        message.settings.blockYoutubeAds,
+                                    blockYoutubeMusicAds:
+                                        message.settings.blockYoutubeMusicAds,
+                                },
+                                () => {
+                                    // Ignore errors for tabs that don't have content script
+                                }
+                            );
+                        });
+                    }
+
+                    sendResponse({ success: true });
+                    break;
+                case "add-ads-whitelist":
+                    await this.adsBlocker.addToWhitelist(message.domain);
+                    sendResponse({ success: true });
+                    break;
+                case "remove-ads-whitelist":
+                    await this.adsBlocker.removeFromWhitelist(message.domain);
+                    sendResponse({ success: true });
+                    break;
+                case "add-ads-custom-filter":
+                    await this.adsBlocker.addCustomFilter(message.pattern);
+                    sendResponse({ success: true });
+                    break;
+                case "remove-ads-custom-filter":
+                    await this.adsBlocker.removeCustomFilter(message.pattern);
+                    sendResponse({ success: true });
+                    break;
+                case "reset-ads-stats":
+                    await this.adsBlocker.resetStats();
+                    sendResponse({ success: true });
+                    break;
+                case "export-ads-filters":
+                    const exportedAdsFilters = this.adsBlocker.exportFilters();
+                    sendResponse({ success: true, data: exportedAdsFilters });
+                    break;
+                case "import-ads-filters":
+                    await this.adsBlocker.importFilters(message.data);
+                    sendResponse({ success: true });
+                    break;
+                case "toggle-ads-blocker":
+                    await this.adsBlocker.toggleBlocking(message.enabled);
+                    sendResponse({ success: true });
+                    break;
+
+                case "get-youtube-blocker-settings":
+                    const settings = await chrome.storage.local.get([
+                        "adsBlockerSettings",
+                    ]);
+                    if (settings.adsBlockerSettings) {
+                        sendResponse({
+                            blockYoutubeAds:
+                                settings.adsBlockerSettings.blockYoutubeAds ||
+                                false,
+                            blockYoutubeMusicAds:
+                                settings.adsBlockerSettings
+                                    .blockYoutubeMusicAds || false,
+                        });
+                    } else {
+                        sendResponse({
+                            blockYoutubeAds: false,
+                            blockYoutubeMusicAds: false,
+                        });
+                    }
+                    break;
+
                 default:
                     sendResponse({ success: false, error: "Unknown action" });
             }
@@ -1536,12 +1632,23 @@ class TabSuspendManager {
                     break;
                 case "page-analytics-dashboard":
                     chrome.tabs.create({
-                        url: chrome.runtime.getURL("dashboard.html"),
+                        url: chrome.runtime.getURL(
+                            "ui/dashboards/main/dashboard.html"
+                        ),
                     });
                     break;
                 case "page-tracker-blocker":
                     chrome.tabs.create({
-                        url: chrome.runtime.getURL("tracker-dashboard.html"),
+                        url: chrome.runtime.getURL(
+                            "ui/dashboards/tracker-blocker/tracker-dashboard.html"
+                        ),
+                    });
+                    break;
+                case "page-ads-blocker":
+                    chrome.tabs.create({
+                        url: chrome.runtime.getURL(
+                            "ui/dashboards/ads-blocker/ads-dashboard.html"
+                        ),
                     });
                     break;
                 case "suggest-tabs":
@@ -1590,7 +1697,9 @@ class TabSuspendManager {
                     break;
                 case "open-dashboard":
                     await chrome.tabs.create({
-                        url: chrome.runtime.getURL("dashboard.html"),
+                        url: chrome.runtime.getURL(
+                            "ui/dashboards/main/dashboard.html"
+                        ),
                     });
                     break;
                 case "save-session":

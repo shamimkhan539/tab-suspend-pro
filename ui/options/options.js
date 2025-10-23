@@ -31,18 +31,549 @@ class OptionsManager {
             sessionAutoSaveInterval: "never",
             predictiveSuspension: false,
         };
+
+        // Initialize tracker settings with defaults
+        this.trackerSettings = {
+            enabled: true,
+            categories: {
+                ads: true,
+                trackers: true,
+                socialMedia: true,
+                cryptoMining: true,
+                malware: true,
+            },
+            trackStatistics: true,
+            customFilters: [],
+        };
+
+        // Initialize ads blocker settings with defaults
+        this.adsBlockerSettings = {
+            enabled: true,
+            blockAds: true,
+            blockAnalytics: true,
+            blockBanners: true,
+            blockPopups: true,
+            blockCookieTrackers: true,
+            blockSocialWidgets: false,
+            blockYoutubeAds: true,
+            blockYoutubeMusicAds: true,
+            customFilters: [],
+            whitelistedDomains: [],
+        };
+
         this.init();
     }
 
     async init() {
+        this.setupTabNavigation();
         await this.loadSettings();
         await this.loadTabGroups();
         await this.loadSavedGroups();
+        await this.loadTrackerBlockerSettings();
+        await this.loadAdsBlockerSettings();
         this.setupEventListeners();
         this.setupSavedGroupsEventListeners();
         this.setupBackupEventListeners();
+        this.setupTrackerBlockerListeners();
+        this.setupAdsBlockerListeners();
         this.updateUI();
         this.updateLastBackupTime();
+    }
+
+    setupTabNavigation() {
+        const tabButtons = document.querySelectorAll(".tab-button");
+        const tabContents = document.querySelectorAll(".tab-content");
+
+        tabButtons.forEach((button) => {
+            button.addEventListener("click", () => {
+                const tabName = button.getAttribute("data-tab");
+
+                // Remove active class from all buttons and contents
+                tabButtons.forEach((btn) => btn.classList.remove("active"));
+                tabContents.forEach((content) =>
+                    content.classList.remove("active")
+                );
+
+                // Add active class to clicked button and corresponding content
+                button.classList.add("active");
+                document
+                    .getElementById(`tab-${tabName}`)
+                    .classList.add("active");
+            });
+        });
+    }
+
+    async loadTrackerBlockerSettings() {
+        try {
+            const result = await chrome.runtime.sendMessage({
+                action: "tracker-get-settings",
+            });
+
+            if (result && result.settings) {
+                // Merge with defaults to ensure all properties exist
+                this.trackerSettings = {
+                    ...this.trackerSettings,
+                    ...result.settings,
+                    categories: {
+                        ...this.trackerSettings.categories,
+                        ...(result.settings.categories || {}),
+                    },
+                };
+                this.updateTrackerUI();
+            } else {
+                console.log("Using default tracker settings");
+                this.updateTrackerUI();
+            }
+
+            // Load whitelist
+            const whitelistResult = await chrome.runtime.sendMessage({
+                action: "tracker-get-whitelist",
+            });
+
+            if (whitelistResult && whitelistResult.whitelist) {
+                this.updateWhitelistUI(whitelistResult.whitelist);
+            }
+        } catch (error) {
+            console.error("Error loading tracker blocker settings:", error);
+            // Still update UI with defaults
+            this.updateTrackerUI();
+        }
+    }
+
+    updateTrackerUI() {
+        if (!this.trackerSettings) return;
+
+        this.setToggleState(
+            "tracker-blocker-enabled",
+            this.trackerSettings.enabled
+        );
+        this.setToggleState("block-ads", this.trackerSettings.categories.ads);
+        this.setToggleState(
+            "block-trackers",
+            this.trackerSettings.categories.trackers
+        );
+        this.setToggleState(
+            "block-social",
+            this.trackerSettings.categories.socialMedia
+        );
+        this.setToggleState(
+            "block-mining",
+            this.trackerSettings.categories.cryptoMining
+        );
+        this.setToggleState(
+            "block-malware",
+            this.trackerSettings.categories.malware
+        );
+        this.setToggleState(
+            "track-stats",
+            this.trackerSettings.trackStatistics
+        );
+
+        // Load custom filters
+        const customFiltersTextarea = document.getElementById("custom-filters");
+        if (customFiltersTextarea && this.trackerSettings.customFilters) {
+            customFiltersTextarea.value =
+                this.trackerSettings.customFilters.join("\n");
+        }
+    }
+
+    updateWhitelistUI(whitelist) {
+        const listElement = document.getElementById("tracker-whitelist-list");
+        if (!listElement) return;
+
+        listElement.innerHTML = "";
+        whitelist.forEach((domain) => {
+            const li = document.createElement("li");
+            li.className = "url-item";
+            li.innerHTML = `
+                <span>${domain}</span>
+                <button class="btn btn-danger btn-sm remove-tracker-whitelist" data-domain="${domain}">Remove</button>
+            `;
+            listElement.appendChild(li);
+        });
+
+        // Add remove listeners
+        document
+            .querySelectorAll(".remove-tracker-whitelist")
+            .forEach((btn) => {
+                btn.addEventListener("click", async (e) => {
+                    const domain = e.target.getAttribute("data-domain");
+                    await this.removeFromTrackerWhitelist(domain);
+                });
+            });
+    }
+
+    setupTrackerBlockerListeners() {
+        // Enable/disable toggle
+        document
+            .getElementById("tracker-blocker-enabled")
+            ?.addEventListener("click", async (e) => {
+                const enabled = e.target.classList.contains("active");
+                await chrome.runtime.sendMessage({
+                    action: "tracker-update-settings",
+                    settings: { enabled: !enabled },
+                });
+                this.setToggleState("tracker-blocker-enabled", !enabled);
+            });
+
+        // Category toggles
+        [
+            "block-ads",
+            "block-trackers",
+            "block-social",
+            "block-mining",
+            "block-malware",
+        ].forEach((id) => {
+            const categoryMap = {
+                "block-ads": "ads",
+                "block-trackers": "trackers",
+                "block-social": "socialMedia",
+                "block-mining": "cryptoMining",
+                "block-malware": "malware",
+            };
+
+            document
+                .getElementById(id)
+                ?.addEventListener("click", async (e) => {
+                    const enabled = e.target.classList.contains("active");
+                    const category = categoryMap[id];
+
+                    // Ensure trackerSettings exists with proper structure
+                    if (!this.trackerSettings) {
+                        this.trackerSettings = {
+                            enabled: true,
+                            categories: {},
+                            trackStatistics: true,
+                            customFilters: [],
+                        };
+                    }
+                    if (!this.trackerSettings.categories) {
+                        this.trackerSettings.categories = {};
+                    }
+
+                    await chrome.runtime.sendMessage({
+                        action: "tracker-update-settings",
+                        settings: {
+                            categories: {
+                                ...this.trackerSettings.categories,
+                                [category]: !enabled,
+                            },
+                        },
+                    });
+
+                    this.setToggleState(id, !enabled);
+                    this.trackerSettings.categories[category] = !enabled;
+                });
+        });
+
+        // Statistics toggle
+        document
+            .getElementById("track-stats")
+            ?.addEventListener("click", async (e) => {
+                const enabled = e.target.classList.contains("active");
+                await chrome.runtime.sendMessage({
+                    action: "tracker-update-settings",
+                    settings: { trackStatistics: !enabled },
+                });
+                this.setToggleState("track-stats", !enabled);
+            });
+
+        // Add to whitelist
+        document
+            .getElementById("add-tracker-whitelist")
+            ?.addEventListener("click", async () => {
+                const input = document.getElementById("tracker-whitelist-url");
+                const domain = input.value.trim();
+
+                if (domain) {
+                    await chrome.runtime.sendMessage({
+                        action: "tracker-add-whitelist",
+                        domain: domain,
+                    });
+
+                    input.value = "";
+                    await this.loadTrackerBlockerSettings();
+                }
+            });
+
+        // Custom filters
+        document
+            .getElementById("custom-filters")
+            ?.addEventListener("blur", async (e) => {
+                const filters = e.target.value
+                    .split("\n")
+                    .filter((f) => f.trim());
+                await chrome.runtime.sendMessage({
+                    action: "tracker-update-settings",
+                    settings: { customFilters: filters },
+                });
+            });
+
+        // Open tracker dashboard
+        document
+            .getElementById("open-tracker-dashboard")
+            ?.addEventListener("click", () => {
+                chrome.tabs.create({
+                    url: chrome.runtime.getURL(
+                        "ui/dashboards/tracker-blocker/tracker-dashboard.html"
+                    ),
+                });
+            });
+
+        // Open other dashboards
+        document
+            .getElementById("open-privacy-dashboard")
+            ?.addEventListener("click", () => {
+                chrome.tabs.create({
+                    url: chrome.runtime.getURL(
+                        "ui/dashboards/privacy/privacy-dashboard.html"
+                    ),
+                });
+            });
+
+        document
+            .getElementById("open-analytics-dashboard")
+            ?.addEventListener("click", () => {
+                chrome.tabs.create({
+                    url: chrome.runtime.getURL(
+                        "ui/dashboards/main/dashboard.html"
+                    ),
+                });
+            });
+
+        document
+            .getElementById("open-advanced-options")
+            ?.addEventListener("click", () => {
+                chrome.tabs.create({
+                    url: chrome.runtime.getURL(
+                        "ui/options/sections/advanced-options.html"
+                    ),
+                });
+            });
+    }
+
+    async removeFromTrackerWhitelist(domain) {
+        await chrome.runtime.sendMessage({
+            action: "tracker-remove-whitelist",
+            domain: domain,
+        });
+        await this.loadTrackerBlockerSettings();
+    }
+
+    async loadAdsBlockerSettings() {
+        try {
+            const result = await chrome.runtime.sendMessage({
+                action: "get-ads-blocker-data",
+            });
+
+            if (result && result.settings) {
+                this.adsBlockerSettings = {
+                    ...this.adsBlockerSettings,
+                    ...result.settings,
+                };
+                this.updateAdsBlockerUI();
+            } else {
+                console.log("Using default ads blocker settings");
+                this.updateAdsBlockerUI();
+            }
+
+            // Load whitelist
+            if (
+                result &&
+                result.settings &&
+                result.settings.whitelistedDomains
+            ) {
+                this.updateAdsWhitelistUI(result.settings.whitelistedDomains);
+            }
+        } catch (error) {
+            console.error("Error loading ads blocker settings:", error);
+            this.updateAdsBlockerUI();
+        }
+    }
+
+    updateAdsBlockerUI() {
+        if (!this.adsBlockerSettings) return;
+
+        this.setToggleState(
+            "ads-blocker-enabled",
+            this.adsBlockerSettings.enabled
+        );
+        this.setToggleState("ads-block-ads", this.adsBlockerSettings.blockAds);
+        this.setToggleState(
+            "ads-block-analytics",
+            this.adsBlockerSettings.blockAnalytics
+        );
+        this.setToggleState(
+            "ads-block-banners",
+            this.adsBlockerSettings.blockBanners
+        );
+        this.setToggleState(
+            "ads-block-popups",
+            this.adsBlockerSettings.blockPopups
+        );
+        this.setToggleState(
+            "ads-block-cookies",
+            this.adsBlockerSettings.blockCookieTrackers
+        );
+        this.setToggleState(
+            "ads-block-social",
+            this.adsBlockerSettings.blockSocialWidgets
+        );
+        this.setToggleState(
+            "ads-block-youtube",
+            this.adsBlockerSettings.blockYoutubeAds
+        );
+        this.setToggleState(
+            "ads-block-youtube-music",
+            this.adsBlockerSettings.blockYoutubeMusicAds
+        );
+
+        // Load custom filters
+        const customFiltersTextarea =
+            document.getElementById("ads-custom-filters");
+        if (customFiltersTextarea && this.adsBlockerSettings.customFilters) {
+            customFiltersTextarea.value =
+                this.adsBlockerSettings.customFilters.join("\n");
+        }
+    }
+
+    updateAdsWhitelistUI(whitelist) {
+        const listElement = document.getElementById("ads-whitelist-list");
+        if (!listElement) return;
+
+        listElement.innerHTML = "";
+        whitelist.forEach((domain) => {
+            const li = document.createElement("li");
+            li.className = "url-item";
+            li.innerHTML = `
+                <span>${domain}</span>
+                <button class="btn btn-danger btn-sm remove-ads-whitelist" data-domain="${domain}">Remove</button>
+            `;
+            listElement.appendChild(li);
+        });
+
+        // Add remove listeners
+        document.querySelectorAll(".remove-ads-whitelist").forEach((btn) => {
+            btn.addEventListener("click", async (e) => {
+                const domain = e.target.getAttribute("data-domain");
+                await this.removeFromAdsWhitelist(domain);
+            });
+        });
+    }
+
+    setupAdsBlockerListeners() {
+        // Enable/disable toggle
+        document
+            .getElementById("ads-blocker-enabled")
+            ?.addEventListener("click", async (e) => {
+                const enabled = e.target.classList.contains("active");
+                await chrome.runtime.sendMessage({
+                    action: "update-ads-blocker-settings",
+                    settings: { enabled: !enabled },
+                });
+                this.setToggleState("ads-blocker-enabled", !enabled);
+            });
+
+        // Category toggles
+        [
+            "ads-block-ads",
+            "ads-block-analytics",
+            "ads-block-banners",
+            "ads-block-popups",
+            "ads-block-cookies",
+            "ads-block-social",
+            "ads-block-youtube",
+            "ads-block-youtube-music",
+        ].forEach((id) => {
+            const settingMap = {
+                "ads-block-ads": "blockAds",
+                "ads-block-analytics": "blockAnalytics",
+                "ads-block-banners": "blockBanners",
+                "ads-block-popups": "blockPopups",
+                "ads-block-cookies": "blockCookieTrackers",
+                "ads-block-social": "blockSocialWidgets",
+                "ads-block-youtube": "blockYoutubeAds",
+                "ads-block-youtube-music": "blockYoutubeMusicAds",
+            };
+
+            document
+                .getElementById(id)
+                ?.addEventListener("click", async (e) => {
+                    const enabled = e.target.classList.contains("active");
+                    const setting = settingMap[id];
+
+                    await chrome.runtime.sendMessage({
+                        action: "update-ads-blocker-settings",
+                        settings: {
+                            [setting]: !enabled,
+                        },
+                    });
+
+                    this.setToggleState(id, !enabled);
+                    this.adsBlockerSettings[setting] = !enabled;
+                });
+        });
+
+        // Add to whitelist
+        document
+            .getElementById("add-ads-whitelist")
+            ?.addEventListener("click", async () => {
+                const input = document.getElementById("ads-whitelist-url");
+                const domain = input.value.trim();
+
+                if (domain) {
+                    await chrome.runtime.sendMessage({
+                        action: "add-ads-whitelist",
+                        domain: domain,
+                    });
+
+                    input.value = "";
+                    await this.loadAdsBlockerSettings();
+                }
+            });
+
+        // Custom filters
+        document
+            .getElementById("ads-custom-filters")
+            ?.addEventListener("blur", async (e) => {
+                const filters = e.target.value
+                    .split("\n")
+                    .filter((f) => f.trim());
+                await chrome.runtime.sendMessage({
+                    action: "update-ads-blocker-settings",
+                    settings: { customFilters: filters },
+                });
+            });
+
+        // Open ads blocker dashboard
+        document
+            .getElementById("open-ads-dashboard")
+            ?.addEventListener("click", () => {
+                chrome.tabs.create({
+                    url: chrome.runtime.getURL(
+                        "ui/dashboards/ads-blocker/ads-dashboard.html"
+                    ),
+                });
+            });
+    }
+
+    async removeFromAdsWhitelist(domain) {
+        await chrome.runtime.sendMessage({
+            action: "remove-ads-whitelist",
+            domain: domain,
+        });
+        await this.loadAdsBlockerSettings();
+    }
+
+    setToggleState(elementId, isActive) {
+        const element = document.getElementById(elementId);
+        if (element) {
+            if (isActive) {
+                element.classList.add("active");
+            } else {
+                element.classList.remove("active");
+            }
+        }
     }
 
     async loadSettings() {

@@ -339,7 +339,10 @@ async function exportData() {
 
 async function setupCloudSync() {
     try {
-        window.open("privacy-dashboard.html#cloud-section", "_blank");
+        window.open(
+            "../privacy/privacy-dashboard.html#cloud-section",
+            "_blank"
+        );
     } catch (error) {
         console.error("Error opening cloud setup:", error);
     }

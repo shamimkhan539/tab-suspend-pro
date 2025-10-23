@@ -460,7 +460,21 @@ class PopupManager {
         if (trackerBlockerBtn) {
             trackerBlockerBtn.addEventListener("click", () => {
                 chrome.tabs.create({
-                    url: chrome.runtime.getURL("tracker-dashboard.html"),
+                    url: chrome.runtime.getURL(
+                        "ui/dashboards/tracker-blocker/tracker-dashboard.html"
+                    ),
+                });
+            });
+        }
+
+        // Ads Blocker button
+        const adsBlockerBtn = document.getElementById("ads-blocker-btn");
+        if (adsBlockerBtn) {
+            adsBlockerBtn.addEventListener("click", () => {
+                chrome.tabs.create({
+                    url: chrome.runtime.getURL(
+                        "ui/dashboards/ads-blocker/ads-dashboard.html"
+                    ),
                 });
             });
         }
