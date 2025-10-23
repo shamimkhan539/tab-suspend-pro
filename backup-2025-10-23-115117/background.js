@@ -1,15 +1,15 @@
 // Import advanced modules
 importScripts(
-    "src/modules/session-manager/session-manager.js",
-    "src/modules/smart-organizer/smart-organizer.js",
-    "src/modules/analytics/performance-analytics.js",
-    "src/modules/analytics/activity-analytics.js",
-    "src/modules/privacy/privacy-manager.js",
-    "src/modules/cloud-sync/cloud-backup.js",
-    "src/modules/tracker-blocker/tracker-blocker.js"
+    "modules/session-manager.js",
+    "modules/smart-organizer.js",
+    "modules/performance-analytics.js",
+    "modules/activity-analytics.js",
+    "modules/privacy-manager.js",
+    "modules/cloud-backup.js",
+    "modules/tracker-blocker.js"
 );
 
-// Background service worker for BrowserGuard Pro
+// Background service worker for Tab Suspend Pro
 class TabSuspendManager {
     constructor() {
         this.tabActivity = new Map();
@@ -64,7 +64,7 @@ class TabSuspendManager {
             this.setupMessageHandlers();
             this.startMonitoring();
             this.startMetadataCleanup();
-            console.log("BrowserGuard Pro initialized");
+            console.log("Tab Suspend Pro initialized");
         } catch (error) {
             console.error("Error initializing extension:", error);
         }
@@ -360,7 +360,7 @@ class TabSuspendManager {
                     chrome.notifications.create({
                         type: "basic",
                         iconUrl: "icons/icon48.png",
-                        title: "BrowserGuard Pro",
+                        title: "Tab Suspend Pro",
                         message: `Restored ${recreated} suspended tab${
                             recreated > 1 ? "s" : ""
                         } after extension update`,
@@ -1525,7 +1525,7 @@ class TabSuspendManager {
                         chrome.notifications.create({
                             type: "basic",
                             iconUrl: "icons/icon48.png",
-                            title: "BrowserGuard Pro",
+                            title: "Tab Suspend Pro",
                             message:
                                 'This tab is not in a group. Use "Save Current Window" instead.',
                         });
@@ -1574,7 +1574,7 @@ class TabSuspendManager {
                     chrome.notifications.create({
                         type: "basic",
                         iconUrl: "icons/icon48.png",
-                        title: "BrowserGuard Pro",
+                        title: "Tab Suspend Pro",
                         message: "Tab suspended: " + activeTab.title,
                     });
                     break;
@@ -1584,7 +1584,7 @@ class TabSuspendManager {
                     chrome.notifications.create({
                         type: "basic",
                         iconUrl: "icons/icon48.png",
-                        title: "BrowserGuard Pro",
+                        title: "Tab Suspend Pro",
                         message: "All suspended tabs restored!",
                     });
                     break;
@@ -1601,7 +1601,7 @@ class TabSuspendManager {
                     chrome.notifications.create({
                         type: "basic",
                         iconUrl: "icons/icon48.png",
-                        title: "BrowserGuard Pro",
+                        title: "Tab Suspend Pro",
                         message: `Session saved: ${session.name}`,
                     });
                     break;
@@ -1779,7 +1779,7 @@ class TabSuspendManager {
             chrome.notifications.create({
                 type: "basic",
                 iconUrl: "icons/icon48.png",
-                title: "BrowserGuard Pro",
+                title: "Tab Suspend Pro",
                 message: "Suspended " + tabs.length + " tabs from the group!",
             });
         } catch (error) {
@@ -1850,7 +1850,7 @@ class TabSuspendManager {
                 chrome.notifications.create({
                     type: "basic",
                     iconUrl: "icons/icon48.png",
-                    title: "BrowserGuard Pro",
+                    title: "Tab Suspend Pro",
                     message:
                         "Found " +
                         suggestions.length +
@@ -1860,7 +1860,7 @@ class TabSuspendManager {
                 chrome.notifications.create({
                     type: "basic",
                     iconUrl: "icons/icon48.png",
-                    title: "BrowserGuard Pro",
+                    title: "Tab Suspend Pro",
                     message: "No tabs found that need suspending!",
                 });
             }
@@ -1951,7 +1951,7 @@ class TabSuspendManager {
             chrome.notifications.create({
                 type: "basic",
                 iconUrl: "icons/icon48.png",
-                title: "BrowserGuard Pro",
+                title: "Tab Suspend Pro",
                 message: "Restored " + toRestore.length + " lost tabs",
             });
             console.log(
@@ -1989,7 +1989,7 @@ class TabSuspendManager {
                 chrome.notifications.create({
                     type: "basic",
                     iconUrl: "icons/icon48.png",
-                    title: "BrowserGuard Pro",
+                    title: "Tab Suspend Pro",
                     message: "Added to whitelist: " + urlToAdd,
                 });
 
@@ -2264,7 +2264,7 @@ class TabSuspendManager {
             chrome.notifications.create({
                 type: "basic",
                 iconUrl: "icons/icon48.png",
-                title: "BrowserGuard Pro",
+                title: "Tab Suspend Pro",
                 message: `Saved "${groupName}" with ${validTabs.length} tabs`,
             });
 
@@ -2277,7 +2277,7 @@ class TabSuspendManager {
             chrome.notifications.create({
                 type: "basic",
                 iconUrl: "icons/icon48.png",
-                title: "BrowserGuard Pro",
+                title: "Tab Suspend Pro",
                 message: `Error saving group: ${error.message}`,
             });
             throw error;
@@ -2397,7 +2397,7 @@ class TabSuspendManager {
             chrome.notifications.create({
                 type: "basic",
                 iconUrl: "icons/icon48.png",
-                title: "BrowserGuard Pro",
+                title: "Tab Suspend Pro",
                 message: `Restored "${name}" with ${createdTabs.length} tabs`,
             });
 
@@ -2423,7 +2423,7 @@ class TabSuspendManager {
             chrome.notifications.create({
                 type: "basic",
                 iconUrl: "icons/icon48.png",
-                title: "BrowserGuard Pro",
+                title: "Tab Suspend Pro",
                 message: `Error restoring group: ${error.message}`,
             });
             throw error;
@@ -2477,7 +2477,7 @@ class TabSuspendManager {
             chrome.notifications.create({
                 type: "basic",
                 iconUrl: "icons/icon48.png",
-                title: "BrowserGuard Pro",
+                title: "Tab Suspend Pro",
                 message: `Exported ${groups.length} saved groups`,
             });
 
@@ -2547,7 +2547,7 @@ class TabSuspendManager {
             chrome.notifications.create({
                 type: "basic",
                 iconUrl: "icons/icon48.png",
-                title: "BrowserGuard Pro",
+                title: "Tab Suspend Pro",
                 message: `Imported ${importedCount} groups${
                     duplicateCount > 0
                         ? `, skipped ${duplicateCount} duplicates`
@@ -2670,7 +2670,7 @@ class TabSuspendManager {
                 <!DOCTYPE html>
                 <html>
                 <head>
-                    <title>BrowserGuard Pro - Analytics Report</title>
+                    <title>Tab Suspend Pro - Analytics Report</title>
                     <style>
                         body { font-family: Arial, sans-serif; margin: 2rem; }
                         .header { background: #667eea; color: white; padding: 2rem; text-align: center; }
@@ -2680,7 +2680,7 @@ class TabSuspendManager {
                 </head>
                 <body>
                     <div class="header">
-                        <h1>📊 BrowserGuard Pro Analytics Report</h1>
+                        <h1>📊 Tab Suspend Pro Analytics Report</h1>
                         <p>Generated on ${new Date().toLocaleString()}</p>
                     </div>
                     <div class="section">

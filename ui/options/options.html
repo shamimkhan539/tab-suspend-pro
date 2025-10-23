@@ -1,0 +1,928 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>BrowserGuard Pro - Settings</title>
+    <style>
+        * {
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 50%, #f093fb 100%);
+            min-height: 100vh;
+            margin: 0;
+            padding: 0;
+            line-height: 1.6;
+            position: relative;
+        }
+
+        body::before {
+            content: '';
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: radial-gradient(circle at 30% 20%, rgba(120, 119, 198, 0.3) 0%, transparent 50%),
+                radial-gradient(circle at 80% 80%, rgba(255, 255, 255, 0.15) 0%, transparent 50%),
+                radial-gradient(circle at 40% 40%, rgba(120, 119, 198, 0.15) 0%, transparent 50%);
+            pointer-events: none;
+            z-index: -1;
+        }
+
+        .container {
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 2rem;
+        }
+
+        .header {
+            background: rgba(255, 255, 255, 0.25);
+            backdrop-filter: blur(20px);
+            -webkit-backdrop-filter: blur(20px);
+            border: 1px solid rgba(255, 255, 255, 0.3);
+            color: #2d3748;
+            padding: 2rem;
+            border-radius: 16px;
+            text-align: center;
+            margin-bottom: 2rem;
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
+        }
+
+        .header h1 {
+            margin: 0;
+            font-size: 2rem;
+            font-weight: 600;
+        }
+
+        .header p {
+            margin: 0.5rem 0 0 0;
+            opacity: 0.9;
+        }
+
+        .settings-section {
+            background: rgba(255, 255, 255, 0.25);
+            backdrop-filter: blur(20px);
+            -webkit-backdrop-filter: blur(20px);
+            border: 1px solid rgba(255, 255, 255, 0.3);
+            padding: 1.5rem;
+            border-radius: 16px;
+            margin-bottom: 1.5rem;
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
+        }
+
+        .section-title {
+            font-size: 1.25rem;
+            font-weight: 600;
+            margin: 0 0 1rem 0;
+            color: #2d3748;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .setting-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 1rem 0;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.2);
+        }
+
+        .setting-item:last-child {
+            border-bottom: none;
+        }
+
+        .setting-info {
+            flex: 1;
+        }
+
+        .setting-label {
+            font-weight: 500;
+            margin-bottom: 0.25rem;
+            color: #2d3748;
+        }
+
+        .setting-description {
+            font-size: 0.9rem;
+            color: #4a5568;
+        }
+
+        .setting-control {
+            margin-left: 1rem;
+        }
+
+        .toggle {
+            position: relative;
+            width: 50px;
+            height: 24px;
+            background: rgba(200, 200, 200, 0.3);
+            backdrop-filter: blur(10px);
+            -webkit-backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 255, 255, 0.3);
+            border-radius: 12px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .toggle.active {
+            background: rgba(102, 126, 234, 0.4);
+            border-color: rgba(102, 126, 234, 0.5);
+        }
+
+        .toggle::after {
+            content: '';
+            position: absolute;
+            width: 20px;
+            height: 20px;
+            border-radius: 50%;
+            background: white;
+            top: 2px;
+            left: 2px;
+            transition: transform 0.2s;
+        }
+
+        .toggle.active::after {
+            transform: translateX(26px);
+        }
+
+        .time-input {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .time-input input {
+            width: 80px;
+            padding: 6px 8px;
+            border: 1px solid rgba(255, 255, 255, 0.3);
+            border-radius: 8px;
+            font-size: 0.9rem;
+            background: rgba(255, 255, 255, 0.2);
+            backdrop-filter: blur(10px);
+            -webkit-backdrop-filter: blur(10px);
+            color: #2d3748;
+        }
+
+        .time-input select {
+            padding: 6px 8px;
+            border: 1px solid rgba(255, 255, 255, 0.3);
+            border-radius: 8px;
+            font-size: 0.9rem;
+            background: rgba(255, 255, 255, 0.2);
+            backdrop-filter: blur(10px);
+            -webkit-backdrop-filter: blur(10px);
+            color: #2d3748;
+        }
+
+        .group-list {
+            max-height: 200px;
+            overflow-y: auto;
+            border: 1px solid rgba(255, 255, 255, 0.3);
+            border-radius: 12px;
+            margin-top: 0.5rem;
+            background: rgba(255, 255, 255, 0.1);
+            backdrop-filter: blur(10px);
+            -webkit-backdrop-filter: blur(10px);
+        }
+
+        .group-item {
+            display: flex;
+            align-items: center;
+            padding: 8px 12px;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.2);
+            background: rgba(255, 255, 255, 0.05);
+            transition: background-color 0.3s ease;
+        }
+
+        .group-item:hover {
+            background: rgba(255, 255, 255, 0.15);
+        }
+
+        .group-item:last-child {
+            border-bottom: none;
+        }
+
+        .group-checkbox {
+            margin-right: 8px;
+        }
+
+        .group-name {
+            flex: 1;
+            font-size: 0.9rem;
+        }
+
+        .group-count {
+            font-size: 0.8rem;
+            color: #4a5568;
+        }
+
+        .whitelist-section {
+            margin-top: 1rem;
+        }
+
+        .url-input {
+            display: flex;
+            gap: 8px;
+            margin-bottom: 0.5rem;
+        }
+
+        .url-input input {
+            flex: 1;
+            padding: 8px 12px;
+            border: 1px solid rgba(255, 255, 255, 0.3);
+            border-radius: 8px;
+            font-size: 0.9rem;
+            background: rgba(255, 255, 255, 0.2);
+            backdrop-filter: blur(10px);
+            -webkit-backdrop-filter: blur(10px);
+            color: #2d3748;
+        }
+
+        .btn {
+            padding: 8px 16px;
+            border: 1px solid rgba(255, 255, 255, 0.3);
+            border-radius: 8px;
+            font-size: 0.9rem;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            backdrop-filter: blur(10px);
+            -webkit-backdrop-filter: blur(10px);
+        }
+
+        .btn-primary {
+            background: rgba(102, 126, 234, 0.25);
+            color: #2d3748;
+            font-weight: 500;
+        }
+
+        .btn-primary:hover {
+            background: rgba(102, 126, 234, 0.4);
+            transform: translateY(-2px);
+            box-shadow: 0 4px 20px rgba(102, 126, 234, 0.3);
+        }
+
+        .btn-secondary {
+            background: rgba(108, 117, 125, 0.25);
+            color: #2d3748;
+            font-weight: 500;
+        }
+
+        .btn-secondary:hover {
+            background: rgba(108, 117, 125, 0.4);
+            transform: translateY(-2px);
+            box-shadow: 0 4px 20px rgba(108, 117, 125, 0.3);
+        }
+
+        .btn-danger {
+            background: rgba(220, 53, 69, 0.25);
+            color: #2d3748;
+            font-weight: 500;
+        }
+
+        .btn-danger:hover {
+            background: rgba(220, 53, 69, 0.4);
+            transform: translateY(-2px);
+            box-shadow: 0 4px 20px rgba(220, 53, 69, 0.3);
+        }
+
+        .url-list {
+            list-style: none;
+            padding: 0;
+            margin: 0;
+        }
+
+        .url-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 6px 12px;
+            background: rgba(255, 255, 255, 0.15);
+            backdrop-filter: blur(10px);
+            -webkit-backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            border-radius: 8px;
+            margin-bottom: 4px;
+            font-size: 0.9rem;
+        }
+
+        .time-range {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            font-size: 0.9rem;
+        }
+
+        .time-range input[type="time"] {
+            padding: 6px 8px;
+            border: 1px solid rgba(255, 255, 255, 0.3);
+            border-radius: 8px;
+            font-size: 0.9rem;
+            background: rgba(255, 255, 255, 0.2);
+            backdrop-filter: blur(10px);
+            -webkit-backdrop-filter: blur(10px);
+            color: #2d3748;
+        }
+
+        .setting-control select {
+            padding: 6px 12px;
+            border: 1px solid rgba(255, 255, 255, 0.3);
+            border-radius: 8px;
+            font-size: 0.9rem;
+            background: rgba(255, 255, 255, 0.2);
+            backdrop-filter: blur(10px);
+            -webkit-backdrop-filter: blur(10px);
+            color: #2d3748;
+            min-width: 120px;
+        }
+
+        .save-section {
+            text-align: center;
+            padding: 1.5rem;
+            background: rgba(255, 255, 255, 0.25);
+            backdrop-filter: blur(20px);
+            -webkit-backdrop-filter: blur(20px);
+            border: 1px solid rgba(255, 255, 255, 0.3);
+            border-radius: 16px;
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
+        }
+
+        .btn-save {
+            background: rgba(34, 197, 94, 0.3);
+            color: #2d3748;
+            padding: 12px 32px;
+            font-size: 1rem;
+            font-weight: 600;
+            border: 1px solid rgba(34, 197, 94, 0.4);
+            backdrop-filter: blur(15px);
+            -webkit-backdrop-filter: blur(15px);
+        }
+
+        .btn-save:hover {
+            background: rgba(34, 197, 94, 0.5);
+            transform: translateY(-3px);
+            box-shadow: 0 6px 25px rgba(34, 197, 94, 0.4);
+        }
+
+        .status-message {
+            margin-top: 1rem;
+            padding: 8px 16px;
+            border-radius: 4px;
+            display: none;
+        }
+
+        .status-success {
+            background: #d4edda;
+            color: #155724;
+            border: 1px solid #c3e6cb;
+        }
+
+        .status-error {
+            background: #f8d7da;
+            color: #721c24;
+            border: 1px solid #f5c6cb;
+        }
+
+        .saved-groups-list {
+            border: 1px solid rgba(255, 255, 255, 0.3);
+            border-radius: 12px;
+            margin-top: 0.5rem;
+            max-height: 400px;
+            overflow-y: auto;
+            background: rgba(255, 255, 255, 0.1);
+            backdrop-filter: blur(10px);
+            -webkit-backdrop-filter: blur(10px);
+        }
+
+        .saved-group-item {
+            display: flex;
+            align-items: center;
+            padding: 12px;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.2);
+            background: rgba(255, 255, 255, 0.05);
+            transition: all 0.3s ease;
+        }
+
+        .saved-group-item:hover {
+            background: rgba(255, 255, 255, 0.15);
+            transform: translateY(-1px);
+        }
+
+        .saved-group-item:last-child {
+            border-bottom: none;
+        }
+
+        .saved-group-info {
+            flex: 1;
+            min-width: 0;
+        }
+
+        .saved-group-name {
+            font-weight: 500;
+            font-size: 0.9rem;
+            margin-bottom: 2px;
+            color: #212529;
+        }
+
+        .saved-group-meta {
+            font-size: 0.8rem;
+            color: #4a5568;
+            display: flex;
+            gap: 12px;
+            flex-wrap: wrap;
+        }
+
+        .saved-group-actions {
+            display: flex;
+            gap: 4px;
+            flex-shrink: 0;
+        }
+
+        .btn-small {
+            padding: 4px 8px;
+            font-size: 0.8rem;
+            border-radius: 6px;
+            border: 1px solid rgba(255, 255, 255, 0.3);
+            cursor: pointer;
+            font-weight: 500;
+            transition: all 0.3s ease;
+            backdrop-filter: blur(10px);
+            -webkit-backdrop-filter: blur(10px);
+        }
+
+        .btn-restore {
+            background: rgba(40, 167, 69, 0.25);
+            color: #2d3748;
+        }
+
+        .btn-restore:hover {
+            background: rgba(40, 167, 69, 0.4);
+            transform: translateY(-1px);
+            box-shadow: 0 4px 15px rgba(40, 167, 69, 0.3);
+        }
+
+        .btn-restore-new {
+            background: rgba(23, 162, 184, 0.25);
+            color: #2d3748;
+        }
+
+        .btn-restore-new:hover {
+            background: rgba(23, 162, 184, 0.4);
+            transform: translateY(-1px);
+            box-shadow: 0 4px 15px rgba(23, 162, 184, 0.3);
+        }
+
+        .btn-delete {
+            background: rgba(220, 53, 69, 0.25);
+            color: #2d3748;
+        }
+
+        .btn-delete:hover {
+            background: rgba(220, 53, 69, 0.4);
+            transform: translateY(-1px);
+            box-shadow: 0 4px 15px rgba(220, 53, 69, 0.3);
+        }
+
+        .btn-rename {
+            background: rgba(108, 117, 125, 0.25);
+            color: #2d3748;
+        }
+
+        .btn-rename:hover {
+            background: rgba(108, 117, 125, 0.4);
+            transform: translateY(-1px);
+            box-shadow: 0 4px 15px rgba(108, 117, 125, 0.3);
+        }
+
+        .group-color-indicator {
+            width: 4px;
+            height: 40px;
+            border-radius: 2px;
+            margin-right: 12px;
+            flex-shrink: 0;
+        }
+
+        .group-preview {
+            font-size: 0.75rem;
+            color: #868e96;
+            margin-top: 4px;
+            display: -webkit-box;
+            -webkit-line-clamp: 2;
+            line-clamp: 2;
+            -webkit-box-orient: vertical;
+            overflow: hidden;
+        }
+
+        .empty-state {
+            padding: 40px 20px;
+            text-align: center;
+            color: #6c757d;
+            border: 2px dashed #dee2e6;
+            border-radius: 8px;
+            margin: 20px 0;
+        }
+
+        .empty-state-icon {
+            font-size: 3rem;
+            margin-bottom: 1rem;
+            opacity: 0.5;
+        }
+
+        .import-area {
+            position: relative;
+            display: inline-block;
+        }
+
+        .import-area input[type="file"] {
+            position: absolute;
+            opacity: 0;
+            width: 100%;
+            height: 100%;
+            cursor: pointer;
+        }
+    </style>
+</head>
+
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>💤 BrowserGuard Pro Settings</h1>
+            <p>Configure how tabs are automatically suspended to save memory</p>
+        </div>
+
+        <div class="save-section">
+            <button class="btn btn-primary btn-save" id="save-settings">💾 Save Settings</button>
+            <div class="status-message" id="status-message"></div>
+        </div>
+
+        <div class="settings-section">
+            <h2 class="section-title">🔧 General Settings</h2>
+
+            <div class="setting-item">
+                <div class="setting-info">
+                    <div class="setting-label">Auto-suspend inactive tabs after</div>
+                    <div class="setting-description">Automatically suspend tabs that haven't been used for this amount
+                        of time</div>
+                </div>
+                <div class="setting-control">
+                    <div class="time-input">
+                        <input type="number" id="suspend-time" min="1" max="1440" value="30">
+                        <select id="time-unit">
+                            <option value="minutes">minutes</option>
+                            <option value="hours">hours</option>
+                        </select>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="settings-section">
+            <h2 class="section-title">👥 Tab Groups</h2>
+
+            <div class="setting-item">
+                <div class="setting-info">
+                    <div class="setting-label">Excluded Tab Groups</div>
+                    <div class="setting-description">Select tab groups that should never be automatically suspended
+                    </div>
+                </div>
+            </div>
+
+            <div class="group-list" id="group-list">
+                <div style="padding: 20px; text-align: center; color: #6c757d;">
+                    Loading tab groups...
+                </div>
+            </div>
+        </div>
+
+        <div class="settings-section">
+            <h2 class="section-title">💾 Saved Tab Groups</h2>
+
+            <div class="setting-item">
+                <div class="setting-info">
+                    <div class="setting-label">Enable Saved Groups</div>
+                    <div class="setting-description">Save your tab groups for later restoration. Groups are saved
+                        locally and can be exported/imported.</div>
+                </div>
+                <div class="setting-control">
+                    <div class="toggle" id="saved-groups-toggle"></div>
+                </div>
+            </div>
+
+            <div class="saved-groups-actions" style="margin: 1rem 0; display: flex; gap: 8px; flex-wrap: wrap;">
+                <button class="btn btn-primary" id="save-current-window">Save Current Window</button>
+                <button class="btn btn-secondary" id="export-groups">Export Groups</button>
+                <button class="btn btn-secondary" id="import-groups">Import Groups</button>
+            </div>
+
+            <div class="saved-groups-list" id="saved-groups-list">
+                <div style="padding: 20px; text-align: center; color: #6c757d;">
+                    Loading saved groups...
+                </div>
+            </div>
+        </div>
+
+        <div class="settings-section">
+            <h2 class="section-title">🎛️ Feature Controls</h2>
+
+            <div class="setting-item">
+                <div class="setting-info">
+                    <div class="setting-label">Enable Sessions</div>
+                    <div class="setting-description">Show the Sessions tab in popup for saving and restoring browser
+                        sessions</div>
+                </div>
+                <div class="setting-control">
+                    <div class="toggle active" id="sessions-toggle"></div>
+                </div>
+            </div>
+
+            <div class="setting-item">
+                <div class="setting-info">
+                    <div class="setting-label">Enable Analytics</div>
+                    <div class="setting-description">Show the Analytics tab in popup for browsing statistics and
+                        insights</div>
+                </div>
+                <div class="setting-control">
+                    <div class="toggle active" id="analytics-enabled-toggle"></div>
+                </div>
+            </div>
+
+            <div class="setting-item">
+                <div class="setting-info">
+                    <div class="setting-label">Enable Organization</div>
+                    <div class="setting-description">Show the Organization tab in popup for smart tab grouping and
+                        management</div>
+                </div>
+                <div class="setting-control">
+                    <div class="toggle active" id="organization-toggle"></div>
+                </div>
+            </div>
+        </div>
+
+        <div class="settings-section">
+            <h2 class="section-title">🔗 URL Whitelist</h2>
+
+            <div class="setting-item">
+                <div class="setting-info">
+                    <div class="setting-label">Never suspend these URLs</div>
+                    <div class="setting-description">Add URL patterns that should never be suspended (e.g.,
+                        meet.google.com, localhost:)</div>
+                </div>
+            </div>
+
+            <div class="whitelist-section">
+                <div class="url-input">
+                    <input type="text" id="new-url" placeholder="Enter URL pattern (e.g., github.com, localhost:)">
+                    <button class="btn btn-primary" id="add-url">Add</button>
+                </div>
+
+                <ul class="url-list" id="url-list"></ul>
+            </div>
+        </div>
+
+        <div class="settings-section">
+            <h2 class="section-title">📊 Advanced Options</h2>
+
+            <div class="setting-item">
+                <div class="setting-info">
+                    <div class="setting-label">Suspend tabs playing audio</div>
+                    <div class="setting-description">Allow suspension of tabs that are playing audio or video</div>
+                </div>
+                <div class="setting-control">
+                    <div class="toggle" id="audio-toggle"></div>
+                </div>
+            </div>
+
+            <div class="setting-item">
+                <div class="setting-info">
+                    <div class="setting-label">Show suspension notifications</div>
+                    <div class="setting-description">Display notifications when tabs are automatically suspended</div>
+                </div>
+                <div class="setting-control">
+                    <div class="toggle active" id="notifications-toggle"></div>
+                </div>
+            </div>
+
+            <div class="setting-item">
+                <div class="setting-info">
+                    <div class="setting-label">Aggressive memory saving</div>
+                    <div class="setting-description">Use more aggressive suspension methods (may affect tab restoration)
+                    </div>
+                </div>
+                <div class="setting-control">
+                    <div class="toggle" id="aggressive-toggle"></div>
+                </div>
+            </div>
+        </div>
+
+        <div class="settings-section">
+            <h2 class="section-title">📊 Analytics & Privacy</h2>
+
+            <div class="setting-item">
+                <div class="setting-info">
+                    <div class="setting-label">Activity Tracking</div>
+                    <div class="setting-description">Track tab usage for analytics and productivity insights</div>
+                </div>
+                <div class="setting-control">
+                    <div class="toggle active" id="analytics-toggle"></div>
+                </div>
+            </div>
+
+            <div class="setting-item">
+                <div class="setting-info">
+                    <div class="setting-label">Performance Monitoring</div>
+                    <div class="setting-description">Monitor browser performance and memory usage</div>
+                </div>
+                <div class="setting-control">
+                    <div class="toggle active" id="performance-toggle"></div>
+                </div>
+            </div>
+
+            <div class="setting-item">
+                <div class="setting-info">
+                    <div class="setting-label">Data Export Interval</div>
+                    <div class="setting-description">Automatically export analytics data for backup</div>
+                </div>
+                <div class="setting-control">
+                    <select id="export-interval">
+                        <option value="never">Never</option>
+                        <option value="daily">Daily</option>
+                        <option value="weekly">Weekly</option>
+                        <option value="monthly">Monthly</option>
+                    </select>
+                </div>
+            </div>
+        </div>
+
+        <div class="settings-section">
+            <h2 class="section-title">🎯 Focus Mode</h2>
+
+            <div class="setting-item">
+                <div class="setting-info">
+                    <div class="setting-label">Auto-enable Focus Mode</div>
+                    <div class="setting-description">Automatically enable focus mode during work hours</div>
+                </div>
+                <div class="setting-control">
+                    <div class="toggle" id="auto-focus-toggle"></div>
+                </div>
+            </div>
+
+            <div class="setting-item">
+                <div class="setting-info">
+                    <div class="setting-label">Work Hours</div>
+                    <div class="setting-description">Define your work hours for automatic focus mode</div>
+                </div>
+                <div class="setting-control">
+                    <div class="time-range">
+                        <input type="time" id="work-start" value="09:00">
+                        <span>to</span>
+                        <input type="time" id="work-end" value="17:00">
+                    </div>
+                </div>
+            </div>
+
+            <div class="setting-item">
+                <div class="setting-info">
+                    <div class="setting-label">Focus Mode Actions</div>
+                    <div class="setting-description">What to do when accessing blocked sites</div>
+                </div>
+                <div class="setting-control">
+                    <select id="focus-action">
+                        <option value="warn">Show warning</option>
+                        <option value="block">Block completely</option>
+                        <option value="suspend">Auto-suspend tab</option>
+                    </select>
+                </div>
+            </div>
+        </div>
+
+        <!-- Backup & Sync Section -->
+        <div class="settings-section">
+            <h2 class="section-title">☁️ Backup & Sync</h2>
+
+            <div class="setting-item">
+                <div class="setting-info">
+                    <div class="setting-label">Google Drive Backup</div>
+                    <div class="setting-description">Automatically backup your settings and saved groups to Google Drive
+                    </div>
+                </div>
+                <div class="setting-control">
+                    <div class="toggle" id="google-drive-toggle"></div>
+                </div>
+            </div>
+
+            <div class="setting-item">
+                <div class="setting-info">
+                    <div class="setting-label">Auto Backup Frequency</div>
+                    <div class="setting-description">How often to automatically backup your data</div>
+                </div>
+                <div class="setting-control">
+                    <select id="backup-frequency">
+                        <option value="never">Never</option>
+                        <option value="daily">Daily</option>
+                        <option value="weekly" selected>Weekly</option>
+                        <option value="monthly">Monthly</option>
+                    </select>
+                </div>
+            </div>
+
+            <div class="setting-item">
+                <div class="setting-info">
+                    <div class="setting-label">Export Settings</div>
+                    <div class="setting-description">Export all settings and saved groups to a file</div>
+                </div>
+                <div class="setting-control">
+                    <button class="btn btn-primary" id="export-settings">📤 Export</button>
+                </div>
+            </div>
+
+            <div class="setting-item">
+                <div class="setting-info">
+                    <div class="setting-label">Import Settings</div>
+                    <div class="setting-description">Import settings and saved groups from a backup file</div>
+                </div>
+                <div class="setting-control">
+                    <input type="file" id="import-file" accept=".json" style="display: none;">
+                    <button class="btn btn-secondary" id="import-settings">📥 Import</button>
+                </div>
+            </div>
+
+            <div class="setting-item">
+                <div class="setting-info">
+                    <div class="setting-label">Sync Across Devices</div>
+                    <div class="setting-description">Sync settings across all your Chrome installations</div>
+                </div>
+                <div class="setting-control">
+                    <div class="toggle" id="sync-toggle"></div>
+                </div>
+            </div>
+
+            <div class="setting-item">
+                <div class="setting-info">
+                    <div class="setting-label">Last Backup</div>
+                    <div class="setting-description" id="last-backup-time">Never backed up</div>
+                </div>
+                <div class="setting-control">
+                    <button class="btn btn-secondary" id="backup-now">Backup Now</button>
+                </div>
+            </div>
+        </div>
+
+        <div class="settings-section">
+            <h2 class="section-title">⚡ Advanced Features</h2>
+
+            <div class="setting-item">
+                <div class="setting-info">
+                    <div class="setting-label">Smart Tab Grouping</div>
+                    <div class="setting-description">Automatically group tabs by domain and content type</div>
+                </div>
+                <div class="setting-control">
+                    <div class="toggle" id="smart-grouping-toggle"></div>
+                </div>
+            </div>
+
+            <div class="setting-item">
+                <div class="setting-info">
+                    <div class="setting-label">Session Auto-save</div>
+                    <div class="setting-description">Automatically save sessions at regular intervals</div>
+                </div>
+                <div class="setting-control">
+                    <select id="session-interval">
+                        <option value="never">Never</option>
+                        <option value="hourly">Every hour</option>
+                        <option value="daily">Daily</option>
+                        <option value="weekly">Weekly</option>
+                    </select>
+                </div>
+            </div>
+
+            <div class="setting-item">
+                <div class="setting-info">
+                    <div class="setting-label">Predictive Suspension</div>
+                    <div class="setting-description">Use AI to predict which tabs to suspend based on usage patterns
+                    </div>
+                </div>
+                <div class="setting-control">
+                    <div class="toggle" id="predictive-toggle"></div>
+                </div>
+            </div>
+
+            <div class="setting-item">
+                <div class="setting-info">
+                    <div class="setting-label">Keyboard Shortcuts</div>
+                    <div class="setting-description">Customize keyboard shortcuts for quick actions</div>
+                </div>
+                <div class="setting-control">
+                    <button class="btn btn-secondary" id="customize-shortcuts">Customize</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="options.js"></script>
+</body>
+
+</html>

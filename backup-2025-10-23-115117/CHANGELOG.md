@@ -1,6 +1,6 @@
 # Changelog
 
-All notable changes to BrowserGuard Pro will be documented in this file.
+All notable changes to Tab Suspend Pro will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/), and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
@@ -99,7 +99,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 
 ### Added
 
--   Initial release of BrowserGuard Pro
+-   Initial release of Tab Suspend Pro
 -   Basic tab suspension functionality
 -   Right-click context menu integration
 -   Settings page with customizable options

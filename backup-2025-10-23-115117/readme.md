@@ -1,6 +1,6 @@
-# BrowserGuard Pro �️⚡
+# Tab Suspender Pro 💤⚡
 
-A comprehensive Chrome extension with advanced tab management, privacy protection, tracker blocking, analytics, and productivity features. Save up to 80% memory usage while protecting your privacy and boosting your browser performance with intelligent automation.
+A comprehensive Chrome extension with advanced tab management, analytics, and productivity features. Save up to 80% memory usage while boosting your browser performance with intelligent automation and detailed insights.
 
 ## 🌟 Core Features
 
@@ -58,7 +58,7 @@ A comprehensive Chrome extension with advanced tab management, privacy protectio
 -   **Statistics Dashboard**: View blocked requests by category and domain
 -   **Import/Export**: Share filter configurations across devices
 
-Similar to uBlock Origin but integrated directly into BrowserGuard Pro!
+Similar to uBlock Origin but integrated directly into Tab Suspend Pro!
 
 📖 **[Detailed Tracker Blocker Documentation](TRACKER_BLOCKER_README.md)**
 
@@ -96,7 +96,7 @@ The extension will be available on the Chrome Web Store.
 
 4. **Pin the Extension**
     - Click the puzzle piece icon in the toolbar
-    - Pin "BrowserGuard Pro" for easy access
+    - Pin "Tab Suspend Pro" for easy access
 
 ## 📁 File Structure
 
@@ -353,4 +353,4 @@ This project is open source and available under the MIT License.
 
 ---
 
-**Save memory. Stay productive. Suspend smartly with BrowserGuard Pro! 💤**
+**Save memory. Stay productive. Suspend smartly with Tab Suspend Pro! 💤**

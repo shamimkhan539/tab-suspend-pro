@@ -453,6 +453,18 @@ class PopupManager {
             });
         }
 
+        // Tracker Blocker button
+        const trackerBlockerBtn = document.getElementById(
+            "tracker-blocker-btn"
+        );
+        if (trackerBlockerBtn) {
+            trackerBlockerBtn.addEventListener("click", () => {
+                chrome.tabs.create({
+                    url: chrome.runtime.getURL("tracker-dashboard.html"),
+                });
+            });
+        }
+
         // Settings button (bottom)
         const openSettings = document.getElementById("open-settings");
         if (openSettings) {
