@@ -514,7 +514,7 @@ class TabActivityAnalytics {
         // Notification
         chrome.notifications.create({
             type: "basic",
-            iconUrl: "icons/icon48.png",
+            iconUrl: "ui/assets/icons/icon48.png",
             title: "BrowserGuard Pro",
             message: "Focus Mode enabled! Distracting sites will be blocked.",
         });
@@ -540,7 +540,7 @@ class TabActivityAnalytics {
 
         chrome.notifications.create({
             type: "basic",
-            iconUrl: "icons/icon48.png",
+            iconUrl: "ui/assets/icons/icon48.png",
             title: "BrowserGuard Pro",
             message: `Focus session completed! Duration: ${Math.round(
                 sessionDuration

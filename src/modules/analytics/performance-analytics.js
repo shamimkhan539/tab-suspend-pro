@@ -466,7 +466,7 @@ class PerformanceAnalytics {
         if (warnings.length > 0) {
             chrome.notifications.create({
                 type: "basic",
-                iconUrl: "icons/icon48.png",
+                iconUrl: "ui/assets/icons/icon48.png",
                 title: "BrowserGuard Pro - Performance Warning",
                 message:
                     warnings.join(". ") + ". Consider suspending some tabs.",

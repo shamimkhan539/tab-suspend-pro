@@ -35,6 +35,16 @@
     },
     "content_scripts": [
         {
+            "matches": [
+                "https://www.youtube.com/*",
+                "https://youtube.com/*",
+                "https://youtu.be/*",
+                "https://music.youtube.com/*"
+            ],
+            "js": ["src/content/youtube-blocker.js"],
+            "run_at": "document_start"
+        },
+        {
             "matches": ["http://*/*", "https://*/*"],
             "js": ["src/content/content.js"],
             "run_at": "document_start"

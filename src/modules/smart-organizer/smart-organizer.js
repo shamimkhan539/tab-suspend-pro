@@ -187,7 +187,7 @@ class SmartTabOrganizer {
         // Notify about profile switch
         chrome.notifications.create({
             type: "basic",
-            iconUrl: "icons/icon48.png",
+            iconUrl: "ui/assets/icons/icon48.png",
             title: "BrowserGuard Pro",
             message: `Switched to ${profile.name} profile`,
         });
@@ -453,7 +453,7 @@ class SmartTabOrganizer {
             // Optionally close the group after bookmarking
             chrome.notifications.create({
                 type: "basic",
-                iconUrl: "icons/icon48.png",
+                iconUrl: "ui/assets/icons/icon48.png",
                 title: "BrowserGuard Pro",
                 message: `Bookmarked ${tabs.length} tabs from "${group.title}"`,
             });
