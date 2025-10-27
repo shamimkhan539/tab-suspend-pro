@@ -100,30 +100,111 @@ The extension will be available on the Chrome Web Store.
 
 ## 📁 File Structure
 
-```
-tab-suspender-pro/
+````
+browser-guard-pro/
 ├── manifest.json              # Extension configuration
-├── background.js               # Main extension logic & session management
-├── popup.html                 # Extension popup interface
-├── popup.js                   # Popup functionality & toggle controls
-├── options.html               # Settings & backup page
-├── options.js                 # Settings functionality & export/import
-├── suspended.html             # Suspended tab page
-├── suspended.js               # Tab restoration logic
-├── content.js                 # Activity tracking & user interaction
-├── dashboard.html             # Analytics dashboard
-├── dashboard.js               # Performance metrics & charts
-├── advanced-options.html      # Advanced configuration
-├── session-manager-enhanced.js # Enhanced session management
-├── icons/                     # Extension icons
-│   ├── icon16.png
-│   ├── icon32.png
-│   ├── icon48.png
-│   └── icon128.png
-├── modules/                   # Shared modules
-├── README.md                  # User documentation
-└── CHANGELOG.md               # Version history & technical changes
-```
+├── background.js              # Main extension logic & service worker
+├── LICENSE                    # License file
+├── CHANGELOG.md               # Version history & technical changes
+├── readme.md                  # User documentation
+├──
+├── src/                       # Source code directory
+│   ├── content/               # Content scripts
+│   │   ├── content.js         # Activity tracking & user interaction
+│   │   └── youtube-blocker.js # YouTube ad blocker (JAdSkip approach)
+│   ├── core/                  # Core functionality modules
+│   ├── config/                # Configuration files
+│   ├── utils/                 # Utility functions & helpers
+│   └── modules/               # Feature modules
+│       ├── analytics/         # Analytics & performance tracking
+│       │   ├── activity-analytics.js
+│       │   └── performance-analytics.js
+│       ├── session-manager/   # Session management & snapshots
+│       │   └── session-manager.js
+│       ├── tracker-blocker/   # Tracker & ad blocking
+│       │   └── tracker-blocker.js
+│       ├── privacy/           # Privacy management
+│       │   └── privacy-manager.js
+│       ├── cloud-sync/        # Cloud synchronization
+│       │   └── cloud-backup.js
+│       ├── smart-organizer/   # Smart tab organization
+│       │   └── smart-organizer.js
+│       └── ads-blocker/       # Ad blocking features
+│           └── ads-blocker.js
+│
+├── ui/                        # User interface directory
+│   ├── assets/                # Assets & media
+│   │   ├── icons/             # Extension icons
+│   │   │   ├── icon16.png
+│   │   │   ├── icon32.png
+│   │   │   ├── icon48.png
+│   │   │   └── icon128.png
+│   │   └── images/            # Other images
+│   ├── popup/                 # Popup interface
+│   │   ├── popup.html         # Popup UI
+│   │   ├── popup.js           # Popup functionality
+│   │   └── components/        # Reusable components
+│   ├── options/               # Settings & configuration page
+│   │   ├── options.html       # Settings UI
+│   │   ├── options.js         # Settings functionality
+│   │   └── sections/          # Settings sections
+│   ├── dashboards/            # Analytics dashboards
+│   │   ├── main/              # Main dashboard
+│   │   ├── analytics/         # Analytics dashboard
+│   │   ├── privacy/           # Privacy dashboard
+│   │   └── tracker-blocker/   # Tracker blocker dashboard
+│   ├── suspended/             # Suspended tab page
+│   │   ├── suspended.html     # Suspended tab UI
+│   │   └── suspended.js       # Tab restoration logic
+│   └── shared/                # Shared UI components
+│       ├── components/        # Reusable UI components
+│       └── styles/            # Global styles
+│
+├── tests/                     # Test suite
+│   ├── unit/                  # Unit tests
+│   ├── integration/           # Integration tests
+│   └── e2e/                   # End-to-end tests
+│
+├── docs/                      # Documentation
+│   ├── guides/                # User guides & tutorials
+│   ├── development/           # Development documentation
+│   └── api/                   # API documentation
+│
+├── scripts/                   # Build & maintenance scripts
+│   └── update-changelog.js    # Changelog updater
+│
+├── .github/                   # GitHub configuration
+│   └── workflows/             # GitHub Actions workflows
+│       ├── master-pipeline.yml # Master branch CI/CD
+│       ├── pr-validation.yml  # PR validation
+│       └── release.yml        # Release workflow
+│
+├── .git/                      # Git repository
+├── .gitattributes             # Git attributes
+└── README.md                  # This file
+```### Directory Descriptions
+
+-   **`src/`** - Main source code organized by functionality
+
+    -   `content/` - Content scripts injected into web pages
+    -   `modules/` - Feature modules (analytics, session management, blocking, etc.)
+    -   `core/` - Core extension functionality
+    -   `config/` - Configuration and constants
+    -   `utils/` - Utility functions and helpers
+
+-   **`ui/`** - User interface components and pages
+
+    -   `assets/` - Icons, images, and other media
+    -   `popup/` - Extension popup interface
+    -   `options/` - Settings and configuration pages
+    -   `dashboards/` - Analytics and monitoring dashboards
+    -   `suspended/` - Suspended tab placeholder page
+    -   `shared/` - Shared UI components and styles
+
+-   **`tests/`** - Automated test suite
+-   **`docs/`** - User and developer documentation
+-   **`scripts/`** - Build, maintenance, and utility scripts
+-   **`.github/`** - GitHub Actions CI/CD workflows
 
 ## 🎮 Usage
 
@@ -331,7 +412,7 @@ node update-changelog.js
 
 # Command line mode
 node update-changelog.js "2.1.0" "Added" "New AI-powered suspension feature"
-```
+````
 
 ### Recent Development Summary
 
