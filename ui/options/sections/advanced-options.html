@@ -966,48 +966,28 @@
 
         <!-- Action Buttons -->
         <div class="action-buttons advanced-section">
-            <button class="btn btn-success" onclick="exportAdvancedSettings()">
+            <button class="btn btn-success" id="export-settings-btn">
                 📤 Export Settings
             </button>
 
             <div class="file-input-wrapper">
-                <input type="file" id="import-file" accept=".json" onchange="importAdvancedSettings(event)">
-                <button class="btn btn-secondary">
+                <input type="file" id="import-file" accept=".json">
+                <button class="btn btn-secondary" id="import-settings-btn">
                     📥 Import Settings
                 </button>
             </div>
 
-            <button class="btn" onclick="window.open('main-dashboard.html', '_blank')">
+            <button class="btn" id="open-dashboard-btn">
                 📊 Open Dashboard
             </button>
 
-            <button class="btn btn-danger" onclick="resetAdvancedSettings()">
+            <button class="btn btn-danger" id="reset-settings-btn">
                 🔄 Reset All Settings
             </button>
         </div>
     </div>
 
     <script src="advanced-settings.js"></script>
-    <script>
-        // Tab switching functionality
-        document.querySelectorAll('.tab').forEach(tab => {
-            tab.addEventListener('click', () => {
-                // Remove active from all tabs and content
-                document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
-                document.querySelectorAll('.tab-content').forEach(tc => tc.classList.remove('active'));
-
-                // Add active to clicked tab and corresponding content
-                tab.classList.add('active');
-                const tabId = tab.getAttribute('data-tab');
-                document.getElementById(tabId).classList.add('active');
-            });
-        });
-
-        // File input wrapper click handler
-        document.querySelector('.file-input-wrapper').addEventListener('click', () => {
-            document.getElementById('import-file').click();
-        });
-    </script>
 </body>
 
 </html>

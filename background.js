@@ -361,7 +361,7 @@ class TabSuspendManager {
                 try {
                     chrome.notifications.create({
                         type: "basic",
-                        iconUrl: "icons/icon48.png",
+                        iconUrl: "ui/assets/icons/icon48.png",
                         title: "BrowserGuard Pro",
                         message: `Restored ${recreated} suspended tab${
                             recreated > 1 ? "s" : ""
@@ -1620,7 +1620,7 @@ class TabSuspendManager {
                     } else {
                         chrome.notifications.create({
                             type: "basic",
-                            iconUrl: "icons/icon48.png",
+                            iconUrl: "ui/assets/icons/icon48.png",
                             title: "BrowserGuard Pro",
                             message:
                                 'This tab is not in a group. Use "Save Current Window" instead.',
@@ -1680,7 +1680,7 @@ class TabSuspendManager {
                     await this.suspendTab(activeTab.id);
                     chrome.notifications.create({
                         type: "basic",
-                        iconUrl: "icons/icon48.png",
+                        iconUrl: "ui/assets/icons/icon48.png",
                         title: "BrowserGuard Pro",
                         message: "Tab suspended: " + activeTab.title,
                     });
@@ -1690,7 +1690,7 @@ class TabSuspendManager {
                     await this.restoreAllTabs();
                     chrome.notifications.create({
                         type: "basic",
-                        iconUrl: "icons/icon48.png",
+                        iconUrl: "ui/assets/icons/icon48.png",
                         title: "BrowserGuard Pro",
                         message: "All suspended tabs restored!",
                     });
@@ -1709,7 +1709,7 @@ class TabSuspendManager {
                         );
                     chrome.notifications.create({
                         type: "basic",
-                        iconUrl: "icons/icon48.png",
+                        iconUrl: "ui/assets/icons/icon48.png",
                         title: "BrowserGuard Pro",
                         message: `Session saved: ${session.name}`,
                     });
@@ -1887,7 +1887,7 @@ class TabSuspendManager {
 
             chrome.notifications.create({
                 type: "basic",
-                iconUrl: "icons/icon48.png",
+                iconUrl: "ui/assets/icons/icon48.png",
                 title: "BrowserGuard Pro",
                 message: "Suspended " + tabs.length + " tabs from the group!",
             });
@@ -1958,7 +1958,7 @@ class TabSuspendManager {
             if (suggestions.length > 0) {
                 chrome.notifications.create({
                     type: "basic",
-                    iconUrl: "icons/icon48.png",
+                    iconUrl: "ui/assets/icons/icon48.png",
                     title: "BrowserGuard Pro",
                     message:
                         "Found " +
@@ -1968,7 +1968,7 @@ class TabSuspendManager {
             } else {
                 chrome.notifications.create({
                     type: "basic",
-                    iconUrl: "icons/icon48.png",
+                    iconUrl: "ui/assets/icons/icon48.png",
                     title: "BrowserGuard Pro",
                     message: "No tabs found that need suspending!",
                 });
@@ -2059,7 +2059,7 @@ class TabSuspendManager {
             await this.persistSuspendedMeta();
             chrome.notifications.create({
                 type: "basic",
-                iconUrl: "icons/icon48.png",
+                iconUrl: "ui/assets/icons/icon48.png",
                 title: "BrowserGuard Pro",
                 message: "Restored " + toRestore.length + " lost tabs",
             });
@@ -2097,7 +2097,7 @@ class TabSuspendManager {
 
                 chrome.notifications.create({
                     type: "basic",
-                    iconUrl: "icons/icon48.png",
+                    iconUrl: "ui/assets/icons/icon48.png",
                     title: "BrowserGuard Pro",
                     message: "Added to whitelist: " + urlToAdd,
                 });
@@ -2372,7 +2372,7 @@ class TabSuspendManager {
             // Show notification
             chrome.notifications.create({
                 type: "basic",
-                iconUrl: "icons/icon48.png",
+                iconUrl: "ui/assets/icons/icon48.png",
                 title: "BrowserGuard Pro",
                 message: `Saved "${groupName}" with ${validTabs.length} tabs`,
             });
@@ -2385,7 +2385,7 @@ class TabSuspendManager {
             console.error("Error saving tab group:", error);
             chrome.notifications.create({
                 type: "basic",
-                iconUrl: "icons/icon48.png",
+                iconUrl: "ui/assets/icons/icon48.png",
                 title: "BrowserGuard Pro",
                 message: `Error saving group: ${error.message}`,
             });
@@ -2505,7 +2505,7 @@ class TabSuspendManager {
 
             chrome.notifications.create({
                 type: "basic",
-                iconUrl: "icons/icon48.png",
+                iconUrl: "ui/assets/icons/icon48.png",
                 title: "BrowserGuard Pro",
                 message: `Restored "${name}" with ${createdTabs.length} tabs`,
             });
@@ -2531,7 +2531,7 @@ class TabSuspendManager {
             console.error("Error restoring saved group:", error);
             chrome.notifications.create({
                 type: "basic",
-                iconUrl: "icons/icon48.png",
+                iconUrl: "ui/assets/icons/icon48.png",
                 title: "BrowserGuard Pro",
                 message: `Error restoring group: ${error.message}`,
             });
@@ -2585,7 +2585,7 @@ class TabSuspendManager {
 
             chrome.notifications.create({
                 type: "basic",
-                iconUrl: "icons/icon48.png",
+                iconUrl: "ui/assets/icons/icon48.png",
                 title: "BrowserGuard Pro",
                 message: `Exported ${groups.length} saved groups`,
             });
@@ -2655,7 +2655,7 @@ class TabSuspendManager {
 
             chrome.notifications.create({
                 type: "basic",
-                iconUrl: "icons/icon48.png",
+                iconUrl: "ui/assets/icons/icon48.png",
                 title: "BrowserGuard Pro",
                 message: `Imported ${importedCount} groups${
                     duplicateCount > 0
