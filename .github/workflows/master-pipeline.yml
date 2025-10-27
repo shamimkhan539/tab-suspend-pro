@@ -145,7 +145,6 @@ jobs:
                   cp background.js build-test/
                   cp -r src build-test/
                   cp -r ui build-test/
-                  cp -r icons build-test/
                   cp LICENSE build-test/
                   echo "✅ Test build created successfully"
 
@@ -208,7 +207,6 @@ jobs:
                   cp background.js extension-package/ 2>/dev/null || true
                   cp -r src extension-package/ 2>/dev/null || true
                   cp -r ui extension-package/ 2>/dev/null || true
-                  cp -r icons extension-package/ 2>/dev/null || true
                   cp LICENSE extension-package/ 2>/dev/null || true
                   cd extension-package
                   zip -r ../tab-suspend-pro-${{ needs.validate-and-test.outputs.version }}.zip .
@@ -261,7 +259,6 @@ jobs:
                   cp background.js extension-package/ 2>/dev/null || true
                   cp -r src extension-package/ 2>/dev/null || true
                   cp -r ui extension-package/ 2>/dev/null || true
-                  cp -r icons extension-package/ 2>/dev/null || true
                   cp LICENSE extension-package/ 2>/dev/null || true
                   cd extension-package
                   zip -r ../tab-suspend-pro-${{ needs.validate-and-test.outputs.version }}.zip .
