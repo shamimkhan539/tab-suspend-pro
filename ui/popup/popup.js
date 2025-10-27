@@ -1,4 +1,4 @@
-// Popup script for Tab Suspend Pro
+// Popup script for BrowserGuard Pro
 class PopupManager {
     constructor() {
         this.settings = {};
@@ -449,6 +449,32 @@ class PopupManager {
                 await this.sendMessageToBackground("addToWhitelist", {
                     url: tab.url,
                     type: "domain",
+                });
+            });
+        }
+
+        // Tracker Blocker button
+        const trackerBlockerBtn = document.getElementById(
+            "tracker-blocker-btn"
+        );
+        if (trackerBlockerBtn) {
+            trackerBlockerBtn.addEventListener("click", () => {
+                chrome.tabs.create({
+                    url: chrome.runtime.getURL(
+                        "ui/dashboards/tracker-blocker/tracker-dashboard.html"
+                    ),
+                });
+            });
+        }
+
+        // Ads Blocker button
+        const adsBlockerBtn = document.getElementById("ads-blocker-btn");
+        if (adsBlockerBtn) {
+            adsBlockerBtn.addEventListener("click", () => {
+                chrome.tabs.create({
+                    url: chrome.runtime.getURL(
+                        "ui/dashboards/ads-blocker/ads-dashboard.html"
+                    ),
                 });
             });
         }

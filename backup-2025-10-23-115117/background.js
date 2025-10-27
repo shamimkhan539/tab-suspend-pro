@@ -1,16 +1,15 @@
 // Import advanced modules
 importScripts(
-    "src/modules/session-manager/session-manager.js",
-    "src/modules/smart-organizer/smart-organizer.js",
-    "src/modules/analytics/performance-analytics.js",
-    "src/modules/analytics/activity-analytics.js",
-    "src/modules/privacy/privacy-manager.js",
-    "src/modules/cloud-sync/cloud-backup.js",
-    "src/modules/tracker-blocker/tracker-blocker.js",
-    "src/modules/ads-blocker/ads-blocker.js"
+    "modules/session-manager.js",
+    "modules/smart-organizer.js",
+    "modules/performance-analytics.js",
+    "modules/activity-analytics.js",
+    "modules/privacy-manager.js",
+    "modules/cloud-backup.js",
+    "modules/tracker-blocker.js"
 );
 
-// Background service worker for BrowserGuard Pro
+// Background service worker for Tab Suspend Pro
 class TabSuspendManager {
     constructor() {
         this.tabActivity = new Map();
@@ -45,7 +44,6 @@ class TabSuspendManager {
         this.privacyManager = new PrivacyManager();
         this.cloudBackup = new CloudBackupManager();
         this.trackerBlocker = new TrackerBlocker();
-        this.adsBlocker = new AdsBlocker();
 
         this.init();
     }
@@ -66,7 +64,7 @@ class TabSuspendManager {
             this.setupMessageHandlers();
             this.startMonitoring();
             this.startMetadataCleanup();
-            console.log("BrowserGuard Pro initialized");
+            console.log("Tab Suspend Pro initialized");
         } catch (error) {
             console.error("Error initializing extension:", error);
         }
@@ -362,7 +360,7 @@ class TabSuspendManager {
                     chrome.notifications.create({
                         type: "basic",
                         iconUrl: "icons/icon48.png",
-                        title: "BrowserGuard Pro",
+                        title: "Tab Suspend Pro",
                         message: `Restored ${recreated} suspended tab${
                             recreated > 1 ? "s" : ""
                         } after extension update`,
@@ -788,13 +786,6 @@ class TabSuspendManager {
                 chrome.contextMenus.create({
                     id: "page-tracker-blocker",
                     title: "Open Tracker Blocker Dashboard",
-                    contexts: ["page"],
-                    documentUrlPatterns: ["http://*/*", "https://*/*"],
-                });
-
-                chrome.contextMenus.create({
-                    id: "page-ads-blocker",
-                    title: "Open Ads Blocker Dashboard",
                     contexts: ["page"],
                     documentUrlPatterns: ["http://*/*", "https://*/*"],
                 });
@@ -1438,93 +1429,6 @@ class TabSuspendManager {
                     sendResponse({ success: true });
                     break;
 
-                // Ads Blocker Management
-                case "get-ads-blocker-data":
-                    const adsData = this.adsBlocker.getDashboardData();
-                    sendResponse({ success: true, ...adsData });
-                    break;
-                case "update-ads-blocker-settings":
-                    await this.adsBlocker.updateSettings(message.settings);
-
-                    // Broadcast YouTube blocker settings to all tabs
-                    if (
-                        message.settings.blockYoutubeAds !== undefined ||
-                        message.settings.blockYoutubeMusicAds !== undefined
-                    ) {
-                        const tabs = await chrome.tabs.query({});
-                        tabs.forEach((tab) => {
-                            chrome.tabs.sendMessage(
-                                tab.id,
-                                {
-                                    action: "update-youtube-blocker",
-                                    blockYoutubeAds:
-                                        message.settings.blockYoutubeAds,
-                                    blockYoutubeMusicAds:
-                                        message.settings.blockYoutubeMusicAds,
-                                },
-                                () => {
-                                    // Ignore errors for tabs that don't have content script
-                                }
-                            );
-                        });
-                    }
-
-                    sendResponse({ success: true });
-                    break;
-                case "add-ads-whitelist":
-                    await this.adsBlocker.addToWhitelist(message.domain);
-                    sendResponse({ success: true });
-                    break;
-                case "remove-ads-whitelist":
-                    await this.adsBlocker.removeFromWhitelist(message.domain);
-                    sendResponse({ success: true });
-                    break;
-                case "add-ads-custom-filter":
-                    await this.adsBlocker.addCustomFilter(message.pattern);
-                    sendResponse({ success: true });
-                    break;
-                case "remove-ads-custom-filter":
-                    await this.adsBlocker.removeCustomFilter(message.pattern);
-                    sendResponse({ success: true });
-                    break;
-                case "reset-ads-stats":
-                    await this.adsBlocker.resetStats();
-                    sendResponse({ success: true });
-                    break;
-                case "export-ads-filters":
-                    const exportedAdsFilters = this.adsBlocker.exportFilters();
-                    sendResponse({ success: true, data: exportedAdsFilters });
-                    break;
-                case "import-ads-filters":
-                    await this.adsBlocker.importFilters(message.data);
-                    sendResponse({ success: true });
-                    break;
-                case "toggle-ads-blocker":
-                    await this.adsBlocker.toggleBlocking(message.enabled);
-                    sendResponse({ success: true });
-                    break;
-
-                case "get-youtube-blocker-settings":
-                    const settings = await chrome.storage.local.get([
-                        "adsBlockerSettings",
-                    ]);
-                    if (settings.adsBlockerSettings) {
-                        sendResponse({
-                            blockYoutubeAds:
-                                settings.adsBlockerSettings.blockYoutubeAds ||
-                                false,
-                            blockYoutubeMusicAds:
-                                settings.adsBlockerSettings
-                                    .blockYoutubeMusicAds || false,
-                        });
-                    } else {
-                        sendResponse({
-                            blockYoutubeAds: false,
-                            blockYoutubeMusicAds: false,
-                        });
-                    }
-                    break;
-
                 default:
                     sendResponse({ success: false, error: "Unknown action" });
             }
@@ -1621,7 +1525,7 @@ class TabSuspendManager {
                         chrome.notifications.create({
                             type: "basic",
                             iconUrl: "icons/icon48.png",
-                            title: "BrowserGuard Pro",
+                            title: "Tab Suspend Pro",
                             message:
                                 'This tab is not in a group. Use "Save Current Window" instead.',
                         });
@@ -1632,23 +1536,12 @@ class TabSuspendManager {
                     break;
                 case "page-analytics-dashboard":
                     chrome.tabs.create({
-                        url: chrome.runtime.getURL(
-                            "ui/dashboards/main/dashboard.html"
-                        ),
+                        url: chrome.runtime.getURL("dashboard.html"),
                     });
                     break;
                 case "page-tracker-blocker":
                     chrome.tabs.create({
-                        url: chrome.runtime.getURL(
-                            "ui/dashboards/tracker-blocker/tracker-dashboard.html"
-                        ),
-                    });
-                    break;
-                case "page-ads-blocker":
-                    chrome.tabs.create({
-                        url: chrome.runtime.getURL(
-                            "ui/dashboards/ads-blocker/ads-dashboard.html"
-                        ),
+                        url: chrome.runtime.getURL("tracker-dashboard.html"),
                     });
                     break;
                 case "suggest-tabs":
@@ -1681,7 +1574,7 @@ class TabSuspendManager {
                     chrome.notifications.create({
                         type: "basic",
                         iconUrl: "icons/icon48.png",
-                        title: "BrowserGuard Pro",
+                        title: "Tab Suspend Pro",
                         message: "Tab suspended: " + activeTab.title,
                     });
                     break;
@@ -1691,15 +1584,13 @@ class TabSuspendManager {
                     chrome.notifications.create({
                         type: "basic",
                         iconUrl: "icons/icon48.png",
-                        title: "BrowserGuard Pro",
+                        title: "Tab Suspend Pro",
                         message: "All suspended tabs restored!",
                     });
                     break;
                 case "open-dashboard":
                     await chrome.tabs.create({
-                        url: chrome.runtime.getURL(
-                            "ui/dashboards/main/dashboard.html"
-                        ),
+                        url: chrome.runtime.getURL("dashboard.html"),
                     });
                     break;
                 case "save-session":
@@ -1710,7 +1601,7 @@ class TabSuspendManager {
                     chrome.notifications.create({
                         type: "basic",
                         iconUrl: "icons/icon48.png",
-                        title: "BrowserGuard Pro",
+                        title: "Tab Suspend Pro",
                         message: `Session saved: ${session.name}`,
                     });
                     break;
@@ -1888,7 +1779,7 @@ class TabSuspendManager {
             chrome.notifications.create({
                 type: "basic",
                 iconUrl: "icons/icon48.png",
-                title: "BrowserGuard Pro",
+                title: "Tab Suspend Pro",
                 message: "Suspended " + tabs.length + " tabs from the group!",
             });
         } catch (error) {
@@ -1959,7 +1850,7 @@ class TabSuspendManager {
                 chrome.notifications.create({
                     type: "basic",
                     iconUrl: "icons/icon48.png",
-                    title: "BrowserGuard Pro",
+                    title: "Tab Suspend Pro",
                     message:
                         "Found " +
                         suggestions.length +
@@ -1969,7 +1860,7 @@ class TabSuspendManager {
                 chrome.notifications.create({
                     type: "basic",
                     iconUrl: "icons/icon48.png",
-                    title: "BrowserGuard Pro",
+                    title: "Tab Suspend Pro",
                     message: "No tabs found that need suspending!",
                 });
             }
@@ -2060,7 +1951,7 @@ class TabSuspendManager {
             chrome.notifications.create({
                 type: "basic",
                 iconUrl: "icons/icon48.png",
-                title: "BrowserGuard Pro",
+                title: "Tab Suspend Pro",
                 message: "Restored " + toRestore.length + " lost tabs",
             });
             console.log(
@@ -2098,7 +1989,7 @@ class TabSuspendManager {
                 chrome.notifications.create({
                     type: "basic",
                     iconUrl: "icons/icon48.png",
-                    title: "BrowserGuard Pro",
+                    title: "Tab Suspend Pro",
                     message: "Added to whitelist: " + urlToAdd,
                 });
 
@@ -2373,7 +2264,7 @@ class TabSuspendManager {
             chrome.notifications.create({
                 type: "basic",
                 iconUrl: "icons/icon48.png",
-                title: "BrowserGuard Pro",
+                title: "Tab Suspend Pro",
                 message: `Saved "${groupName}" with ${validTabs.length} tabs`,
             });
 
@@ -2386,7 +2277,7 @@ class TabSuspendManager {
             chrome.notifications.create({
                 type: "basic",
                 iconUrl: "icons/icon48.png",
-                title: "BrowserGuard Pro",
+                title: "Tab Suspend Pro",
                 message: `Error saving group: ${error.message}`,
             });
             throw error;
@@ -2506,7 +2397,7 @@ class TabSuspendManager {
             chrome.notifications.create({
                 type: "basic",
                 iconUrl: "icons/icon48.png",
-                title: "BrowserGuard Pro",
+                title: "Tab Suspend Pro",
                 message: `Restored "${name}" with ${createdTabs.length} tabs`,
             });
 
@@ -2532,7 +2423,7 @@ class TabSuspendManager {
             chrome.notifications.create({
                 type: "basic",
                 iconUrl: "icons/icon48.png",
-                title: "BrowserGuard Pro",
+                title: "Tab Suspend Pro",
                 message: `Error restoring group: ${error.message}`,
             });
             throw error;
@@ -2586,7 +2477,7 @@ class TabSuspendManager {
             chrome.notifications.create({
                 type: "basic",
                 iconUrl: "icons/icon48.png",
-                title: "BrowserGuard Pro",
+                title: "Tab Suspend Pro",
                 message: `Exported ${groups.length} saved groups`,
             });
 
@@ -2656,7 +2547,7 @@ class TabSuspendManager {
             chrome.notifications.create({
                 type: "basic",
                 iconUrl: "icons/icon48.png",
-                title: "BrowserGuard Pro",
+                title: "Tab Suspend Pro",
                 message: `Imported ${importedCount} groups${
                     duplicateCount > 0
                         ? `, skipped ${duplicateCount} duplicates`
@@ -2779,7 +2670,7 @@ class TabSuspendManager {
                 <!DOCTYPE html>
                 <html>
                 <head>
-                    <title>BrowserGuard Pro - Analytics Report</title>
+                    <title>Tab Suspend Pro - Analytics Report</title>
                     <style>
                         body { font-family: Arial, sans-serif; margin: 2rem; }
                         .header { background: #667eea; color: white; padding: 2rem; text-align: center; }
@@ -2789,7 +2680,7 @@ class TabSuspendManager {
                 </head>
                 <body>
                     <div class="header">
-                        <h1>📊 BrowserGuard Pro Analytics Report</h1>
+                        <h1>📊 Tab Suspend Pro Analytics Report</h1>
                         <p>Generated on ${new Date().toLocaleString()}</p>
                     </div>
                     <div class="section">

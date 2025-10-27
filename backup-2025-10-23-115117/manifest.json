@@ -1,8 +1,8 @@
 {
     "manifest_version": 3,
-    "name": "BrowserGuard Pro",
-    "version": "2.0.12",
-    "description": "Advanced browser optimization with tab management, privacy protection, and performance analytics",
+    "name": "Tab Suspend Pro",
+    "version": "2.0.0",
+    "description": "Automatically suspend inactive tabs and save up to 80% of memory",
     "permissions": [
         "tabs",
         "tabGroups",
@@ -35,26 +35,16 @@
     },
     "content_scripts": [
         {
-            "matches": [
-                "https://www.youtube.com/*",
-                "https://youtube.com/*",
-                "https://youtu.be/*",
-                "https://music.youtube.com/*"
-            ],
-            "js": ["src/content/youtube-blocker.js"],
-            "run_at": "document_start"
-        },
-        {
             "matches": ["http://*/*", "https://*/*"],
-            "js": ["src/content/content.js"],
+            "js": ["content.js"],
             "run_at": "document_start"
         }
     ],
     "action": {
-        "default_popup": "ui/popup/popup.html",
+        "default_popup": "popup.html",
         "default_title": "Tab Suspend Pro"
     },
-    "options_page": "ui/options/options.html",
+    "options_page": "options.html",
     "commands": {
         "suspend-current-tab": {
             "suggested_key": {
@@ -86,9 +76,9 @@
         }
     },
     "icons": {
-        "48": "ui/assets/icons/icon48.png",
-        "16": "ui/assets/icons/icon16.png",
-        "128": "ui/assets/icons/icon128.png",
-        "32": "ui/assets/icons/icon32.png"
+        "16": "icons/icon16.png",
+        "32": "icons/icon32.png",
+        "48": "icons/icon48.png",
+        "128": "icons/icon128.png"
     }
 }

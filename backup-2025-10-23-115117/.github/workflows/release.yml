@@ -1,0 +1,77 @@
+name: Build and Release Chrome Extension
+
+on:
+    push:
+        tags:
+            - "v*.*.*" # Triggers on semver tags like v1.0.1
+
+jobs:
+    release:
+        runs-on: ubuntu-latest
+        permissions:
+            contents: write # Required for creating GitHub Releases
+        steps:
+            - name: Checkout code
+              uses: actions/checkout@v4
+              with:
+                  fetch-depth: 0 # Needed for changelog generation
+
+            - name: Get version from tag
+              id: version
+              run: echo "tag=${GITHUB_REF#refs/tags/}" >> $GITHUB_OUTPUT
+
+            - name: Validate manifest version
+              run: |
+                  MANIFEST_VERSION=$(grep -o '"version": "[^"]*"' manifest.json | grep -o '[0-9.]*')
+                  TAG_VERSION=${{ steps.version.outputs.tag }}
+                  TAG_VERSION=${TAG_VERSION#v} # Remove 'v' prefix
+                  echo "Manifest version: $MANIFEST_VERSION"
+                  echo "Tag version: $TAG_VERSION"
+                  if [ "$MANIFEST_VERSION" != "$TAG_VERSION" ]; then
+                    echo "Error: Manifest version ($MANIFEST_VERSION) doesn't match tag version ($TAG_VERSION)"
+                    exit 1
+                  fi
+
+            - name: Create extension package
+              run: |
+                  # Create a clean directory for the extension
+                  mkdir -p extension-package
+
+                  # Copy all necessary files
+                  cp manifest.json extension-package/
+                  cp *.js extension-package/
+                  cp *.html extension-package/
+                  cp -r icons extension-package/
+                  cp LICENSE extension-package/
+
+                  # Create zip file
+                  cd extension-package
+                  zip -r ../tab-suspender-pro-${{ steps.version.outputs.tag }}.zip .
+                  cd ..
+
+                  # List contents for verification
+                  echo "Extension package contents:"
+                  unzip -l tab-suspender-pro-${{ steps.version.outputs.tag }}.zip
+
+            - name: Create GitHub Release
+              uses: softprops/action-gh-release@v2
+              with:
+                  files: tab-suspender-pro-${{ steps.version.outputs.tag }}.zip
+                  generate_release_notes: true # Auto-generates changelog from commits
+                  draft: false
+                  prerelease: false
+                  name: "tab-suspender-pro-${{ steps.version.outputs.tag }}"
+                  body: |
+                      ## Chrome Extension Release ${{ steps.version.outputs.tag }}
+
+                      ### Installation
+                      1. Download the `tab-suspender-pro-${{ steps.version.outputs.tag }}.zip` file
+                      2. Extract the contents
+                      3. Open Chrome and go to `chrome://extensions/`
+                      4. Enable "Developer mode"
+                      5. Click "Load unpacked" and select the extracted folder
+
+                      ### What's Changed
+                      See the auto-generated release notes below for detailed changes.
+              env:
+                  GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }} # Built-in token for releases

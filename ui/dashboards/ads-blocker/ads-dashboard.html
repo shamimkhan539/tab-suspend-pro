@@ -1,0 +1,273 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Ads Blocker Dashboard - BrowserGuard Pro</title>
+    <link rel="stylesheet" href="ads-dashboard.css">
+</head>
+
+<body>
+    <div class="container">
+        <!-- Header Section -->
+        <div class="header">
+            <div class="header-content">
+                <h1 class="title">🛡️ Ads Blocker</h1>
+                <p class="subtitle">Comprehensive ad and tracker blocking</p>
+            </div>
+            <button class="btn-close" id="close-btn" title="Close Dashboard">✕</button>
+        </div>
+
+        <!-- Status Section -->
+        <section class="status-section">
+            <div class="status-card">
+                <div class="status-header">
+                    <div class="status-indicator" id="status-indicator"></div>
+                    <div class="status-text">
+                        <span class="status-title">Protection Status</span>
+                        <span class="status-value" id="status-value">Active</span>
+                    </div>
+                </div>
+                <div class="status-controls">
+                    <label class="toggle-switch">
+                        <input type="checkbox" id="ads-blocker-toggle" checked>
+                        <span class="toggle-slider"></span>
+                    </label>
+                </div>
+            </div>
+        </section>
+
+        <!-- Quick Stats Section -->
+        <section class="stats-section">
+            <div class="stat-card">
+                <div class="stat-icon">🚫</div>
+                <div class="stat-info">
+                    <div class="stat-label">Total Blocked</div>
+                    <div class="stat-value" id="total-blocked">0</div>
+                </div>
+            </div>
+
+            <div class="stat-card">
+                <div class="stat-icon">📊</div>
+                <div class="stat-info">
+                    <div class="stat-label">Session Blocked</div>
+                    <div class="stat-value" id="session-blocked">0</div>
+                </div>
+            </div>
+
+            <div class="stat-card">
+                <div class="stat-icon">💾</div>
+                <div class="stat-info">
+                    <div class="stat-label">Data Saved</div>
+                    <div class="stat-value" id="data-saved">0 MB</div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Tab Navigation -->
+        <div class="tabs">
+            <button class="tab-btn active" data-tab="overview">
+                📊 Overview
+            </button>
+            <button class="tab-btn" data-tab="settings">
+                ⚙️ Settings
+            </button>
+            <button class="tab-btn" data-tab="whitelist">
+                ✅ Whitelist
+            </button>
+            <button class="tab-btn" data-tab="filters">
+                🔧 Filters
+            </button>
+        </div>
+
+        <!-- Tab Content -->
+        <div class="tab-content active" id="overview">
+            <!-- Performance Metrics -->
+            <div class="section">
+                <h2 class="section-title">Performance Metrics</h2>
+                <div class="metrics-grid">
+                    <div class="metric-box">
+                        <div class="metric-icon">🎯</div>
+                        <div class="metric-label">Ad Requests Blocked</div>
+                        <div class="metric-value" id="metric-ads">0</div>
+                    </div>
+                    <div class="metric-box">
+                        <div class="metric-icon">📈</div>
+                        <div class="metric-label">Analytics Blocked</div>
+                        <div class="metric-value" id="metric-analytics">0</div>
+                    </div>
+                    <div class="metric-box">
+                        <div class="metric-icon">📸</div>
+                        <div class="metric-label">Banners Blocked</div>
+                        <div class="metric-value" id="metric-banners">0</div>
+                    </div>
+                    <div class="metric-box">
+                        <div class="metric-icon">🍪</div>
+                        <div class="metric-label">Cookies Blocked</div>
+                        <div class="metric-value" id="metric-cookies">0</div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Top Blocked Domains -->
+            <div class="section">
+                <div class="section-header">
+                    <h2 class="section-title">Top Blocked Domains</h2>
+                    <button class="btn-icon" id="reset-stats-btn" title="Reset Statistics">
+                        🔄 Reset
+                    </button>
+                </div>
+                <div class="domains-list" id="top-domains">
+                    <div class="empty-state">
+                        <p>No ads blocked yet. Start browsing to see statistics.</p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Quick Actions -->
+            <div class="section">
+                <h2 class="section-title">Quick Actions</h2>
+                <div class="actions-grid">
+                    <button class="action-btn" id="export-stats-btn">
+                        📤 Export Statistics
+                    </button>
+                    <button class="action-btn" id="view-report-btn">
+                        📋 View Full Report
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Settings Tab -->
+        <div class="tab-content" id="settings">
+            <div class="section">
+                <h2 class="section-title">Blocking Categories</h2>
+                <div class="settings-list">
+                    <div class="setting-item">
+                        <div class="setting-info">
+                            <div class="setting-label">Block Ads</div>
+                            <div class="setting-description">Block advertisement networks and ad servers</div>
+                        </div>
+                        <label class="toggle-switch">
+                            <input type="checkbox" class="setting-toggle" data-setting="blockAds" checked>
+                            <span class="toggle-slider"></span>
+                        </label>
+                    </div>
+
+                    <div class="setting-item">
+                        <div class="setting-info">
+                            <div class="setting-label">Block Analytics</div>
+                            <div class="setting-description">Block analytics and tracking services</div>
+                        </div>
+                        <label class="toggle-switch">
+                            <input type="checkbox" class="setting-toggle" data-setting="blockAnalytics" checked>
+                            <span class="toggle-slider"></span>
+                        </label>
+                    </div>
+
+                    <div class="setting-item">
+                        <div class="setting-info">
+                            <div class="setting-label">Block Banners</div>
+                            <div class="setting-description">Block banner ad containers and display ads</div>
+                        </div>
+                        <label class="toggle-switch">
+                            <input type="checkbox" class="setting-toggle" data-setting="blockBanners" checked>
+                            <span class="toggle-slider"></span>
+                        </label>
+                    </div>
+
+                    <div class="setting-item">
+                        <div class="setting-info">
+                            <div class="setting-label">Block Popups</div>
+                            <div class="setting-description">Block popup advertisement scripts</div>
+                        </div>
+                        <label class="toggle-switch">
+                            <input type="checkbox" class="setting-toggle" data-setting="blockPopups" checked>
+                            <span class="toggle-slider"></span>
+                        </label>
+                    </div>
+
+                    <div class="setting-item">
+                        <div class="setting-info">
+                            <div class="setting-label">Block Cookie Trackers</div>
+                            <div class="setting-description">Block cookie consent and privacy trackers</div>
+                        </div>
+                        <label class="toggle-switch">
+                            <input type="checkbox" class="setting-toggle" data-setting="blockCookieTrackers" checked>
+                            <span class="toggle-slider"></span>
+                        </label>
+                    </div>
+
+                    <div class="setting-item">
+                        <div class="setting-info">
+                            <div class="setting-label">Block Social Widgets</div>
+                            <div class="setting-description">Block social media embedded widgets and trackers</div>
+                        </div>
+                        <label class="toggle-switch">
+                            <input type="checkbox" class="setting-toggle" data-setting="blockSocialWidgets">
+                            <span class="toggle-slider"></span>
+                        </label>
+                    </div>
+                </div>
+            </div>
+
+            <div class="section">
+                <h2 class="section-title">Advanced Options</h2>
+                <div class="actions-grid">
+                    <button class="action-btn secondary" id="import-filters-btn">
+                        📥 Import Filters
+                    </button>
+                    <button class="action-btn secondary" id="export-filters-btn">
+                        📤 Export Filters
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Whitelist Tab -->
+        <div class="tab-content" id="whitelist">
+            <div class="section">
+                <h2 class="section-title">Whitelisted Domains</h2>
+                <div class="whitelist-control">
+                    <input type="text" id="domain-input" placeholder="Enter domain (e.g., example.com)"
+                        class="input-field">
+                    <button class="btn-secondary" id="add-whitelist-btn">Add</button>
+                </div>
+                <div class="whitelist-list" id="whitelist-items">
+                    <div class="empty-state">
+                        <p>No domains whitelisted. Ads will be blocked everywhere.</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Custom Filters Tab -->
+        <div class="tab-content" id="filters">
+            <div class="section">
+                <h2 class="section-title">Custom Filters</h2>
+                <p class="section-description">Add custom URL patterns to block or whitelist specific requests</p>
+                <div class="filter-control">
+                    <input type="text" id="filter-input"
+                        placeholder="Enter filter pattern (e.g., *://ads.example.com/*)" class="input-field">
+                    <button class="btn-secondary" id="add-filter-btn">Add Filter</button>
+                </div>
+                <div class="filters-list" id="custom-filters">
+                    <div class="empty-state">
+                        <p>No custom filters added yet.</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Footer -->
+    <div class="footer">
+        <p class="footer-text">Last updated: <span id="last-update">Just now</span></p>
+        <a href="#" class="footer-link" id="help-link">Help & Documentation</a>
+    </div>
+
+    <script src="ads-dashboard.js"></script>
+</body>
+
+</html>
