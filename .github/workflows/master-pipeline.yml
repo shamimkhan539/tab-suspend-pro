@@ -184,10 +184,15 @@ jobs:
 
                   echo "📝 Updated manifest.json to version $NEW_VERSION"
 
-                  # Commit the version update
-                  git add manifest.json
-                  git commit -m "chore: bump version to $NEW_VERSION [skip ci]"
-                  git push origin master
+                  # Commit the version update only if there are changes
+                  if git diff --quiet manifest.json; then
+                    echo "✅ Manifest already at version $NEW_VERSION, skipping commit"
+                  else
+                    git add manifest.json
+                    git commit -m "chore: bump version to $NEW_VERSION [skip ci]"
+                    git push origin master
+                    echo "✅ Committed and pushed version update"
+                  fi
 
                   # Create annotated tag with commit message info
                   COMMIT_MSG=$(git log -1 --pretty=%B)
