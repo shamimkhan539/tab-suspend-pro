@@ -1,4 +1,6 @@
-# BrowserGuard Pro �️⚡
+# BrowserGuard Pro 🛡️⚡
+
+![BrowserGuard Pro Icon](ui/assets/icons/icon128.png)
 
 A comprehensive Chrome extension with advanced tab management, privacy protection, tracker blocking, analytics, and productivity features. Save up to 80% memory usage while protecting your privacy and boosting your browser performance with intelligent automation.
 
