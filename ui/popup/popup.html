@@ -20,15 +20,15 @@
         }
 
         [data-theme="dark"] {
-            --glass-bg: rgba(31, 41, 55, 0.25);
-            --glass-border: rgba(75, 85, 99, 0.3);
-            --glass-shadow: rgba(0, 0, 0, 0.3);
-            --text-primary: rgba(243, 244, 246, 0.95);
-            --text-secondary: rgba(156, 163, 175, 0.9);
-            --card-bg: rgba(55, 65, 81, 0.2);
-            --hover-bg: rgba(75, 85, 99, 0.4);
-            --accent-primary: rgba(139, 92, 246, 0.9);
-            --accent-hover: rgba(124, 58, 237, 0.9);
+            --glass-bg: rgba(255, 255, 255, 0.08);
+            --glass-border: rgba(255, 255, 255, 0.12);
+            --glass-shadow: rgba(0, 0, 0, 0.5);
+            --text-primary: rgba(243, 244, 246, 0.98);
+            --text-secondary: rgba(209, 213, 219, 0.95);
+            --card-bg: rgba(255, 255, 255, 0.05);
+            --hover-bg: rgba(255, 255, 255, 0.12);
+            --accent-primary: rgba(167, 139, 250, 0.95);
+            --accent-hover: rgba(196, 181, 253, 0.95);
         }
 
         body {
@@ -43,6 +43,10 @@
             backdrop-filter: blur(25px);
             -webkit-backdrop-filter: blur(25px);
             position: relative;
+        }
+
+        [data-theme="dark"] {
+            background: linear-gradient(135deg, #1a1a2e 0%, #16213e 50%, #0f3460 100%) !important;
         }
 
         body::before {

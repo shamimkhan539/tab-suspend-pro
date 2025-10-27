@@ -158,7 +158,9 @@ class TabSuspendManager {
     async reconstructSuspendedTabs() {
         try {
             const tabs = await chrome.tabs.query({});
-            const suspendedPrefix = chrome.runtime.getURL("suspended.html");
+            const suspendedPrefix = chrome.runtime.getURL(
+                "ui/suspended/suspended.html"
+            );
             let rebuilt = 0;
             for (const tab of tabs) {
                 if (tab.url && tab.url.startsWith(suspendedPrefix)) {
@@ -234,7 +236,9 @@ class TabSuspendManager {
 
             const tabs = await chrome.tabs.query({});
             const existingTabIds = new Set(tabs.map((t) => t.id));
-            const suspendedPrefix = chrome.runtime.getURL("suspended.html");
+            const suspendedPrefix = chrome.runtime.getURL(
+                "ui/suspended/suspended.html"
+            );
 
             // Also check existing suspended tabs to avoid duplicates
             const existingSuspendedUrls = new Set();
@@ -381,7 +385,9 @@ class TabSuspendManager {
     async detectSessionRestore() {
         try {
             const tabs = await chrome.tabs.query({});
-            const suspendedPrefix = chrome.runtime.getURL("suspended.html");
+            const suspendedPrefix = chrome.runtime.getURL(
+                "ui/suspended/suspended.html"
+            );
 
             // Get all original URLs from suspended tabs
             const suspendedUrls = new Set();
@@ -430,7 +436,9 @@ class TabSuspendManager {
             );
 
             const tabs = await chrome.tabs.query({});
-            const suspendedPrefix = chrome.runtime.getURL("suspended.html");
+            const suspendedPrefix = chrome.runtime.getURL(
+                "ui/suspended/suspended.html"
+            );
 
             // Map suspended tabs to their original URLs and groups
             const suspendedTabMap = new Map(); // originalUrl -> { suspendedTab, groupId }
@@ -588,7 +596,9 @@ class TabSuspendManager {
                     if (timeSinceCreation < 10 * 60 * 1000) {
                         try {
                             const suspendedUrl =
-                                chrome.runtime.getURL("suspended.html") +
+                                chrome.runtime.getURL(
+                                    "ui/suspended/suspended.html"
+                                ) +
                                 "?url=" +
                                 encodeURIComponent(meta.originalUrl) +
                                 "&title=" +
@@ -1743,7 +1753,7 @@ class TabSuspendManager {
             }
 
             const suspendedUrl =
-                chrome.runtime.getURL("suspended.html") +
+                chrome.runtime.getURL("ui/suspended/suspended.html") +
                 "?url=" +
                 encodeURIComponent(tab.url) +
                 "&title=" +

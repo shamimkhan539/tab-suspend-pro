@@ -341,17 +341,6 @@ class AdvancedSettingsManager {
         const notification = document.createElement("div");
         notification.className = "settings-notification";
         notification.textContent = "✅ Settings saved";
-        notification.style.cssText = `
-            position: fixed;
-            top: 20px;
-            right: 20px;
-            background: #10b981;
-            color: white;
-            padding: 0.75rem 1rem;
-            border-radius: 6px;
-            z-index: 1000;
-            animation: slideIn 0.3s ease, fadeOut 0.3s ease 2.7s;
-        `;
 
         document.body.appendChild(notification);
 
@@ -511,6 +500,69 @@ let advancedSettingsManager;
 // Initialize when DOM loads
 document.addEventListener("DOMContentLoaded", () => {
     advancedSettingsManager = new AdvancedSettingsManager();
+
+    // Tab switching functionality
+    document.querySelectorAll(".tab").forEach((tab) => {
+        tab.addEventListener("click", () => {
+            // Remove active from all tabs and content
+            document
+                .querySelectorAll(".tab")
+                .forEach((t) => t.classList.remove("active"));
+            document
+                .querySelectorAll(".tab-content")
+                .forEach((tc) => tc.classList.remove("active"));
+
+            // Add active to clicked tab and corresponding content
+            tab.classList.add("active");
+            const tabId = tab.getAttribute("data-tab");
+            document.getElementById(tabId).classList.add("active");
+        });
+    });
+
+    // File input wrapper click handler
+    const fileInputWrapper = document.querySelector(".file-input-wrapper");
+    if (fileInputWrapper) {
+        fileInputWrapper.addEventListener("click", () => {
+            document.getElementById("import-file").click();
+        });
+    }
+
+    // Button event handlers
+    const exportBtn = document.getElementById("export-settings-btn");
+    if (exportBtn) {
+        exportBtn.addEventListener("click", () => {
+            exportAdvancedSettings();
+        });
+    }
+
+    const importBtn = document.getElementById("import-settings-btn");
+    if (importBtn) {
+        importBtn.addEventListener("click", () => {
+            document.getElementById("import-file").click();
+        });
+    }
+
+    const dashboardBtn = document.getElementById("open-dashboard-btn");
+    if (dashboardBtn) {
+        dashboardBtn.addEventListener("click", () => {
+            window.open("main-dashboard.html", "_blank");
+        });
+    }
+
+    const resetBtn = document.getElementById("reset-settings-btn");
+    if (resetBtn) {
+        resetBtn.addEventListener("click", () => {
+            resetAdvancedSettings();
+        });
+    }
+
+    // File input change handler
+    const importFile = document.getElementById("import-file");
+    if (importFile) {
+        importFile.addEventListener("change", (event) => {
+            importAdvancedSettings(event);
+        });
+    }
 });
 
 // Export functions for HTML buttons

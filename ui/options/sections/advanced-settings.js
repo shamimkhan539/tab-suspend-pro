@@ -1,35 +1,40 @@
-// Advanced Settings Management for Dashboard Integration
-class AdvancedSettingsManager {
+// Consolidated Advanced Settings Manager
+class ConsolidatedSettingsManager {
     constructor() {
         this.settings = {
-            // Core Extension Settings
-            core: {
+            // General Settings
+            general: {
+                suspendTime: 30,
+                timeUnit: "minutes",
+                suspendAudio: false,
+                showNotifications: true,
+                aggressiveMode: false,
+                whitelist: [],
+                enableAnalytics: true,
+                enablePerformanceTracking: true,
+                exportInterval: "never",
+            },
+
+            // Tracker Blocker Settings
+            trackerBlocker: {
                 enabled: true,
-                autoSuspendTime: 30,
-                suspendPinned: false,
-                suspendAudible: false,
-                suspendOnLowMemory: true,
-                suspendInBackground: true,
+                blockAds: true,
+                blockTrackers: true,
+                blockSocial: false,
+                blockMining: false,
+                blockMalware: true,
+                whitelist: [],
             },
 
-            // Dashboard Settings
-            dashboard: {
-                autoRefresh: true,
-                refreshInterval: 30,
-                showQuickStats: true,
-                showFeatureStatus: true,
-                compactMode: false,
-                theme: "auto",
-            },
-
-            // Analytics Settings
-            analytics: {
-                enableTracking: true,
-                trackPerformance: true,
-                trackProductivity: true,
-                retentionDays: 90,
-                generateInsights: true,
-                exportFormat: "json",
+            // Ads Blocker Settings
+            adsBlocker: {
+                enabled: true,
+                blockYoutubeAds: true,
+                blockYoutubeMusicAds: true,
+                blockGeneralAds: true,
+                blockAnalytics: true,
+                blockCookies: true,
+                whitelist: [],
             },
 
             // Privacy Settings
@@ -37,57 +42,37 @@ class AdvancedSettingsManager {
                 dataRetention: true,
                 retentionDays: 365,
                 encryption: true,
-                analytics: false,
                 autoCleanup: true,
-                cloudSharing: false,
                 gdprCompliance: true,
             },
 
             // Focus Mode Settings
             focus: {
-                enabled: false,
-                blockSocial: true,
-                blockNews: false,
-                blockShopping: false,
-                allowedSites: [],
-                blockedSites: [],
-                sessionDuration: 25,
-                breakDuration: 5,
-                dailyGoal: 4,
+                autoEnable: false,
+                workStart: "09:00",
+                workEnd: "17:00",
+                action: "warn",
+            },
+
+            // Performance Settings
+            performance: {
+                trackingEnabled: true,
             },
 
             // Cloud Backup Settings
             cloud: {
                 provider: null,
-                autoSync: false,
-                syncInterval: "daily",
-                encryptBackups: true,
-                maxBackups: 10,
-                syncSessions: true,
-                syncSettings: true,
-                syncAnalytics: false,
+                googleDriveEnabled: false,
+                backupFrequency: "weekly",
+                syncEnabled: false,
+                lastBackup: null,
             },
 
-            // Performance Settings
-            performance: {
-                aggressiveMode: false,
-                memoryThreshold: 80,
-                cpuThreshold: 70,
-                suspendDelay: 5,
-                preloadImportant: true,
-                optimizeImages: true,
-                compressData: true,
-            },
-
-            // UI/UX Settings
+            // Interface Settings
             interface: {
-                showNotifications: true,
-                notificationDuration: 3,
-                soundEffects: false,
-                confirmActions: true,
-                tooltips: true,
-                animations: true,
-                keyboardShortcuts: true,
+                sessionsEnabled: true,
+                analyticsTabEnabled: true,
+                organizationEnabled: true,
             },
         };
 
@@ -102,145 +87,234 @@ class AdvancedSettingsManager {
 
     async loadSettings() {
         try {
-            const stored = await chrome.storage.sync.get("advancedSettings");
-            if (stored.advancedSettings) {
+            const stored = await chrome.storage.sync.get([
+                "consolidatedSettings",
+            ]);
+            if (stored.consolidatedSettings) {
                 this.settings = {
                     ...this.settings,
-                    ...stored.advancedSettings,
+                    ...stored.consolidatedSettings,
                 };
             }
         } catch (error) {
-            console.error("Error loading advanced settings:", error);
+            console.error("Error loading consolidated settings:", error);
         }
     }
 
     async saveSettings() {
         try {
             await chrome.storage.sync.set({
-                advancedSettings: this.settings,
+                consolidatedSettings: this.settings,
             });
-            console.log("Advanced settings saved");
+            this.showSettingsSaved();
         } catch (error) {
-            console.error("Error saving advanced settings:", error);
+            console.error("Error saving consolidated settings:", error);
         }
     }
 
     setupEventListeners() {
-        // Dashboard settings
-        this.setupToggle("dashboard-auto-refresh", "dashboard.autoRefresh");
-        this.setupRange(
-            "dashboard-refresh-interval",
-            "dashboard.refreshInterval"
-        );
-        this.setupToggle("dashboard-compact-mode", "dashboard.compactMode");
-        this.setupSelect("dashboard-theme", "dashboard.theme");
+        // Tab switching
+        document.querySelectorAll(".tab").forEach((tab) => {
+            tab.addEventListener("click", () => {
+                this.switchTab(tab);
+            });
+        });
 
-        // Analytics settings
+        // General Settings
+        this.setupToggle("audio-toggle", "general.suspendAudio");
+        this.setupToggle("notifications-toggle", "general.showNotifications");
+        this.setupToggle("aggressive-toggle", "general.aggressiveMode");
+        this.setupToggle("analytics-toggle", "general.enableAnalytics");
         this.setupToggle(
-            "analytics-enable-tracking",
-            "analytics.enableTracking"
+            "performance-toggle",
+            "general.enablePerformanceTracking"
         );
-        this.setupToggle(
-            "analytics-track-performance",
-            "analytics.trackPerformance"
-        );
-        this.setupToggle(
-            "analytics-track-productivity",
-            "analytics.trackProductivity"
-        );
-        this.setupRange("analytics-retention-days", "analytics.retentionDays");
 
-        // Privacy settings
-        this.setupToggle("privacy-data-retention", "privacy.dataRetention");
-        this.setupRange("privacy-retention-days", "privacy.retentionDays");
+        // Tracker Blocker Settings
+        this.setupToggle("tracker-blocker-enabled", "trackerBlocker.enabled");
+        this.setupToggle("block-ads", "trackerBlocker.blockAds");
+        this.setupToggle("block-trackers", "trackerBlocker.blockTrackers");
+        this.setupToggle("block-social", "trackerBlocker.blockSocial");
+        this.setupToggle("block-mining", "trackerBlocker.blockMining");
+        this.setupToggle("block-malware", "trackerBlocker.blockMalware");
+
+        // Ads Blocker Settings
+        this.setupToggle("ads-blocker-enabled", "adsBlocker.enabled");
+        this.setupToggle("ads-block-youtube", "adsBlocker.blockYoutubeAds");
+        this.setupToggle(
+            "ads-block-youtube-music",
+            "adsBlocker.blockYoutubeMusicAds"
+        );
+        this.setupToggle("ads-block-ads", "adsBlocker.blockGeneralAds");
+        this.setupToggle("ads-block-analytics", "adsBlocker.blockAnalytics");
+        this.setupToggle("ads-block-cookies", "adsBlocker.blockCookies");
+
+        // Privacy Settings
+        this.setupToggle("privacy-retention", "privacy.dataRetention");
         this.setupToggle("privacy-encryption", "privacy.encryption");
-        this.setupToggle("privacy-analytics", "privacy.analytics");
-        this.setupToggle("privacy-auto-cleanup", "privacy.autoCleanup");
+        this.setupToggle("privacy-cleanup", "privacy.autoCleanup");
 
-        // Focus mode settings
-        this.setupToggle("focus-enabled", "focus.enabled");
-        this.setupToggle("focus-block-social", "focus.blockSocial");
-        this.setupToggle("focus-block-news", "focus.blockNews");
-        this.setupRange("focus-session-duration", "focus.sessionDuration");
-        this.setupRange("focus-daily-goal", "focus.dailyGoal");
+        // Focus Mode Settings
+        this.setupToggle("auto-focus-toggle", "focus.autoEnable");
+        this.setupTimeInput("work-start", "focus.workStart");
+        this.setupTimeInput("work-end", "focus.workEnd");
+        this.setupSelect("focus-action", "focus.action");
 
-        // Cloud settings
-        this.setupSelect("cloud-provider", "cloud.provider");
-        this.setupToggle("cloud-auto-sync", "cloud.autoSync");
-        this.setupSelect("cloud-sync-interval", "cloud.syncInterval");
-        this.setupToggle("cloud-encrypt-backups", "cloud.encryptBackups");
+        // Cloud Settings
+        this.setupToggle("google-drive-toggle", "cloud.googleDriveEnabled");
+        this.setupSelect("backup-frequency", "cloud.backupFrequency");
+        this.setupToggle("sync-toggle", "cloud.syncEnabled");
 
-        // Performance settings
+        // Interface Settings
+        this.setupToggle("sessions-toggle", "interface.sessionsEnabled");
         this.setupToggle(
-            "performance-aggressive-mode",
-            "performance.aggressiveMode"
-        );
-        this.setupRange(
-            "performance-memory-threshold",
-            "performance.memoryThreshold"
-        );
-        this.setupRange(
-            "performance-cpu-threshold",
-            "performance.cpuThreshold"
+            "analytics-enabled-toggle",
+            "interface.analyticsTabEnabled"
         );
         this.setupToggle(
-            "performance-optimize-images",
-            "performance.optimizeImages"
+            "organization-toggle",
+            "interface.organizationEnabled"
         );
 
-        // Interface settings
-        this.setupToggle(
-            "interface-show-notifications",
-            "interface.showNotifications"
-        );
-        this.setupRange(
-            "interface-notification-duration",
-            "interface.notificationDuration"
-        );
-        this.setupToggle("interface-sound-effects", "interface.soundEffects");
-        this.setupToggle("interface-animations", "interface.animations");
+        // URL List Management
+        document.getElementById("add-url")?.addEventListener("click", () => {
+            this.addUrlToList("new-url", "url-list", "general.whitelist");
+        });
+
+        document
+            .getElementById("add-tracker-whitelist")
+            ?.addEventListener("click", () => {
+                this.addUrlToList(
+                    "tracker-whitelist-url",
+                    "tracker-whitelist-list",
+                    "trackerBlocker.whitelist"
+                );
+            });
+
+        document
+            .getElementById("add-ads-whitelist")
+            ?.addEventListener("click", () => {
+                this.addUrlToList(
+                    "ads-whitelist-url",
+                    "ads-whitelist-list",
+                    "adsBlocker.whitelist"
+                );
+            });
+
+        // Dashboard Links
+        document
+            .getElementById("open-dashboard-btn")
+            ?.addEventListener("click", () => {
+                window.open(
+                    chrome.runtime.getURL(
+                        "ui/dashboards/main/main-dashboard.html"
+                    ),
+                    "_blank"
+                );
+            });
+
+        document
+            .getElementById("open-privacy-dashboard")
+            ?.addEventListener("click", () => {
+                window.open(
+                    chrome.runtime.getURL(
+                        "ui/dashboards/privacy/privacy-dashboard.html"
+                    ),
+                    "_blank"
+                );
+            });
+
+        document
+            .getElementById("open-analytics-dashboard")
+            ?.addEventListener("click", () => {
+                window.open(
+                    chrome.runtime.getURL(
+                        "ui/dashboards/analytics/analytics-dashboard.html"
+                    ),
+                    "_blank"
+                );
+            });
+
+        // Backup/Export/Import
+        document
+            .getElementById("export-settings-btn")
+            ?.addEventListener("click", () => this.exportSettings());
+
+        document
+            .getElementById("import-settings-btn")
+            ?.addEventListener("click", () => {
+                document.getElementById("import-file").click();
+            });
+
+        document
+            .getElementById("import-file")
+            ?.addEventListener("change", (e) => this.importSettings(e));
+
+        document
+            .getElementById("reset-settings-btn")
+            ?.addEventListener("click", () => this.resetAllSettings());
+
+        document
+            .getElementById("export-settings")
+            ?.addEventListener("click", () => this.exportSettings());
+
+        document
+            .getElementById("import-settings")
+            ?.addEventListener("click", () => {
+                document.getElementById("import-file").click();
+            });
+
+        document
+            .getElementById("backup-now")
+            ?.addEventListener("click", () => this.backupNow());
+
+        document
+            .getElementById("export-all-settings")
+            ?.addEventListener("click", () => this.exportAllSettings());
+
+        document
+            .getElementById("import-all-settings")
+            ?.addEventListener("click", () => {
+                document.getElementById("import-all-file").click();
+            });
+
+        document
+            .getElementById("import-all-file")
+            ?.addEventListener("change", (e) => this.importAllSettings(e));
+
+        document
+            .getElementById("reset-all-settings")
+            ?.addEventListener("click", () => this.resetAllSettings());
+
+        // Load and display URL lists
+        this.loadUrlLists();
+    }
+
+    switchTab(tab) {
+        document.querySelectorAll(".tab").forEach((t) => {
+            t.classList.remove("active");
+        });
+        document.querySelectorAll(".tab-content").forEach((tc) => {
+            tc.classList.remove("active");
+        });
+
+        tab.classList.add("active");
+        const tabId = tab.getAttribute("data-tab");
+        document.getElementById(tabId)?.classList.add("active");
     }
 
     setupToggle(elementId, settingPath) {
         const element = document.getElementById(elementId);
         if (element) {
             const currentValue = this.getNestedSetting(settingPath);
-            element.checked = currentValue;
+            element.classList.toggle("active", currentValue);
 
-            element.addEventListener("change", async (e) => {
-                this.setNestedSetting(settingPath, e.target.checked);
+            element.addEventListener("click", async (e) => {
+                e.preventDefault();
+                const newValue = !this.getNestedSetting(settingPath);
+                this.setNestedSetting(settingPath, newValue);
+                element.classList.toggle("active", newValue);
                 await this.saveSettings();
-                this.applySettings();
-                this.showSettingsSaved();
-            });
-        }
-    }
-
-    setupRange(elementId, settingPath) {
-        const element = document.getElementById(elementId);
-        if (element) {
-            const currentValue = this.getNestedSetting(settingPath);
-            element.value = currentValue;
-
-            // Update display value
-            const displayElement = document.getElementById(
-                elementId + "-value"
-            );
-            if (displayElement) {
-                displayElement.textContent = currentValue;
-            }
-
-            element.addEventListener("input", (e) => {
-                if (displayElement) {
-                    displayElement.textContent = e.target.value;
-                }
-            });
-
-            element.addEventListener("change", async (e) => {
-                this.setNestedSetting(settingPath, parseInt(e.target.value));
-                await this.saveSettings();
-                this.applySettings();
-                this.showSettingsSaved();
             });
         }
     }
@@ -248,14 +322,21 @@ class AdvancedSettingsManager {
     setupSelect(elementId, settingPath) {
         const element = document.getElementById(elementId);
         if (element) {
-            const currentValue = this.getNestedSetting(settingPath);
-            element.value = currentValue;
-
+            element.value = this.getNestedSetting(settingPath);
             element.addEventListener("change", async (e) => {
                 this.setNestedSetting(settingPath, e.target.value);
                 await this.saveSettings();
-                this.applySettings();
-                this.showSettingsSaved();
+            });
+        }
+    }
+
+    setupTimeInput(elementId, settingPath) {
+        const element = document.getElementById(elementId);
+        if (element) {
+            element.value = this.getNestedSetting(settingPath);
+            element.addEventListener("change", async (e) => {
+                this.setNestedSetting(settingPath, e.target.value);
+                await this.saveSettings();
             });
         }
     }
@@ -279,79 +360,84 @@ class AdvancedSettingsManager {
         current[keys[keys.length - 1]] = value;
     }
 
-    applySettings() {
-        // Apply dashboard settings
-        if (this.settings.dashboard.autoRefresh) {
-            this.startDashboardRefresh();
-        } else {
-            this.stopDashboardRefresh();
-        }
+    addUrlToList(inputId, listId, settingPath) {
+        const input = document.getElementById(inputId);
+        const list = document.getElementById(listId);
 
-        // Apply theme
-        this.applyTheme(this.settings.dashboard.theme);
+        if (!input || !list) return;
 
-        // Send settings to background script
-        chrome.runtime.sendMessage({
-            action: "updateAdvancedSettings",
-            settings: this.settings,
-        });
-    }
+        const url = input.value.trim();
+        if (!url) return;
 
-    applyTheme(theme) {
-        const body = document.body;
-        body.classList.remove("theme-light", "theme-dark", "theme-auto");
-
-        if (theme === "auto") {
-            // Use system preference
-            const prefersDark = window.matchMedia(
-                "(prefers-color-scheme: dark)"
-            ).matches;
-            body.classList.add(prefersDark ? "theme-dark" : "theme-light");
-        } else {
-            body.classList.add(`theme-${theme}`);
+        const urls = this.getNestedSetting(settingPath);
+        if (!urls.includes(url)) {
+            urls.push(url);
+            this.saveSettings();
+            input.value = "";
+            this.renderUrlList(listId, urls, settingPath);
         }
     }
 
-    startDashboardRefresh() {
-        if (this.refreshInterval) {
-            clearInterval(this.refreshInterval);
-        }
-
-        const interval = this.settings.dashboard.refreshInterval * 1000;
-        this.refreshInterval = setInterval(() => {
-            this.refreshDashboard();
-        }, interval);
+    loadUrlLists() {
+        this.renderUrlList(
+            "url-list",
+            this.settings.general.whitelist,
+            "general.whitelist"
+        );
+        this.renderUrlList(
+            "tracker-whitelist-list",
+            this.settings.trackerBlocker.whitelist,
+            "trackerBlocker.whitelist"
+        );
+        this.renderUrlList(
+            "ads-whitelist-list",
+            this.settings.adsBlocker.whitelist,
+            "adsBlocker.whitelist"
+        );
     }
 
-    stopDashboardRefresh() {
-        if (this.refreshInterval) {
-            clearInterval(this.refreshInterval);
-            this.refreshInterval = null;
+    renderUrlList(listId, urls, settingPath) {
+        const list = document.getElementById(listId);
+        if (!list) return;
+
+        list.innerHTML = urls
+            .map(
+                (url) => `
+            <li class="url-item">
+                <span>${url}</span>
+                <button class="btn btn-danger" onclick="settingsManager.removeUrl('${settingPath}', '${url}')">Remove</button>
+            </li>
+        `
+            )
+            .join("");
+    }
+
+    async removeUrl(settingPath, url) {
+        const urls = this.getNestedSetting(settingPath);
+        const index = urls.indexOf(url);
+        if (index > -1) {
+            urls.splice(index, 1);
+            await this.saveSettings();
+
+            // Re-render the list
+            const listId = this.getListIdForPath(settingPath);
+            this.renderUrlList(listId, urls, settingPath);
         }
     }
 
-    refreshDashboard() {
-        // Trigger dashboard refresh if on dashboard page
-        if (window.dashboardInstance) {
-            window.dashboardInstance.loadQuickStats();
-        }
+    getListIdForPath(settingPath) {
+        const mapping = {
+            "general.whitelist": "url-list",
+            "trackerBlocker.whitelist": "tracker-whitelist-list",
+            "adsBlocker.whitelist": "ads-whitelist-list",
+        };
+        return mapping[settingPath] || "url-list";
     }
 
     showSettingsSaved() {
         const notification = document.createElement("div");
         notification.className = "settings-notification";
         notification.textContent = "✅ Settings saved";
-        notification.style.cssText = `
-            position: fixed;
-            top: 20px;
-            right: 20px;
-            background: #10b981;
-            color: white;
-            padding: 0.75rem 1rem;
-            border-radius: 6px;
-            z-index: 1000;
-            animation: slideIn 0.3s ease, fadeOut 0.3s ease 2.7s;
-        `;
 
         document.body.appendChild(notification);
 
@@ -376,226 +462,142 @@ class AdvancedSettingsManager {
         const url = URL.createObjectURL(blob);
         const a = document.createElement("a");
         a.href = url;
-        a.download = `tab-suspend-pro-settings-${
+        a.download = `browserguard-settings-${
             new Date().toISOString().split("T")[0]
         }.json`;
         a.click();
         URL.revokeObjectURL(url);
     }
 
-    async importSettings(fileContent) {
-        try {
-            const importData = JSON.parse(fileContent);
+    async importSettings(event) {
+        const file = event.target.files[0];
+        if (!file) return;
 
-            if (importData.settings) {
-                this.settings = { ...this.settings, ...importData.settings };
-                await this.saveSettings();
-                this.applySettings();
-
-                // Refresh UI
-                location.reload();
-
-                return {
-                    success: true,
-                    imported: Object.keys(importData.settings).length,
-                };
+        const reader = new FileReader();
+        reader.onload = async (e) => {
+            try {
+                const importData = JSON.parse(e.target.result);
+                if (importData.settings) {
+                    this.settings = {
+                        ...this.settings,
+                        ...importData.settings,
+                    };
+                    await this.saveSettings();
+                    location.reload();
+                }
+            } catch (error) {
+                console.error("Error importing settings:", error);
+                alert("Failed to import settings file");
             }
+        };
+        reader.readAsText(file);
+    }
 
-            return { success: false, error: "Invalid settings file format" };
-        } catch (error) {
-            console.error("Error importing settings:", error);
-            return { success: false, error: "Failed to parse settings file" };
+    async exportAllSettings() {
+        this.exportSettings();
+    }
+
+    async importAllSettings(event) {
+        this.importSettings(event);
+    }
+
+    async backupNow() {
+        this.settings.cloud.lastBackup = new Date().toISOString();
+        await this.saveSettings();
+        const lastBackupElement = document.getElementById("last-backup-time");
+        if (lastBackupElement) {
+            lastBackupElement.textContent = `Last backed up: ${new Date(
+                this.settings.cloud.lastBackup
+            ).toLocaleString()}`;
         }
     }
 
     async resetAllSettings() {
         if (
-            confirm(
+            !confirm(
                 "Are you sure you want to reset ALL settings to defaults? This cannot be undone."
             )
         ) {
-            // Reset to defaults
-            this.settings = {
-                core: {
-                    enabled: true,
-                    autoSuspendTime: 30,
-                    suspendPinned: false,
-                    suspendAudible: false,
-                    suspendOnLowMemory: true,
-                    suspendInBackground: true,
-                },
-                dashboard: {
-                    autoRefresh: true,
-                    refreshInterval: 30,
-                    showQuickStats: true,
-                    showFeatureStatus: true,
-                    compactMode: false,
-                    theme: "auto",
-                },
-                analytics: {
-                    enableTracking: true,
-                    trackPerformance: true,
-                    trackProductivity: true,
-                    retentionDays: 90,
-                    generateInsights: true,
-                    exportFormat: "json",
-                },
-                privacy: {
-                    dataRetention: true,
-                    retentionDays: 365,
-                    encryption: true,
-                    analytics: false,
-                    autoCleanup: true,
-                    cloudSharing: false,
-                    gdprCompliance: true,
-                },
-                focus: {
-                    enabled: false,
-                    blockSocial: true,
-                    blockNews: false,
-                    blockShopping: false,
-                    allowedSites: [],
-                    blockedSites: [],
-                    sessionDuration: 25,
-                    breakDuration: 5,
-                    dailyGoal: 4,
-                },
-                cloud: {
-                    provider: null,
-                    autoSync: false,
-                    syncInterval: "daily",
-                    encryptBackups: true,
-                    maxBackups: 10,
-                    syncSessions: true,
-                    syncSettings: true,
-                    syncAnalytics: false,
-                },
-                performance: {
-                    aggressiveMode: false,
-                    memoryThreshold: 80,
-                    cpuThreshold: 70,
-                    suspendDelay: 5,
-                    preloadImportant: true,
-                    optimizeImages: true,
-                    compressData: true,
-                },
-                interface: {
-                    showNotifications: true,
-                    notificationDuration: 3,
-                    soundEffects: false,
-                    confirmActions: true,
-                    tooltips: true,
-                    animations: true,
-                    keyboardShortcuts: true,
-                },
-            };
-
-            await this.saveSettings();
-            this.applySettings();
-            location.reload();
+            return;
         }
+
+        this.settings = {
+            general: {
+                suspendTime: 30,
+                timeUnit: "minutes",
+                suspendAudio: false,
+                showNotifications: true,
+                aggressiveMode: false,
+                whitelist: [],
+                enableAnalytics: true,
+                enablePerformanceTracking: true,
+                exportInterval: "never",
+            },
+            trackerBlocker: {
+                enabled: true,
+                blockAds: true,
+                blockTrackers: true,
+                blockSocial: false,
+                blockMining: false,
+                blockMalware: true,
+                whitelist: [],
+            },
+            adsBlocker: {
+                enabled: true,
+                blockYoutubeAds: true,
+                blockYoutubeMusicAds: true,
+                blockGeneralAds: true,
+                blockAnalytics: true,
+                blockCookies: true,
+                whitelist: [],
+            },
+            privacy: {
+                dataRetention: true,
+                retentionDays: 365,
+                encryption: true,
+                autoCleanup: true,
+                gdprCompliance: true,
+            },
+            focus: {
+                autoEnable: false,
+                workStart: "09:00",
+                workEnd: "17:00",
+                action: "warn",
+            },
+            performance: {
+                trackingEnabled: true,
+            },
+            cloud: {
+                provider: null,
+                googleDriveEnabled: false,
+                backupFrequency: "weekly",
+                syncEnabled: false,
+                lastBackup: null,
+            },
+            interface: {
+                sessionsEnabled: true,
+                analyticsTabEnabled: true,
+                organizationEnabled: true,
+            },
+        };
+
+        await this.saveSettings();
+        location.reload();
     }
 
-    getSettingsForExport() {
-        return {
-            version: "2.1.0",
-            exported: new Date().toISOString(),
+    applySettings() {
+        // Send to background script
+        chrome.runtime.sendMessage({
+            action: "updateConsolidatedSettings",
             settings: this.settings,
-        };
+        });
     }
 }
 
 // Global instance
-let advancedSettingsManager;
+let settingsManager;
 
 // Initialize when DOM loads
 document.addEventListener("DOMContentLoaded", () => {
-    advancedSettingsManager = new AdvancedSettingsManager();
-
-    // Tab switching functionality
-    document.querySelectorAll(".tab").forEach((tab) => {
-        tab.addEventListener("click", () => {
-            // Remove active from all tabs and content
-            document
-                .querySelectorAll(".tab")
-                .forEach((t) => t.classList.remove("active"));
-            document
-                .querySelectorAll(".tab-content")
-                .forEach((tc) => tc.classList.remove("active"));
-
-            // Add active to clicked tab and corresponding content
-            tab.classList.add("active");
-            const tabId = tab.getAttribute("data-tab");
-            document.getElementById(tabId).classList.add("active");
-        });
-    });
-
-    // File input wrapper click handler
-    const fileInputWrapper = document.querySelector(".file-input-wrapper");
-    if (fileInputWrapper) {
-        fileInputWrapper.addEventListener("click", () => {
-            document.getElementById("import-file").click();
-        });
-    }
-
-    // Button event handlers
-    const exportBtn = document.getElementById("export-settings-btn");
-    if (exportBtn) {
-        exportBtn.addEventListener("click", () => {
-            exportAdvancedSettings();
-        });
-    }
-
-    const importBtn = document.getElementById("import-settings-btn");
-    if (importBtn) {
-        importBtn.addEventListener("click", () => {
-            document.getElementById("import-file").click();
-        });
-    }
-
-    const dashboardBtn = document.getElementById("open-dashboard-btn");
-    if (dashboardBtn) {
-        dashboardBtn.addEventListener("click", () => {
-            window.open("main-dashboard.html", "_blank");
-        });
-    }
-
-    const resetBtn = document.getElementById("reset-settings-btn");
-    if (resetBtn) {
-        resetBtn.addEventListener("click", () => {
-            resetAdvancedSettings();
-        });
-    }
-
-    // File input change handler
-    const importFile = document.getElementById("import-file");
-    if (importFile) {
-        importFile.addEventListener("change", (event) => {
-            importAdvancedSettings(event);
-        });
-    }
+    settingsManager = new ConsolidatedSettingsManager();
 });
-
-// Export functions for HTML buttons
-window.exportAdvancedSettings = () => {
-    if (advancedSettingsManager) {
-        advancedSettingsManager.exportSettings();
-    }
-};
-
-window.importAdvancedSettings = (event) => {
-    const file = event.target.files[0];
-    if (file && advancedSettingsManager) {
-        const reader = new FileReader();
-        reader.onload = (e) => {
-            advancedSettingsManager.importSettings(e.target.result);
-        };
-        reader.readAsText(file);
-    }
-};
-
-window.resetAdvancedSettings = () => {
-    if (advancedSettingsManager) {
-        advancedSettingsManager.resetAllSettings();
-    }
-};

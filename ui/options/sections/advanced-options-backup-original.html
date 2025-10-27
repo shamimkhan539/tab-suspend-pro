@@ -4,7 +4,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Tab Suspend Pro - Advanced Options</title>
+    <title>BrowserGuard Pro - Advanced Options</title>
     <style>
         :root {
             --primary-color: #2563eb;
@@ -342,11 +342,6 @@
             grid-column: 1 / -1;
         }
 
-        .feature-highlight {
-            background: linear-gradient(135deg, rgba(37, 99, 235, 0.1), rgba(124, 58, 237, 0.1));
-            border: 1px solid rgba(37, 99, 235, 0.2);
-        }
-
         .warning-box {
             background: rgba(245, 158, 11, 0.1);
             border: 1px solid rgba(245, 158, 11, 0.3);
@@ -402,13 +397,47 @@
                 flex-direction: column;
             }
         }
+
+        .settings-notification {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            background: var(--success-color);
+            color: white;
+            padding: 0.75rem 1rem;
+            border-radius: 6px;
+            z-index: 1000;
+            animation: slideIn 0.3s ease, fadeOut 0.3s ease 2.7s;
+        }
+
+        @keyframes slideIn {
+            from {
+                transform: translateX(400px);
+                opacity: 0;
+            }
+
+            to {
+                transform: translateX(0);
+                opacity: 1;
+            }
+        }
+
+        @keyframes fadeOut {
+            from {
+                opacity: 1;
+            }
+
+            to {
+                opacity: 0;
+            }
+        }
     </style>
 </head>
 
 <body>
     <div class="container">
         <div class="header">
-            <h1>🚀 Tab Suspend Pro</h1>
+            <h1>🚀 BrowserGuard Pro</h1>
             <p>Advanced Settings & Configuration</p>
         </div>
 
@@ -966,48 +995,28 @@
 
         <!-- Action Buttons -->
         <div class="action-buttons advanced-section">
-            <button class="btn btn-success" onclick="exportAdvancedSettings()">
+            <button class="btn btn-success" id="export-settings-btn">
                 📤 Export Settings
             </button>
 
             <div class="file-input-wrapper">
-                <input type="file" id="import-file" accept=".json" onchange="importAdvancedSettings(event)">
-                <button class="btn btn-secondary">
+                <input type="file" id="import-file" accept=".json">
+                <button class="btn btn-secondary" id="import-settings-btn">
                     📥 Import Settings
                 </button>
             </div>
 
-            <button class="btn" onclick="window.open('main-dashboard.html', '_blank')">
+            <button class="btn" id="open-dashboard-btn">
                 📊 Open Dashboard
             </button>
 
-            <button class="btn btn-danger" onclick="resetAdvancedSettings()">
+            <button class="btn btn-danger" id="reset-settings-btn">
                 🔄 Reset All Settings
             </button>
         </div>
     </div>
 
     <script src="advanced-settings.js"></script>
-    <script>
-        // Tab switching functionality
-        document.querySelectorAll('.tab').forEach(tab => {
-            tab.addEventListener('click', () => {
-                // Remove active from all tabs and content
-                document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
-                document.querySelectorAll('.tab-content').forEach(tc => tc.classList.remove('active'));
-
-                // Add active to clicked tab and corresponding content
-                tab.classList.add('active');
-                const tabId = tab.getAttribute('data-tab');
-                document.getElementById(tabId).classList.add('active');
-            });
-        });
-
-        // File input wrapper click handler
-        document.querySelector('.file-input-wrapper').addEventListener('click', () => {
-            document.getElementById('import-file').click();
-        });
-    </script>
 </body>
 
 </html>
