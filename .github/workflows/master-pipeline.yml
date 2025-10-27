@@ -78,7 +78,17 @@ jobs:
             - name: Check required files
               run: |
                   echo "🔍 Checking required files..."
-                  required_files=("manifest.json" "background.js" "content.js" "popup.html" "popup.js" "options.html" "options.js" "suspended.html" "suspended.js")
+                  required_files=(
+                    "manifest.json"
+                    "background.js"
+                    "src/content/content.js"
+                    "ui/popup/popup.html"
+                    "ui/popup/popup.js"
+                    "ui/options/options.html"
+                    "ui/options/options.js"
+                    "ui/suspended/suspended.html"
+                    "ui/suspended/suspended.js"
+                  )
 
                   for file in "${required_files[@]}"; do
                     if [ ! -f "$file" ]; then
@@ -92,7 +102,12 @@ jobs:
             - name: Check icons
               run: |
                   echo "🔍 Checking icons..."
-                  required_icons=("icons/icon16.png" "icons/icon32.png" "icons/icon48.png" "icons/icon128.png")
+                  required_icons=(
+                    "ui/assets/icons/icon16.png"
+                    "ui/assets/icons/icon32.png"
+                    "ui/assets/icons/icon48.png"
+                    "ui/assets/icons/icon128.png"
+                  )
                   for icon in "${required_icons[@]}"; do
                     if [ ! -f "$icon" ]; then
                       echo "❌ Required icon missing: $icon"
@@ -105,7 +120,13 @@ jobs:
             - name: Validate JavaScript syntax
               run: |
                   echo "🔍 Checking JavaScript syntax..."
-                  js_files=("background.js" "content.js" "popup.js" "options.js" "suspended.js")
+                  js_files=(
+                    "background.js"
+                    "src/content/content.js"
+                    "ui/popup/popup.js"
+                    "ui/options/options.js"
+                    "ui/suspended/suspended.js"
+                  )
 
                   for file in "${js_files[@]}"; do
                     if ! node -c "$file" 2>/dev/null; then
@@ -121,8 +142,9 @@ jobs:
                   echo "🔨 Creating test build..."
                   mkdir -p build-test
                   cp manifest.json build-test/
-                  cp *.js build-test/
-                  cp *.html build-test/
+                  cp background.js build-test/
+                  cp -r src build-test/
+                  cp -r ui build-test/
                   cp -r icons build-test/
                   cp LICENSE build-test/
                   echo "✅ Test build created successfully"
@@ -183,8 +205,9 @@ jobs:
                   echo "🔨 Creating extension package for release..."
                   mkdir -p extension-package
                   cp manifest.json extension-package/ || true
-                  cp *.js extension-package/ 2>/dev/null || true
-                  cp *.html extension-package/ 2>/dev/null || true
+                  cp background.js extension-package/ 2>/dev/null || true
+                  cp -r src extension-package/ 2>/dev/null || true
+                  cp -r ui extension-package/ 2>/dev/null || true
                   cp -r icons extension-package/ 2>/dev/null || true
                   cp LICENSE extension-package/ 2>/dev/null || true
                   cd extension-package
@@ -235,8 +258,9 @@ jobs:
               run: |
                   mkdir -p extension-package
                   cp manifest.json extension-package/ || true
-                  cp *.js extension-package/ 2>/dev/null || true
-                  cp *.html extension-package/ 2>/dev/null || true
+                  cp background.js extension-package/ 2>/dev/null || true
+                  cp -r src extension-package/ 2>/dev/null || true
+                  cp -r ui extension-package/ 2>/dev/null || true
                   cp -r icons extension-package/ 2>/dev/null || true
                   cp LICENSE extension-package/ 2>/dev/null || true
                   cd extension-package
