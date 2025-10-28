@@ -27,32 +27,6 @@
     let isCurrentlyPlayingAd = false; // Flag to know if ad is actively playing
     let aggressiveCheckMode = false; // When true, check every 300ms instead of 800ms
     let lastVideoTime = -1; // Track last video position to detect ads
-    let isYouTubeShorts = false; // Detect if we're on YouTube Shorts
-    let shortsDetectionAttempts = 0; // Track attempts to detect shorts
-    let lastSeekerTime = 0; // Track last seeked time to prevent rapid seeking
-    let pauseResumeTimeout = null; // Timeout for pause/resume detection
-
-    // Function to detect if we're on YouTube Shorts
-    function detectYouTubeShorts() {
-        try {
-            // Check multiple ways YouTube Shorts is detected
-            const url = window.location.href;
-            const isOnShorts =
-                url.includes("/shorts/") ||
-                document.querySelector('[data-is-short="true"]') ||
-                document.querySelector(".reel-player-container");
-
-            if (isOnShorts) {
-                isYouTubeShorts = true;
-                console.log(
-                    "[YouTube Blocker] 🎬 YouTube Shorts detected - applying shorts-specific optimization"
-                );
-            }
-            return isOnShorts;
-        } catch (e) {
-            return false;
-        }
-    }
 
     // Function to load settings from background
     async function loadSettings() {
@@ -127,14 +101,6 @@
     }
 
     loadSettingsWithRetry();
-
-    // Detect YouTube Shorts immediately and monitor for changes
-    detectYouTubeShorts();
-
-    // Also detect on navigation
-    document.addEventListener("yt-navigate-finish", () => {
-        detectYouTubeShorts();
-    });
 
     // Get ad player element (the video playing ads) - try multiple selectors
     function getAdPlayer() {
@@ -216,12 +182,14 @@
             }
 
             // For video ads: seek aggressively to skip
-            if (player.duration < 90) {
-                // Video ads are usually < 90 seconds (covering most pre-roll, mid-roll ads)
+            // Increased from 90 to 120 seconds to catch more ad types
+            if (player.duration < 120) {
+                // Video ads are usually < 120 seconds (covering most pre-roll, mid-roll, bumper ads)
                 if (!shouldSkip) {
+                    // Seek to very end of ad (99% through)
                     const target = Math.max(
-                        player.duration - 0.5,
-                        player.duration * 0.95
+                        player.duration - 0.1,
+                        player.duration * 0.99
                     );
 
                     // Mark this ad as processed
@@ -240,8 +208,15 @@
                     );
 
                     try {
+                        // AGGRESSIVE: Multiple rapid seeks to ensure it works
                         player.currentTime = target;
                         lastBlockedAdURL = player.src;
+
+                        // Wait a bit then seek again to make sure
+                        await new Promise((resolve) => setTimeout(resolve, 50));
+                        if (Math.abs(player.currentTime - target) > 1) {
+                            player.currentTime = target;
+                        }
                     } catch (e) {
                         console.log("[YouTube Blocker] Error seeking:", e);
                     }
@@ -252,13 +227,13 @@
         }
     }
 
-    // Click skip button if visible
+    // Click skip button if visible - AGGRESSIVE approach
     async function tryClickSkipButton() {
         if (!blockEnabled) return;
 
         try {
-            // Direct approach: look for skip button
-            const skipBtn = document.querySelector("button.ytp-ad-skip-button");
+            // Method 1: Direct skip button
+            let skipBtn = document.querySelector("button.ytp-ad-skip-button");
             if (skipBtn && skipBtn.offsetHeight > 0) {
                 try {
                     skipBtn.click();
@@ -267,29 +242,41 @@
                     return true;
                 } catch (e) {
                     // Try alternative click method
-                    skipBtn.dispatchEvent(
-                        new MouseEvent("click", { bubbles: true })
-                    );
-                    console.log(
-                        "[YouTube Blocker] ✓ Dispatched skip button click"
-                    );
-                    lastBlockedAdURL = "";
-                    return true;
+                    try {
+                        skipBtn.dispatchEvent(
+                            new MouseEvent("click", { bubbles: true })
+                        );
+                        console.log(
+                            "[YouTube Blocker] ✓ Dispatched skip button click"
+                        );
+                        lastBlockedAdURL = "";
+                        return true;
+                    } catch (e2) {
+                        // Continue to next method
+                    }
                 }
             }
 
-            // Alternative: look for "Skip Ads" or similar text button
-            const buttons = document.querySelectorAll("button");
-            for (const btn of buttons) {
+            // Method 2: Look for "Skip" text on any button
+            const allButtons = document.querySelectorAll(
+                "button, div[role='button']"
+            );
+            for (const btn of allButtons) {
+                const text = (btn.textContent || "").toLowerCase();
+                const ariaLabel = (
+                    btn.getAttribute("aria-label") || ""
+                ).toLowerCase();
+
                 if (
-                    btn.textContent.includes("Skip") ||
-                    btn.textContent.includes("skip")
+                    (text.includes("skip") && !text.includes("upload")) ||
+                    (ariaLabel.includes("skip") &&
+                        !ariaLabel.includes("upload"))
                 ) {
-                    if (btn.offsetHeight > 0) {
+                    if (btn.offsetHeight > 0 && btn.offsetWidth > 0) {
                         try {
                             btn.click();
                             console.log(
-                                "[YouTube Blocker] ✓ Clicked alternative skip button"
+                                "[YouTube Blocker] ✓ Clicked skip button (text match)"
                             );
                             lastBlockedAdURL = "";
                             return true;
@@ -297,6 +284,19 @@
                             // Continue
                         }
                     }
+                }
+            }
+
+            // Method 3: Look for "Ad will end in" countdown and wait for it to expire
+            const countdownEl = document.querySelector(".ytp-ad-countdown");
+            if (countdownEl) {
+                const text = countdownEl.textContent || "";
+                // If it says "Skip ad in X seconds", button will appear soon
+                if (text.includes("Skip")) {
+                    console.log(
+                        "[YouTube Blocker] Countdown detected, skip button should appear"
+                    );
+                    return false; // Will retry
                 }
             }
         } catch (e) {
@@ -312,32 +312,67 @@
         try {
             // When ad is currently playing, check more frequently
             const now = Date.now();
-            const checkDelay = isCurrentlyPlayingAd ? 50 : 100; // More aggressive when ad detected
+            const checkDelay = isCurrentlyPlayingAd ? 30 : 75; // Even more aggressive
 
             if (now - lastAdDetectedTime < checkDelay) return; // Skip if checked recently
 
             lastAdDetectedTime = now;
 
-            // Hide multiple ad overlays
+            // Hide multiple ad overlays (comprehensive list)
             const selectors = [
                 ".ytp-ad-player-overlay",
                 ".ytp-ad-message-container",
                 ".ytp-ad",
                 ".ytp-ads-container",
+                ".ytp-ad-skip-button-container", // Hide skip button container
+                ".ytp-ad-countdown-container", // Hide countdown
                 "div[data-ad]",
+                ".html5-parent .ad", // Ads in main video area
+                "div[role='alertdialog']", // Dialog boxes (not settings)
+                ".ytp-ad-actions", // Ad action buttons
+                ".adtx", // Ad text
+                ".player-age-gate-content", // Age gate ads
             ];
 
             let adFound = false;
             for (const selector of selectors) {
-                const elements = document.querySelectorAll(selector);
-                for (const el of elements) {
-                    if (el && el.offsetHeight > 0) {
-                        el.style.display = "none !important";
-                        el.style.visibility = "hidden !important";
-                        el.style.pointerEvents = "none !important";
-                        el.style.opacity = "0 !important";
-                        adFound = true;
+                try {
+                    const elements = document.querySelectorAll(selector);
+                    for (const el of elements) {
+                        if (!el) continue;
+
+                        // IMPORTANT: Don't hide settings/user interface elements
+                        const parent = el.closest(
+                            ".ytp-settings-menu, .yt-uix-menu, .yt-menu-container, .yt-dropdown-menu"
+                        );
+                        if (parent) continue; // Skip settings menus
+
+                        // Skip if it's clearly not an ad
+                        const ariaLabel = el.getAttribute("aria-label") || "";
+                        if (
+                            ariaLabel.includes("Settings") ||
+                            ariaLabel.includes("options")
+                        )
+                            continue;
+
+                        if (el.offsetHeight > 0 || el.offsetWidth > 0) {
+                            // Use multiple hiding techniques
+                            el.style.display = "none !important";
+                            el.style.visibility = "hidden !important";
+                            el.style.pointerEvents = "none !important";
+                            el.style.opacity = "0 !important";
+                            el.style.width = "0 !important";
+                            el.style.height = "0 !important";
+                            adFound = true;
+
+                            // Log what we're hiding
+                            console.log(
+                                `[YouTube Blocker] Hidden ad element: ${selector}`
+                            );
+                        }
                     }
+                } catch (e) {
+                    // Continue if selector fails
                 }
             }
 
@@ -378,25 +413,27 @@
 
         adCheckCount++;
 
-        // Aggressive multi-step ad blocking
+        // Hide ad elements FIRST (most important)
         hideAdElements();
 
-        // Check player state first
+        // Check player state
         detectAdViaPlayerState();
 
-        // Try clicking skip button (multiple attempts)
-        const clicked1 = await tryClickSkipButton();
-        if (!clicked1) {
-            // If click failed, wait less and try seeking immediately
+        // AGGRESSIVE: Try clicking skip button (multiple attempts)
+        let clicked = await tryClickSkipButton();
+        if (!clicked) {
+            // If click failed, wait and try again
             await new Promise((resolve) => setTimeout(resolve, 100));
+            clicked = await tryClickSkipButton();
         }
 
-        // Always try seeking - don't wait for click to fail
+        // ALWAYS try seeking - don't wait for click to fail
+        // This is the most reliable way to skip ads
         await trySkipAd();
 
-        // Second attempt for skip button (for non-skippable ads becoming skippable)
-        if (!clicked1) {
-            await new Promise((resolve) => setTimeout(resolve, 100));
+        // If still no click, try one more time after a short delay
+        if (!clicked) {
+            await new Promise((resolve) => setTimeout(resolve, 200));
             await tryClickSkipButton();
         }
     }
@@ -452,13 +489,6 @@
     document.addEventListener(
         "play",
         () => {
-            // Skip if on YouTube Shorts to avoid rapid pause/resume
-            if (isYouTubeShorts) {
-                console.log(
-                    "[YouTube Blocker] Shorts play event - skipping to prevent pause/resume loop"
-                );
-                return;
-            }
             isVideoPlaying = true;
             checkAds();
         },
@@ -468,13 +498,6 @@
     document.addEventListener(
         "pause",
         () => {
-            // Skip if on YouTube Shorts to avoid rapid pause/resume
-            if (isYouTubeShorts) {
-                console.log(
-                    "[YouTube Blocker] Shorts pause event - skipping to prevent pause/resume loop"
-                );
-                return;
-            }
             isVideoPlaying = false;
         },
         true
@@ -482,14 +505,9 @@
 
     // MID-ROLL AD DETECTION: Listen for when ads appear during playback
     // Create observer to detect when ad UI elements appear
-    // FIXED: Disabled for YouTube Shorts to prevent false positives
+    // FIXED: Don't interfere with settings or user UI elements
     const adObserver = new MutationObserver((mutations) => {
         if (!blockEnabled) return;
-
-        // CRITICAL: Skip mutation observer on Shorts - reduces false ad detection
-        if (isYouTubeShorts) {
-            return;
-        }
 
         for (const mutation of mutations) {
             if (mutation.addedNodes.length > 0) {
@@ -498,10 +516,26 @@
                     if (node.nodeType === 1) {
                         // Element node
                         const classList = node.className || "";
+                        const id = node.id || "";
+
+                        // CRITICAL: Skip settings/menu elements
+                        if (
+                            classList.includes("ytp-settings") ||
+                            classList.includes("yt-menu") ||
+                            classList.includes("yt-dropdown") ||
+                            id.includes("settings") ||
+                            id.includes("menu")
+                        ) {
+                            continue; // Skip settings elements
+                        }
+
+                        // Only process actual ad elements
                         if (
                             classList.includes("ytp-ad") ||
-                            classList.includes("ad") ||
-                            node.id?.includes("ad")
+                            (classList.includes("ad") &&
+                                !classList.includes("upload") &&
+                                !classList.includes("readability")) ||
+                            (id?.includes("ad") && !id.includes("upload"))
                         ) {
                             // Ad UI element appeared - trigger aggressive checking
                             isCurrentlyPlayingAd = true;
@@ -531,27 +565,17 @@
     }
 
     // Listen for seeking events - mid-roll ads often appear after seeking
-    // BUT: Skip on Shorts to avoid pause/resume loops
     document.addEventListener(
         "seeking",
         () => {
-            if (!blockEnabled || !isVideoPlaying) return;
-
-            // CRITICAL FIX: Don't trigger seeking checks on YouTube Shorts
-            // Shorts uses rapid seeking for transitions, causing false pause/resume
-            if (isYouTubeShorts) {
+            if (blockEnabled && isVideoPlaying) {
                 console.log(
-                    "[YouTube Blocker] Shorts seeking event - skipping to prevent pause/resume loop"
+                    "[YouTube Blocker] Seeking detected - checking for ads"
                 );
-                return;
+                isCurrentlyPlayingAd = true;
+                lastAdStartTime = Date.now();
+                checkAds();
             }
-
-            console.log(
-                "[YouTube Blocker] Seeking detected - checking for ads"
-            );
-            isCurrentlyPlayingAd = true;
-            lastAdStartTime = Date.now();
-            checkAds();
         },
         true
     );
@@ -560,9 +584,6 @@
     document.addEventListener(
         "ratechange",
         () => {
-            // Skip on Shorts
-            if (isYouTubeShorts) return;
-
             if (blockEnabled && isVideoPlaying) {
                 console.log(
                     "[YouTube Blocker] Playback rate changed - checking for ads"
@@ -577,14 +598,8 @@
     // When ad is detected, check every 300ms (aggressive)
     // When no ad, check every 800ms (efficient)
     // This catches ALL ads including mid-roll while keeping CPU low
-    // FIXED: Disable for YouTube Shorts to prevent pause/resume issues
     setInterval(() => {
         if (blockEnabled && isVideoPlaying && document.body) {
-            // CRITICAL: Skip interval checking on YouTube Shorts
-            if (isYouTubeShorts) {
-                return;
-            }
-
             const now = Date.now();
 
             // Detect if ad is currently playing
@@ -641,17 +656,11 @@
     );
 
     // Listen for seeking event - OPTIMIZED to debounce
-    // FIXED: Skip on YouTube Shorts to prevent pause/resume loops
     let lastSeekCheckTime = 0;
     document.addEventListener(
         "seeking",
         () => {
             if (!blockEnabled) return;
-
-            // CRITICAL: Skip seeking checks on Shorts - prevents pause/resume issues
-            if (isYouTubeShorts) {
-                return;
-            }
 
             const now = Date.now();
             // Only check if 200ms has passed since last seeking check
