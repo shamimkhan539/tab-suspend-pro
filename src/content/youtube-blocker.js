@@ -18,8 +18,15 @@
     let blockEnabled = false;
     let adSlots = [];
     let lastBlockedAdURL = "";
-    let processedAds = new Set(); // Track processed ads by ID/combination
+    let processedAds = new Set(); // Track processed ads by timestamp and position
     let adCheckCount = 0; // Counter for aggressive checking
+    let lastCheckTime = 0; // Track last check to avoid redundant checks
+    let isVideoPlaying = false; // Track if video is currently playing
+    let lastAdDetectedTime = 0; // Track when ad was last detected
+    let lastAdStartTime = 0; // Track when ad was first detected (for aggressive checking during ads)
+    let isCurrentlyPlayingAd = false; // Flag to know if ad is actively playing
+    let aggressiveCheckMode = false; // When true, check every 300ms instead of 800ms
+    let lastVideoTime = -1; // Track last video position to detect ads
 
     // Function to load settings from background
     async function loadSettings() {
@@ -113,6 +120,33 @@
         }
     }
 
+    // Detect if we're currently in an ad
+    function isAdPlaying() {
+        try {
+            const player = document.querySelector("#movie_player");
+            if (!player) return false;
+
+            // Check for ad-related classes
+            const classList = player.className || "";
+            if (classList.includes("ad-showing") || classList.includes("ad")) {
+                return true;
+            }
+
+            // Check for ad UI elements
+            const adOverlay = document.querySelector(".ytp-ad-player-overlay");
+            const adMessage = document.querySelector(
+                ".ytp-ad-message-container"
+            );
+            if (adOverlay?.offsetHeight > 0 || adMessage?.offsetHeight > 0) {
+                return true;
+            }
+
+            return false;
+        } catch (e) {
+            return false;
+        }
+    }
+
     // Skip ad by seeking to end - more aggressive approach
     async function trySkipAd() {
         if (!blockEnabled) return;
@@ -126,43 +160,57 @@
                 return;
             }
 
-            // Create unique ad identifier based on duration and current time
-            // This helps track different ads without relying on URL
+            // Create unique ad identifier using BOTH duration, current time, AND a timestamp
+            // This allows us to track different ads even with similar durations
+            const timestamp = Date.now();
             const adId = `${Math.round(player.duration)}_${Math.round(
                 player.currentTime * 10
-            )}`;
+            )}_${Math.floor(timestamp / 1000)}`;
 
-            // If already processed this specific ad configuration, skip
-            if (processedAds.has(adId)) {
-                return;
+            // If already processed this specific ad configuration within last 5 seconds, skip
+            let shouldSkip = false;
+            for (const processed of processedAds) {
+                const [duration, time, ts] = processed.split("_");
+                const timeSinceProcessed = timestamp - parseInt(ts) * 1000;
+                if (
+                    duration === Math.round(player.duration).toString() &&
+                    timeSinceProcessed < 5000
+                ) {
+                    shouldSkip = true;
+                    break;
+                }
             }
 
             // For video ads: seek aggressively to skip
             if (player.duration < 90) {
                 // Video ads are usually < 90 seconds (covering most pre-roll, mid-roll ads)
-                const target = Math.max(
-                    player.duration - 0.5,
-                    player.duration * 0.95
-                );
+                if (!shouldSkip) {
+                    const target = Math.max(
+                        player.duration - 0.5,
+                        player.duration * 0.95
+                    );
 
-                // Mark this ad as processed
-                processedAds.add(adId);
+                    // Mark this ad as processed
+                    processedAds.add(adId);
+                    isCurrentlyPlayingAd = true;
+                    lastAdStartTime = Date.now();
 
-                console.log(
-                    `[YouTube Blocker] ⏩ Skipping ad #${
-                        processedAds.size
-                    } from ${player.currentTime.toFixed(
-                        1
-                    )}s to ${target.toFixed(
-                        1
-                    )}s (duration: ${player.duration.toFixed(1)}s)`
-                );
+                    console.log(
+                        `[YouTube Blocker] ⏩ Skipping ad #${
+                            processedAds.size
+                        } from ${player.currentTime.toFixed(
+                            1
+                        )}s to ${target.toFixed(
+                            1
+                        )}s (duration: ${player.duration.toFixed(1)}s)`
+                    );
 
-                try {
-                    player.currentTime = target;
-                    lastBlockedAdURL = player.src;
-                } catch (e) {
-                    console.log("[YouTube Blocker] Error seeking:", e);
+                    try {
+                        player.currentTime = target;
+                        lastBlockedAdURL = player.src;
+                    } catch (e) {
+                        console.log("[YouTube Blocker] Error seeking:", e);
+                    }
                 }
             }
         } catch (e) {
@@ -223,29 +271,48 @@
         return false;
     }
 
-    // Block ad container elements
+    // Block ad container elements - IMPROVED for mid-roll ads
     function hideAdElements() {
         if (!blockEnabled) return;
+
         try {
-            // Hide ad panels and overlays
-            const adElements = document.querySelectorAll([
+            // When ad is currently playing, check more frequently
+            const now = Date.now();
+            const checkDelay = isCurrentlyPlayingAd ? 50 : 100; // More aggressive when ad detected
+
+            if (now - lastAdDetectedTime < checkDelay) return; // Skip if checked recently
+
+            lastAdDetectedTime = now;
+
+            // Hide multiple ad overlays
+            const selectors = [
                 ".ytp-ad-player-overlay",
                 ".ytp-ad-message-container",
-                "div[aria-label*='Advertisement']",
-                "div[aria-label*='advertisement']",
                 ".ytp-ad",
-                ".ytp-ads",
-            ]);
-            adElements.forEach((el) => {
-                if (el) {
-                    el.style.display = "none";
-                    el.style.visibility = "hidden";
-                    el.style.pointerEvents = "none";
-                    el.style.opacity = "0";
+                ".ytp-ads-container",
+                "div[data-ad]",
+            ];
+
+            let adFound = false;
+            for (const selector of selectors) {
+                const elements = document.querySelectorAll(selector);
+                for (const el of elements) {
+                    if (el && el.offsetHeight > 0) {
+                        el.style.display = "none !important";
+                        el.style.visibility = "hidden !important";
+                        el.style.pointerEvents = "none !important";
+                        el.style.opacity = "0 !important";
+                        adFound = true;
+                    }
                 }
-            });
+            }
+
+            if (adFound) {
+                isCurrentlyPlayingAd = true;
+                lastAdStartTime = now;
+            }
         } catch (e) {
-            // Ignore
+            // Ignore errors
         }
     }
 
@@ -348,29 +415,134 @@
     };
 
     // Listen for video playback to trigger ad checks
-    document.addEventListener("play", checkAds, true);
+    document.addEventListener(
+        "play",
+        () => {
+            isVideoPlaying = true;
+            checkAds();
+        },
+        true
+    );
 
-    // Check very frequently when video is playing
+    document.addEventListener(
+        "pause",
+        () => {
+            isVideoPlaying = false;
+        },
+        true
+    );
+
+    // MID-ROLL AD DETECTION: Listen for when ads appear during playback
+    // Create observer to detect when ad UI elements appear
+    const adObserver = new MutationObserver((mutations) => {
+        if (!blockEnabled) return;
+
+        for (const mutation of mutations) {
+            if (mutation.addedNodes.length > 0) {
+                // Check if any new nodes are ad-related
+                for (const node of mutation.addedNodes) {
+                    if (node.nodeType === 1) {
+                        // Element node
+                        const classList = node.className || "";
+                        if (
+                            classList.includes("ytp-ad") ||
+                            classList.includes("ad") ||
+                            node.id?.includes("ad")
+                        ) {
+                            // Ad UI element appeared - trigger aggressive checking
+                            isCurrentlyPlayingAd = true;
+                            lastAdStartTime = Date.now();
+                            console.log(
+                                "[YouTube Blocker] 🎬 Mid-roll ad detected via DOM!"
+                            );
+                            checkAds();
+                            break;
+                        }
+                    }
+                }
+            }
+        }
+    });
+
+    // Start observing the document for ad elements
+    try {
+        adObserver.observe(document.body, {
+            childList: true,
+            subtree: true,
+            attributes: true,
+            attributeFilter: ["class", "style"],
+        });
+    } catch (e) {
+        console.log("[YouTube Blocker] Could not set up ad observer:", e);
+    }
+
+    // Listen for seeking events - mid-roll ads often appear after seeking
+    document.addEventListener(
+        "seeking",
+        () => {
+            if (blockEnabled && isVideoPlaying) {
+                console.log(
+                    "[YouTube Blocker] Seeking detected - checking for ads"
+                );
+                isCurrentlyPlayingAd = true;
+                lastAdStartTime = Date.now();
+                checkAds();
+            }
+        },
+        true
+    );
+
+    // Listen for playback rate changes - ads can affect playback rate
+    document.addEventListener(
+        "ratechange",
+        () => {
+            if (blockEnabled && isVideoPlaying) {
+                console.log(
+                    "[YouTube Blocker] Playback rate changed - checking for ads"
+                );
+                checkAds();
+            }
+        },
+        true
+    );
+
+    // Smart interval checking - DYNAMICALLY AGGRESSIVE
+    // When ad is detected, check every 300ms (aggressive)
+    // When no ad, check every 800ms (efficient)
+    // This catches ALL ads including mid-roll while keeping CPU low
     setInterval(() => {
-        if (blockEnabled && document.body) {
-            checkAds().catch((e) =>
-                console.log("[YouTube Blocker] Interval check error:", e)
-            );
-        }
-    }, 300); // Check every 300ms for maximum ad coverage
+        if (blockEnabled && isVideoPlaying && document.body) {
+            const now = Date.now();
 
-    // More aggressive checking for first 3 seconds (when most pre-roll ads play)
-    let initialCheckCount = 0;
-    const initialCheckInterval = setInterval(() => {
-        if (blockEnabled && document.body && initialCheckCount < 10) {
-            initialCheckCount++;
-            checkAds().catch((e) => {
-                console.log("[YouTube Blocker] Initial check error:", e);
-            });
-        } else {
-            clearInterval(initialCheckInterval);
+            // Detect if ad is currently playing
+            const adCurrentlyPlaying = isAdPlaying();
+            if (adCurrentlyPlaying) {
+                isCurrentlyPlayingAd = true;
+                lastAdStartTime = now;
+            }
+
+            // Determine check interval based on whether ad is playing
+            let checkInterval = 800; // Default: efficient checking (800ms)
+
+            if (isCurrentlyPlayingAd) {
+                // Aggressive mode: check every 300ms while ad is playing
+                checkInterval = 300;
+
+                // Exit aggressive mode if 3 seconds have passed since ad detected
+                if (now - lastAdStartTime > 3000) {
+                    isCurrentlyPlayingAd = false;
+                }
+            }
+
+            // Check if enough time has passed
+            if (now - lastCheckTime >= checkInterval) {
+                lastCheckTime = now;
+                checkAds().catch((e) =>
+                    console.log("[YouTube Blocker] Interval check error:", e)
+                );
+            }
         }
-    }, 150); // Check every 150ms for first 1.5 seconds
+    }, 100); // Poll every 100ms (lightweight), but only actually check every 800ms
 
     // Listen for YouTube navigation - RESET tracking
     document.addEventListener("yt-navigate-finish", () => {
@@ -395,14 +567,22 @@
         true
     );
 
-    // Listen for seeking event - might indicate ad skipping attempt
+    // Listen for seeking event - OPTIMIZED to debounce
+    let lastSeekCheckTime = 0;
     document.addEventListener(
         "seeking",
         () => {
-            const player = getAdPlayer();
-            if (player && player.duration < 90) {
-                console.log("[YouTube Blocker] Seeking detected during ad");
-                checkAds();
+            if (!blockEnabled) return;
+
+            const now = Date.now();
+            // Only check if 200ms has passed since last seeking check
+            if (now - lastSeekCheckTime >= 200) {
+                lastSeekCheckTime = now;
+                const player = getAdPlayer();
+                if (player && player.duration < 90) {
+                    console.log("[YouTube Blocker] Seeking detected during ad");
+                    checkAds();
+                }
             }
         },
         true

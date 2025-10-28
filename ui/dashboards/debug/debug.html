@@ -1,0 +1,529 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>🔧 Extension Diagnostics & Performance Debug</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 2rem;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+
+        .header {
+            background: white;
+            border-radius: 12px;
+            padding: 2rem;
+            margin-bottom: 2rem;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
+        }
+
+        .header h1 {
+            font-size: 2rem;
+            margin-bottom: 0.5rem;
+        }
+
+        .header p {
+            color: #666;
+        }
+
+        .controls {
+            display: flex;
+            gap: 1rem;
+            margin-top: 1rem;
+            flex-wrap: wrap;
+        }
+
+        .btn {
+            padding: 0.75rem 1.5rem;
+            border: none;
+            border-radius: 8px;
+            font-size: 0.9rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+
+        .btn-primary {
+            background: #667eea;
+            color: white;
+        }
+
+        .btn-primary:hover {
+            background: #5568d3;
+            transform: translateY(-2px);
+        }
+
+        .btn-danger {
+            background: #ef4444;
+            color: white;
+        }
+
+        .btn-danger:hover {
+            background: #dc2626;
+        }
+
+        .grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 1.5rem;
+            margin-bottom: 2rem;
+        }
+
+        .card {
+            background: white;
+            border-radius: 12px;
+            padding: 1.5rem;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
+        }
+
+        .card h3 {
+            font-size: 1.1rem;
+            margin-bottom: 1rem;
+            color: #333;
+        }
+
+        .stat {
+            display: flex;
+            justify-content: space-between;
+            padding: 0.75rem 0;
+            border-bottom: 1px solid #eee;
+        }
+
+        .stat:last-child {
+            border-bottom: none;
+        }
+
+        .stat-label {
+            font-weight: 500;
+            color: #666;
+        }
+
+        .stat-value {
+            font-weight: 600;
+            color: #333;
+            text-align: right;
+        }
+
+        .stat-value.success {
+            color: #10b981;
+        }
+
+        .stat-value.warning {
+            color: #f59e0b;
+        }
+
+        .stat-value.error {
+            color: #ef4444;
+        }
+
+        .chart {
+            margin-top: 1rem;
+            height: 200px;
+            background: #f9fafb;
+            border-radius: 8px;
+            padding: 1rem;
+        }
+
+        .log-section {
+            background: white;
+            border-radius: 12px;
+            padding: 1.5rem;
+            margin-bottom: 2rem;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
+        }
+
+        .log-section h3 {
+            font-size: 1.1rem;
+            margin-bottom: 1rem;
+        }
+
+        .log-container {
+            background: #1e1e1e;
+            color: #d4d4d4;
+            font-family: 'Courier New', monospace;
+            padding: 1rem;
+            border-radius: 8px;
+            max-height: 400px;
+            overflow-y: auto;
+            font-size: 0.85rem;
+        }
+
+        .log-entry {
+            margin: 0.25rem 0;
+            padding: 0.25rem 0;
+        }
+
+        .log-error {
+            color: #f48771;
+        }
+
+        .log-warning {
+            color: #dcdcaa;
+        }
+
+        .log-info {
+            color: #569cd6;
+        }
+
+        .log-success {
+            color: #6a9955;
+        }
+
+        .metric-item {
+            background: #f9fafb;
+            padding: 1rem;
+            border-radius: 8px;
+            margin-bottom: 1rem;
+        }
+
+        .metric-name {
+            font-weight: 600;
+            margin-bottom: 0.5rem;
+        }
+
+        .metric-stats {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(100px, 1fr));
+            gap: 0.5rem;
+            font-size: 0.85rem;
+        }
+
+        .metric-stat {
+            padding: 0.5rem;
+            background: white;
+            border-radius: 4px;
+            text-align: center;
+        }
+
+        .status-indicator {
+            display: inline-block;
+            width: 12px;
+            height: 12px;
+            border-radius: 50%;
+            margin-right: 0.5rem;
+        }
+
+        .status-indicator.healthy {
+            background: #10b981;
+        }
+
+        .status-indicator.warning {
+            background: #f59e0b;
+        }
+
+        .status-indicator.error {
+            background: #ef4444;
+        }
+
+        @keyframes pulse {
+
+            0%,
+            100% {
+                opacity: 1;
+            }
+
+            50% {
+                opacity: 0.5;
+            }
+        }
+
+        .loading {
+            animation: pulse 1.5s infinite;
+        }
+
+        .refresh-time {
+            font-size: 0.85rem;
+            color: #999;
+            margin-top: 1rem;
+        }
+
+        @media (max-width: 768px) {
+            .grid {
+                grid-template-columns: 1fr;
+            }
+
+            .body {
+                padding: 1rem;
+            }
+
+            .header {
+                padding: 1rem;
+            }
+
+            .header h1 {
+                font-size: 1.5rem;
+            }
+        }
+    </style>
+</head>
+
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>🔧 Extension Diagnostics & Performance Debug</h1>
+            <p>Monitor extension health, performance metrics, and error logs</p>
+            <div class="controls">
+                <button class="btn btn-primary" onclick="refreshDiagnostics()">
+                    🔄 Refresh Diagnostics
+                </button>
+                <button class="btn btn-primary" onclick="enableDebugMode()">
+                    🐛 Enable Debug Mode
+                </button>
+                <button class="btn btn-danger" onclick="clearAllLogs()">
+                    🗑️ Clear All Logs
+                </button>
+            </div>
+        </div>
+
+        <!-- System Health -->
+        <div class="grid">
+            <div class="card">
+                <h3>💾 Memory Usage</h3>
+                <div class="stat">
+                    <span class="stat-label">Total Memory:</span>
+                    <span class="stat-value" id="total-memory">Calculating...</span>
+                </div>
+                <div class="stat">
+                    <span class="stat-label">Available Memory:</span>
+                    <span class="stat-value" id="available-memory">Calculating...</span>
+                </div>
+                <div class="stat">
+                    <span class="stat-label">Usage %:</span>
+                    <span class="stat-value" id="memory-usage">Calculating...</span>
+                </div>
+                <div class="chart" id="memory-chart"></div>
+            </div>
+
+            <div class="card">
+                <h3>⚡ Extension Status</h3>
+                <div class="stat">
+                    <span class="stat-label">
+                        <span class="status-indicator healthy"></span>
+                        Extension Enabled
+                    </span>
+                    <span class="stat-value" id="extension-enabled">Yes</span>
+                </div>
+                <div class="stat">
+                    <span class="stat-label">Cache Size:</span>
+                    <span class="stat-value" id="cache-size">Calculating...</span>
+                </div>
+                <div class="stat">
+                    <span class="stat-label">Pending Requests:</span>
+                    <span class="stat-value" id="pending-requests">0</span>
+                </div>
+                <div class="stat">
+                    <span class="stat-label">Debug Mode:</span>
+                    <span class="stat-value" id="debug-mode">Disabled</span>
+                </div>
+            </div>
+
+            <div class="card">
+                <h3>📊 Error Statistics</h3>
+                <div class="stat">
+                    <span class="stat-label">Total Errors:</span>
+                    <span class="stat-value error" id="error-count">0</span>
+                </div>
+                <div class="stat">
+                    <span class="stat-label">Total Warnings:</span>
+                    <span class="stat-value warning" id="warning-count">0</span>
+                </div>
+                <div class="stat">
+                    <span class="stat-label">Total Info:</span>
+                    <span class="stat-value success" id="info-count">0</span>
+                </div>
+                <div class="stat">
+                    <span class="stat-label">Last Error:</span>
+                    <span class="stat-value" id="last-error-time">N/A</span>
+                </div>
+            </div>
+        </div>
+
+        <!-- Performance Metrics -->
+        <div class="log-section">
+            <h3>📈 Performance Metrics</h3>
+            <div id="metrics-container">
+                <div class="loading">Loading metrics...</div>
+            </div>
+        </div>
+
+        <!-- Error Logs -->
+        <div class="log-section">
+            <h3>🔴 Error Logs</h3>
+            <div class="log-container" id="error-logs">
+                <div class="log-entry log-info">Waiting for data...</div>
+            </div>
+            <div class="refresh-time">Last updated: <span id="error-update-time">Never</span></div>
+        </div>
+
+        <!-- Warning Logs -->
+        <div class="log-section">
+            <h3>🟡 Warning Logs</h3>
+            <div class="log-container" id="warning-logs">
+                <div class="log-entry log-info">Waiting for data...</div>
+            </div>
+            <div class="refresh-time">Last updated: <span id="warning-update-time">Never</span></div>
+        </div>
+
+        <!-- System Info -->
+        <div class="log-section">
+            <h3>ℹ️ System Information</h3>
+            <div class="grid">
+                <div class="card">
+                    <div class="stat">
+                        <span class="stat-label">Chrome Version:</span>
+                        <span class="stat-value" id="chrome-version">Detecting...</span>
+                    </div>
+                    <div class="stat">
+                        <span class="stat-label">Platform:</span>
+                        <span class="stat-value" id="platform">Detecting...</span>
+                    </div>
+                    <div class="stat">
+                        <span class="stat-label">Manifest Version:</span>
+                        <span class="stat-value" id="manifest-version">3</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Fetch and display diagnostics
+        async function refreshDiagnostics() {
+            try {
+                // Get diagnostics from background script
+                const response = await chrome.runtime.sendMessage({
+                    action: 'get-diagnostics'
+                });
+
+                if (response && response.diagnostics) {
+                    displayDiagnostics(response.diagnostics);
+                    displayLogs(response.logs);
+                }
+            } catch (error) {
+                console.error('Error fetching diagnostics:', error);
+            }
+        }
+
+        function displayDiagnostics(diags) {
+            const now = new Date();
+
+            // Memory
+            if (diags.memory) {
+                document.getElementById('total-memory').textContent =
+                    (diags.memory.capacity / 1024 / 1024 / 1024).toFixed(2) + ' GB';
+                document.getElementById('available-memory').textContent =
+                    (diags.memory.availableCapacity / 1024 / 1024 / 1024).toFixed(2) + ' GB';
+
+                const usage = ((diags.memory.capacity - diags.memory.availableCapacity) /
+                    diags.memory.capacity * 100).toFixed(1);
+                document.getElementById('memory-usage').textContent = usage + '%';
+            }
+
+            // Extension status
+            document.getElementById('cache-size').textContent =
+                (diags.cacheSize / 1024).toFixed(2) + ' KB';
+            document.getElementById('pending-requests').textContent =
+                diags.pendingRequests || 0;
+            document.getElementById('debug-mode').textContent =
+                diags.debugMode ? 'Enabled' : 'Disabled';
+
+            // System info
+            document.getElementById('chrome-version').textContent =
+                /Chrome\/([0-9.]+)/.exec(navigator.userAgent)?.[1] || 'Unknown';
+            document.getElementById('platform').textContent =
+                navigator.platform || 'Unknown';
+        }
+
+        function displayLogs(logs) {
+            if (!logs) return;
+
+            // Error logs
+            const errorContainer = document.getElementById('error-logs');
+            if (logs.errors && logs.errors.length > 0) {
+                errorContainer.innerHTML = logs.errors.map(err => `
+                    <div class="log-entry log-error">
+                        [${new Date(err.timestamp).toLocaleTimeString()}] 
+                        ${err.module}: ${err.message}
+                    </div>
+                `).join('');
+            }
+            document.getElementById('error-update-time').textContent = new Date().toLocaleTimeString();
+
+            // Warning logs
+            const warningContainer = document.getElementById('warning-logs');
+            if (logs.warnings && logs.warnings.length > 0) {
+                warningContainer.innerHTML = logs.warnings.map(warn => `
+                    <div class="log-entry log-warning">
+                        [${new Date(warn.timestamp).toLocaleTimeString()}] 
+                        ${warn.module}: ${warn.message}
+                    </div>
+                `).join('');
+            }
+            document.getElementById('warning-update-time').textContent = new Date().toLocaleTimeString();
+
+            // Error statistics
+            document.getElementById('error-count').textContent = logs.errors?.length || 0;
+            document.getElementById('warning-count').textContent = logs.warnings?.length || 0;
+            document.getElementById('info-count').textContent = logs.info?.length || 0;
+
+            // Metrics
+            const metricsContainer = document.getElementById('metrics-container');
+            if (logs.metrics && logs.metrics.length > 0) {
+                metricsContainer.innerHTML = logs.metrics.map(m => `
+                    <div class="metric-item">
+                        <div class="metric-name">${m.name}</div>
+                        <div class="metric-stats">
+                            <div class="metric-stat"><strong>Avg:</strong> ${m.stats.avg}ms</div>
+                            <div class="metric-stat"><strong>Min:</strong> ${m.stats.min}ms</div>
+                            <div class="metric-stat"><strong>Max:</strong> ${m.stats.max}ms</div>
+                            <div class="metric-stat"><strong>P95:</strong> ${m.stats.p95}ms</div>
+                        </div>
+                    </div>
+                `).join('');
+            }
+        }
+
+        function enableDebugMode() {
+            chrome.runtime.sendMessage({
+                action: 'enable-debug-mode'
+            }, () => {
+                alert('Debug mode enabled. Refresh to see debug logs.');
+                refreshDiagnostics();
+            });
+        }
+
+        function clearAllLogs() {
+            if (confirm('Are you sure you want to clear all logs?')) {
+                chrome.runtime.sendMessage({
+                    action: 'clear-logs'
+                }, () => {
+                    alert('Logs cleared.');
+                    refreshDiagnostics();
+                });
+            }
+        }
+
+        // Auto-refresh every 5 seconds
+        setInterval(refreshDiagnostics, 5000);
+
+        // Initial load
+        refreshDiagnostics();
+    </script>
+</body>
+
+</html>
