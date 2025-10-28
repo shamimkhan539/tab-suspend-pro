@@ -677,6 +677,27 @@ class TabActivityAnalytics {
         };
     }
 
+    getFocusStatus() {
+        const now = Date.now();
+        const sessionDuration =
+            this.focusMode.enabled && this.focusMode.startTime
+                ? Math.floor((now - this.focusMode.startTime) / 1000 / 60) // minutes
+                : 0;
+
+        return {
+            enabled: this.focusMode.enabled,
+            startTime: this.focusMode.startTime,
+            sessionDuration: sessionDuration,
+            blockedSites: Array.from(this.focusMode.blockedSites),
+            workSites: Array.from(this.focusMode.workSites),
+            totalSessionsToday: this.sessionData.filter(
+                (session) =>
+                    new Date(session.date).toDateString() ===
+                    new Date().toDateString()
+            ).length,
+        };
+    }
+
     async getDetailedSiteStats(domain) {
         const stats = this.siteStats.get(domain);
         if (!stats) return null;

@@ -106,6 +106,39 @@ class ConsolidatedSettingsManager {
             await chrome.storage.sync.set({
                 consolidatedSettings: this.settings,
             });
+
+            // Notify background script to update content scripts
+            try {
+                chrome.runtime.sendMessage({
+                    action: "settings-updated",
+                    settings: this.settings,
+                });
+            } catch (error) {
+                console.log("Background script not ready:", error);
+            }
+
+            // Specifically notify YouTube blocker about ads settings changes
+            chrome.tabs.query(
+                { url: ["*://youtube.com/*", "*://music.youtube.com/*"] },
+                (tabs) => {
+                    tabs.forEach((tab) => {
+                        try {
+                            chrome.tabs.sendMessage(tab.id, {
+                                action: "update-ads-blocker-settings",
+                                blockYoutubeAds:
+                                    this.settings.adsBlocker?.blockYoutubeAds ||
+                                    false,
+                                blockYoutubeMusicAds:
+                                    this.settings.adsBlocker
+                                        ?.blockYoutubeMusicAds || false,
+                            });
+                        } catch (error) {
+                            // Tab may not be ready
+                        }
+                    });
+                }
+            );
+
             this.showSettingsSaved();
         } catch (error) {
             console.error("Error saving consolidated settings:", error);

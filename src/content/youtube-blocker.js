@@ -19,29 +19,59 @@
     let adSlots = [];
     let lastBlockedAdURL = "";
 
-    // Get settings from background
-    try {
-        chrome.runtime.sendMessage(
-            { action: "get-youtube-blocker-settings" },
-            function (response) {
-                if (!chrome.runtime.lastError && response) {
-                    blockEnabled =
-                        isYouTube && response.blockYoutubeAds
-                            ? true
-                            : isYouTubeMusic && response.blockYoutubeMusicAds
-                            ? true
-                            : false;
-                    console.log("[YouTube Blocker] Settings loaded:", {
-                        blockEnabled,
-                        blockYoutubeAds: response.blockYoutubeAds,
-                        blockYoutubeMusicAds: response.blockYoutubeMusicAds,
-                    });
-                }
+    // Function to load settings from background
+    async function loadSettings() {
+        return new Promise((resolve) => {
+            try {
+                chrome.runtime.sendMessage(
+                    { action: "get-youtube-blocker-settings" },
+                    function (response) {
+                        if (chrome.runtime.lastError) {
+                            console.log(
+                                "[YouTube Blocker] Error getting settings:",
+                                chrome.runtime.lastError
+                            );
+                            resolve(false);
+                            return;
+                        }
+
+                        if (response) {
+                            blockEnabled =
+                                isYouTube && response.blockYoutubeAds
+                                    ? true
+                                    : isYouTubeMusic &&
+                                      response.blockYoutubeMusicAds
+                                    ? true
+                                    : false;
+                            console.log("[YouTube Blocker] Settings loaded:", {
+                                blockEnabled,
+                                blockYoutubeAds: response.blockYoutubeAds,
+                                blockYoutubeMusicAds:
+                                    response.blockYoutubeMusicAds,
+                            });
+                            resolve(true);
+                        } else {
+                            console.log(
+                                "[YouTube Blocker] No response from background"
+                            );
+                            resolve(false);
+                        }
+                    }
+                );
+            } catch (error) {
+                console.log("[YouTube Blocker] Error sending message:", error);
+                resolve(false);
             }
-        );
-    } catch (error) {
-        console.log("[YouTube Blocker] Error loading settings:", error);
+        });
     }
+
+    // Load settings immediately
+    loadSettings().then((success) => {
+        if (!success) {
+            // Retry after a short delay if first attempt fails
+            setTimeout(loadSettings, 500);
+        }
+    });
 
     // Get ad player element (the video playing ads)
     function getAdPlayer() {

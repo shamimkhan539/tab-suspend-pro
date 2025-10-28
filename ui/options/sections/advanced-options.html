@@ -421,6 +421,8 @@
             <div class="tab" data-tab="cloud">☁️ Cloud Backup</div>
             <div class="tab" data-tab="performance">⚡ Performance</div>
             <div class="tab" data-tab="interface">🎨 Interface</div>
+            <div class="tab" data-tab="tracker">🛡️ Tracker Blocker</div>
+            <div class="tab" data-tab="ads">🚫 Ads Blocker</div>
         </div>
 
         <!-- Core Settings Tab -->
@@ -958,6 +960,213 @@
                             <div class="toggle-switch active" id="interface-animations">
                                 <div class="toggle-slider"></div>
                             </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Tracker Blocker Tab -->
+        <div class="tab-content" id="tracker">
+            <div class="settings-grid">
+                <div class="settings-section">
+                    <h3 class="section-title">
+                        <div class="section-icon">🛡️</div>
+                        Tracker Blocking
+                    </h3>
+
+                    <div class="setting-item">
+                        <div class="setting-info">
+                            <div class="setting-label">Enable Tracker Blocking</div>
+                            <div class="setting-description">Block advertising and tracking scripts from monitoring your
+                                browsing</div>
+                        </div>
+                        <div class="setting-control">
+                            <div class="toggle-switch active" id="tracker-blocker-enabled">
+                                <div class="toggle-slider"></div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="setting-item">
+                        <div class="setting-info">
+                            <div class="setting-label">Block Advertising</div>
+                            <div class="setting-description">Block ads and advertising networks</div>
+                        </div>
+                        <div class="setting-control">
+                            <div class="toggle-switch active" id="block-ads">
+                                <div class="toggle-slider"></div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="setting-item">
+                        <div class="setting-info">
+                            <div class="setting-label">Block Analytics</div>
+                            <div class="setting-description">Block analytics and tracking services</div>
+                        </div>
+                        <div class="setting-control">
+                            <div class="toggle-switch active" id="block-trackers">
+                                <div class="toggle-slider"></div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="setting-item">
+                        <div class="setting-info">
+                            <div class="setting-label">Block Social Trackers</div>
+                            <div class="setting-description">Block social media tracking pixels and widgets</div>
+                        </div>
+                        <div class="setting-control">
+                            <div class="toggle-switch active" id="block-social">
+                                <div class="toggle-slider"></div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="setting-item">
+                        <div class="setting-info">
+                            <div class="setting-label">Block Mining Scripts</div>
+                            <div class="setting-description">Block cryptocurrency mining scripts</div>
+                        </div>
+                        <div class="setting-control">
+                            <div class="toggle-switch active" id="block-mining">
+                                <div class="toggle-slider"></div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="setting-item">
+                        <div class="setting-info">
+                            <div class="setting-label">Block Malware</div>
+                            <div class="setting-description">Block malicious and suspicious scripts</div>
+                        </div>
+                        <div class="setting-control">
+                            <div class="toggle-switch active" id="block-malware">
+                                <div class="toggle-slider"></div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="settings-section">
+                    <h3 class="section-title">
+                        <div class="section-icon">📋</div>
+                        Whitelist Management
+                    </h3>
+
+                    <div class="setting-item">
+                        <div class="setting-info">
+                            <div class="setting-label">Whitelist Domains</div>
+                            <div class="setting-description">Add domains where tracking is allowed</div>
+                        </div>
+                        <div class="setting-control">
+                            <textarea id="tracker-whitelist"
+                                style="width: 100%; min-height: 100px; padding: 8px; border: 1px solid #444; border-radius: 4px; background: #1a1a1a; color: #fff; font-family: monospace; font-size: 12px;"
+                                placeholder="Enter domains (one per line)&#10;example.com&#10;trusted-site.org"></textarea>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Ads Blocker Tab -->
+        <div class="tab-content" id="ads">
+            <div class="settings-grid">
+                <div class="settings-section">
+                    <h3 class="section-title">
+                        <div class="section-icon">🚫</div>
+                        Ad Blocking
+                    </h3>
+
+                    <div class="setting-item">
+                        <div class="setting-info">
+                            <div class="setting-label">Enable Ad Blocking</div>
+                            <div class="setting-description">Block advertisements across all websites</div>
+                        </div>
+                        <div class="setting-control">
+                            <div class="toggle-switch active" id="ads-blocker-enabled">
+                                <div class="toggle-slider"></div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="setting-item">
+                        <div class="setting-info">
+                            <div class="setting-label">Block YouTube Ads</div>
+                            <div class="setting-description">Block advertisements on YouTube videos</div>
+                        </div>
+                        <div class="setting-control">
+                            <div class="toggle-switch active" id="ads-block-youtube">
+                                <div class="toggle-slider"></div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="setting-item">
+                        <div class="setting-info">
+                            <div class="setting-label">Block YouTube Music Ads</div>
+                            <div class="setting-description">Block advertisements on YouTube Music</div>
+                        </div>
+                        <div class="setting-control">
+                            <div class="toggle-switch active" id="ads-block-youtube-music">
+                                <div class="toggle-slider"></div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="setting-item">
+                        <div class="setting-info">
+                            <div class="setting-label">Block Video Ads</div>
+                            <div class="setting-description">Block pre-roll and mid-roll video advertisements</div>
+                        </div>
+                        <div class="setting-control">
+                            <div class="toggle-switch active" id="ads-block-ads">
+                                <div class="toggle-slider"></div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="setting-item">
+                        <div class="setting-info">
+                            <div class="setting-label">Block Pop-ups</div>
+                            <div class="setting-description">Block pop-up and pop-under advertisements</div>
+                        </div>
+                        <div class="setting-control">
+                            <div class="toggle-switch active" id="ads-block-analytics">
+                                <div class="toggle-slider"></div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="setting-item">
+                        <div class="setting-info">
+                            <div class="setting-label">Block Cookie Consent</div>
+                            <div class="setting-description">Hide cookie consent and privacy banners</div>
+                        </div>
+                        <div class="setting-control">
+                            <div class="toggle-switch active" id="ads-block-cookies">
+                                <div class="toggle-slider"></div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="settings-section">
+                    <h3 class="section-title">
+                        <div class="section-icon">📋</div>
+                        Whitelist Management
+                    </h3>
+
+                    <div class="setting-item">
+                        <div class="setting-info">
+                            <div class="setting-label">Whitelist Domains</div>
+                            <div class="setting-description">Add domains where ads are allowed to display</div>
+                        </div>
+                        <div class="setting-control">
+                            <textarea id="ads-whitelist"
+                                style="width: 100%; min-height: 100px; padding: 8px; border: 1px solid #444; border-radius: 4px; background: #1a1a1a; color: #fff; font-family: monospace; font-size: 12px;"
+                                placeholder="Enter domains (one per line)&#10;example.com&#10;support-site.org"></textarea>
                         </div>
                     </div>
                 </div>

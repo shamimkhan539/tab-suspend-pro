@@ -716,6 +716,26 @@ class TabSuspendManager {
                     stored.tabSuspendSettings
                 );
             }
+
+            // Also sync consolidated settings (from advanced options) to local storage
+            // This ensures ads blocker and tracker blocker have access to their settings
+            const consolidated = await chrome.storage.sync.get([
+                "consolidatedSettings",
+            ]);
+            if (consolidated.consolidatedSettings) {
+                if (consolidated.consolidatedSettings.adsBlocker) {
+                    await chrome.storage.local.set({
+                        adsBlockerSettings:
+                            consolidated.consolidatedSettings.adsBlocker,
+                    });
+                }
+                if (consolidated.consolidatedSettings.trackerBlocker) {
+                    await chrome.storage.local.set({
+                        trackerBlockerSettings:
+                            consolidated.consolidatedSettings.trackerBlocker,
+                    });
+                }
+            }
         } catch (error) {
             console.error("Error loading settings:", error);
         }
@@ -1515,16 +1535,29 @@ class TabSuspendManager {
                     break;
 
                 case "get-youtube-blocker-settings":
-                    const settings = await chrome.storage.local.get([
+                    // Check both sync and local storage for ads blocker settings
+                    let adsSettings = await chrome.storage.local.get([
                         "adsBlockerSettings",
                     ]);
-                    if (settings.adsBlockerSettings) {
+
+                    // If not in local storage, check sync storage (from consolidated settings)
+                    if (!adsSettings.adsBlockerSettings) {
+                        const syncSettings = await chrome.storage.sync.get([
+                            "consolidatedSettings",
+                        ]);
+                        if (syncSettings.consolidatedSettings?.adsBlocker) {
+                            adsSettings.adsBlockerSettings =
+                                syncSettings.consolidatedSettings.adsBlocker;
+                        }
+                    }
+
+                    if (adsSettings.adsBlockerSettings) {
                         sendResponse({
                             blockYoutubeAds:
-                                settings.adsBlockerSettings.blockYoutubeAds ||
-                                false,
+                                adsSettings.adsBlockerSettings
+                                    .blockYoutubeAds || false,
                             blockYoutubeMusicAds:
-                                settings.adsBlockerSettings
+                                adsSettings.adsBlockerSettings
                                     .blockYoutubeMusicAds || false,
                         });
                     } else {
@@ -1533,6 +1566,20 @@ class TabSuspendManager {
                             blockYoutubeMusicAds: false,
                         });
                     }
+                    break;
+
+                case "settings-updated":
+                    // Sync consolidated settings to local storage for ads blocker module
+                    if (message.settings && message.settings.adsBlocker) {
+                        await chrome.storage.local.set({
+                            adsBlockerSettings: message.settings.adsBlocker,
+                        });
+                        console.log(
+                            "[Background] Ads blocker settings updated:",
+                            message.settings.adsBlocker
+                        );
+                    }
+                    sendResponse({ success: true });
                     break;
 
                 default:
