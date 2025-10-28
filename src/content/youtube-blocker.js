@@ -27,6 +27,32 @@
     let isCurrentlyPlayingAd = false; // Flag to know if ad is actively playing
     let aggressiveCheckMode = false; // When true, check every 300ms instead of 800ms
     let lastVideoTime = -1; // Track last video position to detect ads
+    let isYouTubeShorts = false; // Detect if we're on YouTube Shorts
+    let shortsDetectionAttempts = 0; // Track attempts to detect shorts
+    let lastSeekerTime = 0; // Track last seeked time to prevent rapid seeking
+    let pauseResumeTimeout = null; // Timeout for pause/resume detection
+
+    // Function to detect if we're on YouTube Shorts
+    function detectYouTubeShorts() {
+        try {
+            // Check multiple ways YouTube Shorts is detected
+            const url = window.location.href;
+            const isOnShorts =
+                url.includes("/shorts/") ||
+                document.querySelector('[data-is-short="true"]') ||
+                document.querySelector(".reel-player-container");
+
+            if (isOnShorts) {
+                isYouTubeShorts = true;
+                console.log(
+                    "[YouTube Blocker] 🎬 YouTube Shorts detected - applying shorts-specific optimization"
+                );
+            }
+            return isOnShorts;
+        } catch (e) {
+            return false;
+        }
+    }
 
     // Function to load settings from background
     async function loadSettings() {
@@ -101,6 +127,14 @@
     }
 
     loadSettingsWithRetry();
+
+    // Detect YouTube Shorts immediately and monitor for changes
+    detectYouTubeShorts();
+
+    // Also detect on navigation
+    document.addEventListener("yt-navigate-finish", () => {
+        detectYouTubeShorts();
+    });
 
     // Get ad player element (the video playing ads) - try multiple selectors
     function getAdPlayer() {
@@ -418,6 +452,13 @@
     document.addEventListener(
         "play",
         () => {
+            // Skip if on YouTube Shorts to avoid rapid pause/resume
+            if (isYouTubeShorts) {
+                console.log(
+                    "[YouTube Blocker] Shorts play event - skipping to prevent pause/resume loop"
+                );
+                return;
+            }
             isVideoPlaying = true;
             checkAds();
         },
@@ -427,6 +468,13 @@
     document.addEventListener(
         "pause",
         () => {
+            // Skip if on YouTube Shorts to avoid rapid pause/resume
+            if (isYouTubeShorts) {
+                console.log(
+                    "[YouTube Blocker] Shorts pause event - skipping to prevent pause/resume loop"
+                );
+                return;
+            }
             isVideoPlaying = false;
         },
         true
@@ -434,8 +482,14 @@
 
     // MID-ROLL AD DETECTION: Listen for when ads appear during playback
     // Create observer to detect when ad UI elements appear
+    // FIXED: Disabled for YouTube Shorts to prevent false positives
     const adObserver = new MutationObserver((mutations) => {
         if (!blockEnabled) return;
+
+        // CRITICAL: Skip mutation observer on Shorts - reduces false ad detection
+        if (isYouTubeShorts) {
+            return;
+        }
 
         for (const mutation of mutations) {
             if (mutation.addedNodes.length > 0) {
@@ -477,17 +531,27 @@
     }
 
     // Listen for seeking events - mid-roll ads often appear after seeking
+    // BUT: Skip on Shorts to avoid pause/resume loops
     document.addEventListener(
         "seeking",
         () => {
-            if (blockEnabled && isVideoPlaying) {
+            if (!blockEnabled || !isVideoPlaying) return;
+
+            // CRITICAL FIX: Don't trigger seeking checks on YouTube Shorts
+            // Shorts uses rapid seeking for transitions, causing false pause/resume
+            if (isYouTubeShorts) {
                 console.log(
-                    "[YouTube Blocker] Seeking detected - checking for ads"
+                    "[YouTube Blocker] Shorts seeking event - skipping to prevent pause/resume loop"
                 );
-                isCurrentlyPlayingAd = true;
-                lastAdStartTime = Date.now();
-                checkAds();
+                return;
             }
+
+            console.log(
+                "[YouTube Blocker] Seeking detected - checking for ads"
+            );
+            isCurrentlyPlayingAd = true;
+            lastAdStartTime = Date.now();
+            checkAds();
         },
         true
     );
@@ -496,6 +560,9 @@
     document.addEventListener(
         "ratechange",
         () => {
+            // Skip on Shorts
+            if (isYouTubeShorts) return;
+
             if (blockEnabled && isVideoPlaying) {
                 console.log(
                     "[YouTube Blocker] Playback rate changed - checking for ads"
@@ -510,8 +577,14 @@
     // When ad is detected, check every 300ms (aggressive)
     // When no ad, check every 800ms (efficient)
     // This catches ALL ads including mid-roll while keeping CPU low
+    // FIXED: Disable for YouTube Shorts to prevent pause/resume issues
     setInterval(() => {
         if (blockEnabled && isVideoPlaying && document.body) {
+            // CRITICAL: Skip interval checking on YouTube Shorts
+            if (isYouTubeShorts) {
+                return;
+            }
+
             const now = Date.now();
 
             // Detect if ad is currently playing
@@ -568,11 +641,17 @@
     );
 
     // Listen for seeking event - OPTIMIZED to debounce
+    // FIXED: Skip on YouTube Shorts to prevent pause/resume loops
     let lastSeekCheckTime = 0;
     document.addEventListener(
         "seeking",
         () => {
             if (!blockEnabled) return;
+
+            // CRITICAL: Skip seeking checks on Shorts - prevents pause/resume issues
+            if (isYouTubeShorts) {
+                return;
+            }
 
             const now = Date.now();
             // Only check if 200ms has passed since last seeking check
