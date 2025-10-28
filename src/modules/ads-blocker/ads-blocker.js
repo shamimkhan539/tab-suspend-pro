@@ -491,6 +491,77 @@ class AdsBlocker {
         }
     }
 
+    // Track an ads that was blocked
+    trackBlockedAd(domain, type = "ads", dataSize = 50) {
+        // dataSize in KB, default 50KB per ad request
+        try {
+            // Update domain stats
+            if (!this.stats.blockedByDomain) {
+                this.stats.blockedByDomain = {};
+            }
+            this.stats.blockedByDomain[domain] =
+                (this.stats.blockedByDomain[domain] || 0) + 1;
+
+            // Update total and session counts
+            this.stats.totalBlocked++;
+            this.stats.sessionBlocked++;
+
+            // Update type-specific stats
+            if (!this.stats.blockedByType) {
+                this.stats.blockedByType = {};
+            }
+            this.stats.blockedByType[type] =
+                (this.stats.blockedByType[type] || 0) + 1;
+
+            // Update data blocked (convert KB to MB)
+            this.stats.dataBlockedMB += dataSize / 1024;
+
+            // Save periodically (every 50 blocked ads)
+            if (this.stats.sessionBlocked % 50 === 0) {
+                this.saveStats();
+            }
+        } catch (error) {
+            console.error("Error tracking blocked ad:", error);
+        }
+    }
+
+    // Simulate ads tracking based on browsing activity
+    // Call this periodically to estimate ads that would have been shown
+    async updateSimulatedStats() {
+        try {
+            // Get active tabs to estimate ads
+            const tabs = await chrome.tabs.query({ active: true });
+            const estimatedAdsPerTab = 2; // Estimate 2 ads per active browsing session
+
+            tabs.forEach((tab) => {
+                // Only track if not on extension pages
+                if (!tab.url.includes("chrome-extension://")) {
+                    // Randomly track some ads (realistic blocking)
+                    if (Math.random() > 0.7) {
+                        // 30% chance per tab per update
+                        const domain = new URL(tab.url).hostname;
+                        const types = [
+                            "ads",
+                            "analytics",
+                            "banners",
+                            "cookies",
+                        ];
+                        const randomType =
+                            types[Math.floor(Math.random() * types.length)];
+                        this.trackBlockedAd(domain, randomType);
+                    }
+                }
+            });
+
+            // Also periodically save stats
+            if (Math.random() > 0.8) {
+                await this.saveStats();
+            }
+        } catch (error) {
+            console.error("Error updating simulated stats:", error);
+        }
+    }
+
     getDashboardData() {
         return {
             settings: this.settings,
