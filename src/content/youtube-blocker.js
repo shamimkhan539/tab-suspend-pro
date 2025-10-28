@@ -18,6 +18,8 @@
     let blockEnabled = false;
     let adSlots = [];
     let lastBlockedAdURL = "";
+    let processedAds = new Set(); // Track processed ads by ID/combination
+    let adCheckCount = 0; // Counter for aggressive checking
 
     // Function to load settings from background
     async function loadSettings() {
@@ -48,6 +50,9 @@
                                 blockYoutubeAds: response.blockYoutubeAds,
                                 blockYoutubeMusicAds:
                                     response.blockYoutubeMusicAds,
+                                isYouTube,
+                                isYouTubeMusic,
+                                hostname,
                             });
                             resolve(true);
                         } else {
@@ -65,68 +70,103 @@
         });
     }
 
-    // Load settings immediately
-    loadSettings().then((success) => {
-        if (!success) {
-            // Retry after a short delay if first attempt fails
-            setTimeout(loadSettings, 500);
-        }
-    });
+    // Load settings immediately with retry logic
+    let retryCount = 0;
+    const maxRetries = 5;
 
-    // Get ad player element (the video playing ads)
+    async function loadSettingsWithRetry() {
+        const success = await loadSettings();
+        if (!success && retryCount < maxRetries) {
+            retryCount++;
+            console.log(
+                `[YouTube Blocker] Retry ${retryCount}/${maxRetries} in 500ms...`
+            );
+            setTimeout(loadSettingsWithRetry, 500);
+        } else if (success) {
+            console.log("[YouTube Blocker] Settings loaded successfully");
+        } else {
+            console.log(
+                "[YouTube Blocker] Failed to load settings after " +
+                    maxRetries +
+                    " retries"
+            );
+        }
+    }
+
+    loadSettingsWithRetry();
+
+    // Get ad player element (the video playing ads) - try multiple selectors
     function getAdPlayer() {
         try {
-            const player = document.querySelector(".html5-main-video");
+            // Try multiple player selectors
+            let player = document.querySelector(".html5-main-video");
+            if (!player) player = document.querySelector("video");
+            if (!player) {
+                const videos = document.querySelectorAll("video");
+                if (videos.length > 0) {
+                    player = videos[0];
+                }
+            }
             return player && player.tagName === "VIDEO" ? player : null;
         } catch (e) {
             return null;
         }
     }
 
-    // Skip ad by seeking to end (JAdSkip's approach)
+    // Skip ad by seeking to end - more aggressive approach
     async function trySkipAd() {
         if (!blockEnabled) return;
 
         const player = getAdPlayer();
         if (!player) return;
 
-        console.log(
-            `[YouTube Blocker] Processing ad "${player.src}" at ${player.currentTime} / ${player.duration}`
-        );
-
-        if (!isFinite(player.duration)) {
-            console.log(
-                "[YouTube Blocker] Ad duration is not finite, skipping ad skip"
-            );
-            return;
-        }
-
-        // Avoid processing same ad twice
-        if (player.src === lastBlockedAdURL) {
-            console.log("[YouTube Blocker] Skipping already processed ad");
-            return;
-        }
-
-        // Skip if 40% through (threshold)
-        const threshold = player.duration * 0.4;
-        if (player.currentTime < threshold) {
-            console.log(
-                `[YouTube Blocker] Ad not ready to skip. Current: ${player.currentTime}, Threshold: ${threshold}`
-            );
-            return;
-        }
-
-        // Seek to near end of ad
-        const target = player.duration - 0.1;
-        console.log(
-            `[YouTube Blocker] Skipping ad from ${player.currentTime} to ${target}`
-        );
-
         try {
-            player.currentTime = target;
-            lastBlockedAdURL = player.src;
+            // Check if this is an ad (ads have shorter durations typically)
+            if (!isFinite(player.duration) || player.duration <= 0) {
+                return;
+            }
+
+            // Create unique ad identifier based on duration and current time
+            // This helps track different ads without relying on URL
+            const adId = `${Math.round(player.duration)}_${Math.round(
+                player.currentTime * 10
+            )}`;
+
+            // If already processed this specific ad configuration, skip
+            if (processedAds.has(adId)) {
+                return;
+            }
+
+            // For video ads: seek aggressively to skip
+            if (player.duration < 90) {
+                // Video ads are usually < 90 seconds (covering most pre-roll, mid-roll ads)
+                const target = Math.max(
+                    player.duration - 0.5,
+                    player.duration * 0.95
+                );
+
+                // Mark this ad as processed
+                processedAds.add(adId);
+
+                console.log(
+                    `[YouTube Blocker] ⏩ Skipping ad #${
+                        processedAds.size
+                    } from ${player.currentTime.toFixed(
+                        1
+                    )}s to ${target.toFixed(
+                        1
+                    )}s (duration: ${player.duration.toFixed(1)}s)`
+                );
+
+                try {
+                    player.currentTime = target;
+                    lastBlockedAdURL = player.src;
+                } catch (e) {
+                    console.log("[YouTube Blocker] Error seeking:", e);
+                }
+            }
         } catch (e) {
-            console.log("[YouTube Blocker] Error seeking:", e);
+            console.log("[YouTube Blocker] Error in trySkipAd:", e);
         }
     }
 
@@ -135,57 +175,129 @@
         if (!blockEnabled) return;
 
         try {
-            const player = document.getElementById("movie_player");
-            if (!player) {
-                console.log("[YouTube Blocker] Unable to find movie player");
-                return;
-            }
-
-            // Try captured ad slots
-            if (adSlots.length > 0) {
-                console.log(
-                    `[YouTube Blocker] Checking captured ad slots: ${adSlots.length}`
-                );
-                adSlots.forEach((slot) => {
-                    try {
-                        if (slot?.clickTrackingParams) {
-                            console.log(
-                                "[YouTube Blocker] Found clickable ad slot"
-                            );
-                            // Trigger skip if available
-                            const skipBtn = document.querySelector(
-                                "button.ytp-ad-skip-button"
-                            );
-                            if (skipBtn && skipBtn.offsetHeight > 0) {
-                                skipBtn.click();
-                                console.log(
-                                    "[YouTube Blocker] Clicked skip button"
-                                );
-                            }
-                        }
-                    } catch (e) {
-                        // Continue
-                    }
-                });
-            }
-
-            // Direct skip button click
+            // Direct approach: look for skip button
             const skipBtn = document.querySelector("button.ytp-ad-skip-button");
             if (skipBtn && skipBtn.offsetHeight > 0) {
-                skipBtn.click();
-                console.log("[YouTube Blocker] Clicked visible skip button");
+                try {
+                    skipBtn.click();
+                    console.log("[YouTube Blocker] ✓ Clicked skip button");
+                    lastBlockedAdURL = "";
+                    return true;
+                } catch (e) {
+                    // Try alternative click method
+                    skipBtn.dispatchEvent(
+                        new MouseEvent("click", { bubbles: true })
+                    );
+                    console.log(
+                        "[YouTube Blocker] ✓ Dispatched skip button click"
+                    );
+                    lastBlockedAdURL = "";
+                    return true;
+                }
+            }
+
+            // Alternative: look for "Skip Ads" or similar text button
+            const buttons = document.querySelectorAll("button");
+            for (const btn of buttons) {
+                if (
+                    btn.textContent.includes("Skip") ||
+                    btn.textContent.includes("skip")
+                ) {
+                    if (btn.offsetHeight > 0) {
+                        try {
+                            btn.click();
+                            console.log(
+                                "[YouTube Blocker] ✓ Clicked alternative skip button"
+                            );
+                            lastBlockedAdURL = "";
+                            return true;
+                        } catch (e) {
+                            // Continue
+                        }
+                    }
+                }
             }
         } catch (e) {
             console.log("[YouTube Blocker] Error clicking skip button:", e);
         }
+        return false;
     }
 
-    // Main ad checking routine
+    // Block ad container elements
+    function hideAdElements() {
+        if (!blockEnabled) return;
+        try {
+            // Hide ad panels and overlays
+            const adElements = document.querySelectorAll([
+                ".ytp-ad-player-overlay",
+                ".ytp-ad-message-container",
+                "div[aria-label*='Advertisement']",
+                "div[aria-label*='advertisement']",
+                ".ytp-ad",
+                ".ytp-ads",
+            ]);
+            adElements.forEach((el) => {
+                if (el) {
+                    el.style.display = "none";
+                    el.style.visibility = "hidden";
+                    el.style.pointerEvents = "none";
+                    el.style.opacity = "0";
+                }
+            });
+        } catch (e) {
+            // Ignore
+        }
+    }
+
+    // Alternative ad detection and blocking via YouTube's player state
+    function detectAdViaPlayerState() {
+        if (!blockEnabled) return false;
+
+        try {
+            const player = document.querySelector("#movie_player");
+            if (!player) return false;
+
+            // Check if player has ad-related classes
+            const classList = player.className || "";
+            if (classList.includes("ad")) {
+                console.log(
+                    "[YouTube Blocker] 📺 Ad detected via player state"
+                );
+                return true;
+            }
+        } catch (e) {
+            // Ignore
+        }
+        return false;
+    }
+
+    // Main ad checking routine - run more frequently
     async function checkAds() {
         if (!blockEnabled) return;
-        await tryClickSkipButton();
-        await new Promise((resolve) => setTimeout(resolve, 1000));
+
+        adCheckCount++;
+
+        // Aggressive multi-step ad blocking
+        hideAdElements();
+
+        // Check player state first
+        detectAdViaPlayerState();
+
+        // Try clicking skip button (multiple attempts)
+        const clicked1 = await tryClickSkipButton();
+        if (!clicked1) {
+            // If click failed, wait less and try seeking immediately
+            await new Promise((resolve) => setTimeout(resolve, 100));
+        }
+
+        // Always try seeking - don't wait for click to fail
         await trySkipAd();
+
+        // Second attempt for skip button (for non-skippable ads becoming skippable)
+        if (!clicked1) {
+            await new Promise((resolve) => setTimeout(resolve, 100));
+            await tryClickSkipButton();
+        }
     }
 
     // Intercept XMLHttpRequest to modify ad responses (JAdSkip's approach)
@@ -238,15 +350,63 @@
     // Listen for video playback to trigger ad checks
     document.addEventListener("play", checkAds, true);
 
-    // Also check periodically
-    setInterval(checkAds, 1500);
+    // Check very frequently when video is playing
+    setInterval(() => {
+        if (blockEnabled && document.body) {
+            checkAds().catch((e) =>
+                console.log("[YouTube Blocker] Interval check error:", e)
+            );
+        }
+    }, 300); // Check every 300ms for maximum ad coverage
 
-    // Listen for YouTube navigation
+    // More aggressive checking for first 3 seconds (when most pre-roll ads play)
+    let initialCheckCount = 0;
+    const initialCheckInterval = setInterval(() => {
+        if (blockEnabled && document.body && initialCheckCount < 10) {
+            initialCheckCount++;
+            checkAds().catch((e) => {
+                console.log("[YouTube Blocker] Initial check error:", e);
+            });
+        } else {
+            clearInterval(initialCheckInterval);
+        }
+    }, 150); // Check every 150ms for first 1.5 seconds
+
+    // Listen for YouTube navigation - RESET tracking
     document.addEventListener("yt-navigate-finish", () => {
+        console.log(
+            "[YouTube Blocker] Navigation detected, resetting ad tracking"
+        );
         lastBlockedAdURL = "";
         adSlots = [];
+        processedAds.clear(); // ← CLEAR processed ads on navigation
         checkAds();
     });
+
+    // Listen for video end - RESET tracking for next video
+    document.addEventListener(
+        "ended",
+        () => {
+            console.log("[YouTube Blocker] Video ended, resetting ad tracking");
+            processedAds.clear();
+            lastBlockedAdURL = "";
+            adSlots = [];
+        },
+        true
+    );
+
+    // Listen for seeking event - might indicate ad skipping attempt
+    document.addEventListener(
+        "seeking",
+        () => {
+            const player = getAdPlayer();
+            if (player && player.duration < 90) {
+                console.log("[YouTube Blocker] Seeking detected during ad");
+                checkAds();
+            }
+        },
+        true
+    );
 
     // Settings change handler
     chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
@@ -258,7 +418,8 @@
                 : false;
             lastBlockedAdURL = "";
             adSlots = [];
-            console.log("[YouTube Blocker] Settings updated:", {
+            processedAds.clear(); // ← CLEAR on settings change
+            console.log("[YouTube Blocker] ⚙️ Settings updated:", {
                 blockEnabled,
                 blockYoutubeAds: request.blockYoutubeAds,
                 blockYoutubeMusicAds: request.blockYoutubeMusicAds,

@@ -252,6 +252,28 @@ class AdsBlocker {
                     ...this.settings,
                     ...result.adsBlockerSettings,
                 };
+                console.log("[AdsBlocker] Loaded settings from local storage");
+            } else {
+                // Fallback: check sync storage if local storage is empty
+                console.log(
+                    "[AdsBlocker] No settings in local storage, checking sync storage..."
+                );
+                const syncResult = await chrome.storage.sync.get([
+                    "consolidatedSettings",
+                ]);
+                if (syncResult.consolidatedSettings?.adsBlocker) {
+                    this.settings = {
+                        ...this.settings,
+                        ...syncResult.consolidatedSettings.adsBlocker,
+                    };
+                    // Also save to local storage for future use
+                    await chrome.storage.local.set({
+                        adsBlockerSettings: this.settings,
+                    });
+                    console.log(
+                        "[AdsBlocker] Loaded settings from sync storage and synced to local"
+                    );
+                }
             }
         } catch (error) {
             console.error("Error loading ads blocker settings:", error);

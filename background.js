@@ -1,3 +1,6 @@
+// Import browser compatibility layer first
+importScripts("src/utils/browser-compat.js");
+
 // Import advanced modules
 importScripts(
     "src/modules/session-manager/session-manager.js",
@@ -52,7 +55,11 @@ class TabSuspendManager {
 
     async init() {
         try {
+            // Log browser information for debugging cross-browser compatibility
+            const browserInfo = browserCompat.logBrowserInfo();
+
             await this.loadSettings();
+            await this.initializeDefaultSettings(); // Ensure defaults exist
             await this.loadSuspendedMeta();
             await this.reconstructSuspendedTabs(); // Rebuild suspended state after update/reload
 
@@ -66,9 +73,63 @@ class TabSuspendManager {
             this.setupMessageHandlers();
             this.startMonitoring();
             this.startMetadataCleanup();
-            console.log("BrowserGuard Pro initialized");
+            console.log(
+                `✅ BrowserGuard Pro initialized on ${browserInfo.name}`
+            );
         } catch (error) {
             console.error("Error initializing extension:", error);
+        }
+    }
+
+    async initializeDefaultSettings() {
+        try {
+            // Check if consolidated settings exist
+            const stored = await chrome.storage.sync.get([
+                "consolidatedSettings",
+            ]);
+            if (!stored.consolidatedSettings) {
+                console.log(
+                    "[Background] Initializing default settings on first install"
+                );
+
+                const defaults = {
+                    adsBlocker: {
+                        enabled: true,
+                        blockYoutubeAds: true,
+                        blockYoutubeMusicAds: true,
+                        blockGeneralAds: true,
+                        blockAnalytics: true,
+                        blockCookies: true,
+                        whitelist: [],
+                    },
+                    trackerBlocker: {
+                        enabled: true,
+                        blockAds: true,
+                        blockTrackers: true,
+                        blockSocial: false,
+                        blockMining: false,
+                        blockMalware: true,
+                        whitelist: [],
+                    },
+                };
+
+                // Save to both sync and local storage
+                await chrome.storage.sync.set({
+                    consolidatedSettings: defaults,
+                });
+                await chrome.storage.local.set({
+                    adsBlockerSettings: defaults.adsBlocker,
+                    trackerBlockerSettings: defaults.trackerBlocker,
+                });
+                console.log(
+                    "[Background] Default settings initialized and synced"
+                );
+            }
+        } catch (error) {
+            console.log(
+                "[Background] Error initializing default settings:",
+                error
+            );
         }
     }
 
@@ -723,18 +784,33 @@ class TabSuspendManager {
                 "consolidatedSettings",
             ]);
             if (consolidated.consolidatedSettings) {
+                console.log(
+                    "[Background] Loading consolidated settings:",
+                    consolidated.consolidatedSettings
+                );
+
                 if (consolidated.consolidatedSettings.adsBlocker) {
                     await chrome.storage.local.set({
                         adsBlockerSettings:
                             consolidated.consolidatedSettings.adsBlocker,
                     });
+                    console.log(
+                        "[Background] Ads blocker settings synced to local storage"
+                    );
                 }
                 if (consolidated.consolidatedSettings.trackerBlocker) {
                     await chrome.storage.local.set({
                         trackerBlockerSettings:
                             consolidated.consolidatedSettings.trackerBlocker,
                     });
+                    console.log(
+                        "[Background] Tracker blocker settings synced to local storage"
+                    );
                 }
+            } else {
+                console.log(
+                    "[Background] No consolidated settings found in sync storage"
+                );
             }
         } catch (error) {
             console.error("Error loading settings:", error);
@@ -1540,30 +1616,55 @@ class TabSuspendManager {
                         "adsBlockerSettings",
                     ]);
 
+                    console.log(
+                        "[Background] Getting YouTube blocker settings. Local storage:",
+                        adsSettings
+                    );
+
                     // If not in local storage, check sync storage (from consolidated settings)
                     if (!adsSettings.adsBlockerSettings) {
+                        console.log(
+                            "[Background] Settings not in local storage, checking sync..."
+                        );
                         const syncSettings = await chrome.storage.sync.get([
                             "consolidatedSettings",
                         ]);
                         if (syncSettings.consolidatedSettings?.adsBlocker) {
                             adsSettings.adsBlockerSettings =
                                 syncSettings.consolidatedSettings.adsBlocker;
+                            console.log(
+                                "[Background] Found in sync storage:",
+                                adsSettings.adsBlockerSettings
+                            );
                         }
                     }
 
                     if (adsSettings.adsBlockerSettings) {
-                        sendResponse({
+                        const response = {
                             blockYoutubeAds:
                                 adsSettings.adsBlockerSettings
-                                    .blockYoutubeAds || false,
+                                    .blockYoutubeAds !== false
+                                    ? true
+                                    : false,
                             blockYoutubeMusicAds:
                                 adsSettings.adsBlockerSettings
-                                    .blockYoutubeMusicAds || false,
-                        });
+                                    .blockYoutubeMusicAds !== false
+                                    ? true
+                                    : false,
+                        };
+                        console.log(
+                            "[Background] Sending YouTube blocker settings:",
+                            response
+                        );
+                        sendResponse(response);
                     } else {
+                        console.log(
+                            "[Background] No ads blocker settings found, using defaults (enabled)"
+                        );
+                        // Default to enabled for YouTube ads blocking
                         sendResponse({
-                            blockYoutubeAds: false,
-                            blockYoutubeMusicAds: false,
+                            blockYoutubeAds: true,
+                            blockYoutubeMusicAds: true,
                         });
                     }
                     break;
