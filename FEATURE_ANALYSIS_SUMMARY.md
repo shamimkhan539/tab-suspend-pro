@@ -104,23 +104,23 @@ EFFORT vs IMPACT CHART:
           LOW EFFORT → HIGH EFFORT
 
 HIGH   ┌──────────────────────────────────────┐
-I      │  🟢 Smart Tabs                      │
+I      │  🟢 Smart Tabs                       │
 M      │  🟢 Keyboard Shortcuts          🔴  │
 P      │  🟢 Search                     Advanced
 A      │                               Rules
-C      │  🟡 UI Polish                   │
-T      │  🟡 Mobile Design          🟠  │
+C      │  🟡 UI Polish                        │
+T      │  🟡 Mobile Design          🟠       │
        │                          Privacy Vault
-       │  🟡 Session Mgmt           │
-       │                      🟠 AI Suspension
-MEDIUM │                           │ 🟠 Context Rules
-       │                      🔴 Sync    │
-       │  🟡 Tab Suggestions      │
+       │  🟡 Session Mgmt                     │
+       │                   🟠 AI Suspension   │
+       │                   🟠 Context Rules   │
+       │                      🔴 Sync         │
+       │  🟡 Tab Suggestions                  │
        │                     🟠 Automation
-       │  🟡 Tracker Stats    │
+       │  🟡 Tracker Stats                    │
        │
 LOW    │  🟢 CPU Opt          🟠 Categorization
-       │                          │
+       │                                      │
        └──────────────────────────────────────┘
 
 🟢 Quick Wins (< 8 hours)

@@ -27,6 +27,9 @@
     let isCurrentlyPlayingAd = false; // Flag to know if ad is actively playing
     let aggressiveCheckMode = false; // When true, check every 300ms instead of 800ms
     let lastVideoTime = -1; // Track last video position to detect ads
+    let videoPositionBeforeAd = -1; // Store original video position when ad starts (CRITICAL FIX)
+    let lastKnownGoodPosition = 0; // Track last known good playback position
+    let isSkippingAd = false; // Flag to know when we're in the middle of skipping
 
     // Function to load settings from background
     async function loadSettings() {
@@ -186,6 +189,20 @@
             if (player.duration < 120) {
                 // Video ads are usually < 120 seconds (covering most pre-roll, mid-roll, bumper ads)
                 if (!shouldSkip) {
+                    // CRITICAL FIX: Store original video position BEFORE seeking to skip ad
+                    if (
+                        videoPositionBeforeAd === -1 &&
+                        player.currentTime < player.duration * 0.95
+                    ) {
+                        // Only store position if we haven't already and we're not already near end of ad
+                        videoPositionBeforeAd = player.currentTime;
+                        console.log(
+                            `[YouTube Blocker] 📍 Stored video position: ${videoPositionBeforeAd.toFixed(
+                                1
+                            )}s (ad detected)`
+                        );
+                    }
+
                     // Seek to very end of ad (99% through)
                     const target = Math.max(
                         player.duration - 0.1,
@@ -195,6 +212,7 @@
                     // Mark this ad as processed
                     processedAds.add(adId);
                     isCurrentlyPlayingAd = true;
+                    isSkippingAd = true;
                     lastAdStartTime = Date.now();
 
                     console.log(
@@ -216,6 +234,29 @@
                         await new Promise((resolve) => setTimeout(resolve, 50));
                         if (Math.abs(player.currentTime - target) > 1) {
                             player.currentTime = target;
+                        }
+
+                        // After skipping, wait a bit then check if we need to restore position
+                        await new Promise((resolve) =>
+                            setTimeout(resolve, 200)
+                        );
+                        isSkippingAd = false;
+
+                        // If video jumped back to 0 (YouTube reset), restore to saved position
+                        if (
+                            videoPositionBeforeAd !== -1 &&
+                            player.currentTime === 0 &&
+                            videoPositionBeforeAd > 0
+                        ) {
+                            console.log(
+                                `[YouTube Blocker] ⚠️ Video reset to 0! Restoring position to ${videoPositionBeforeAd.toFixed(
+                                    1
+                                )}s`
+                            );
+                            player.currentTime = videoPositionBeforeAd;
+                            await new Promise((resolve) =>
+                                setTimeout(resolve, 100)
+                            );
                         }
                     } catch (e) {
                         console.log("[YouTube Blocker] Error seeking:", e);
@@ -312,7 +353,7 @@
         try {
             // When ad is currently playing, check more frequently
             const now = Date.now();
-            const checkDelay = isCurrentlyPlayingAd ? 30 : 75; // Even more aggressive
+            const checkDelay = isCurrentlyPlayingAd ? 10 : 50; // ULTRA-aggressive when ad detected
 
             if (now - lastAdDetectedTime < checkDelay) return; // Skip if checked recently
 
@@ -332,6 +373,9 @@
                 ".ytp-ad-actions", // Ad action buttons
                 ".adtx", // Ad text
                 ".player-age-gate-content", // Age gate ads
+                ".ytp-ad-button-container",
+                ".ytp-ad-text",
+                "[data-ad-container]",
             ];
 
             let adFound = false;
@@ -363,6 +407,9 @@
                             el.style.opacity = "0 !important";
                             el.style.width = "0 !important";
                             el.style.height = "0 !important";
+                            el.style.position = "absolute !important";
+                            el.style.left = "-9999px !important";
+                            el.style.top = "-9999px !important";
                             adFound = true;
 
                             // Log what we're hiding
@@ -619,6 +666,11 @@
                 // Exit aggressive mode if 3 seconds have passed since ad detected
                 if (now - lastAdStartTime > 3000) {
                     isCurrentlyPlayingAd = false;
+                    // CRITICAL FIX: Reset stored position when ad ends
+                    videoPositionBeforeAd = -1;
+                    console.log(
+                        "[YouTube Blocker] Ad ended, reset position tracking"
+                    );
                 }
             }
 
@@ -640,6 +692,7 @@
         lastBlockedAdURL = "";
         adSlots = [];
         processedAds.clear(); // ← CLEAR processed ads on navigation
+        videoPositionBeforeAd = -1; // RESET stored position
         checkAds();
     });
 
@@ -651,6 +704,7 @@
             processedAds.clear();
             lastBlockedAdURL = "";
             adSlots = [];
+            videoPositionBeforeAd = -1; // RESET stored position
         },
         true
     );
