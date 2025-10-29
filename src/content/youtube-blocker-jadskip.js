@@ -6,14 +6,18 @@
     "use strict";
 
     const hostname = window.location.hostname;
-    const isYouTube = hostname.includes("youtube.com") || hostname.includes("youtu.be");
+    const isYouTube =
+        hostname.includes("youtube.com") || hostname.includes("youtu.be");
     const isYouTubeMusic = hostname.includes("music.youtube.com");
 
     if (!isYouTube && !isYouTubeMusic) {
         return;
     }
 
-    console.log("[YouTube Blocker] JAdSkip implementation initialized on", hostname);
+    console.log(
+        "[YouTube Blocker] JAdSkip implementation initialized on",
+        hostname
+    );
 
     // State variables
     let blockEnabled = false;
@@ -30,7 +34,10 @@
     function getAdPlayer() {
         const videos = document.querySelectorAll("video");
         for (const video of videos) {
-            if (video.src && video.src.includes("googlevideo.com/videoplayback")) {
+            if (
+                video.src &&
+                video.src.includes("googlevideo.com/videoplayback")
+            ) {
                 // Check if it's an ad by duration (ads are typically < 120 seconds)
                 if (video.duration > 0 && video.duration < 120) {
                     return video;
@@ -97,7 +104,9 @@
                 return;
             }
 
-            logMessage(`Trying ad slots from player response: ${playerSlots.length}`);
+            logMessage(
+                `Trying ad slots from player response: ${playerSlots.length}`
+            );
             playerSlots.forEach((slot) => {
                 clickTriggers(player, slot);
             });
@@ -180,7 +189,8 @@
         if (!button) return;
 
         // Check if it's a "Still watching?" popup
-        const actions = button.data?.serviceEndpoint?.signalServiceEndpoint?.actions;
+        const actions =
+            button.data?.serviceEndpoint?.signalServiceEndpoint?.actions;
         logMessage(`Actions found: ${actions ? actions.length : 0}`);
 
         if (!actions) return;
@@ -190,7 +200,9 @@
             if (!signal) return;
 
             if (signal === "ACKNOWLEDGE_YOUTHERE") {
-                logMessage("Clicking confirm button for 'Still watching?' popup");
+                logMessage(
+                    "Clicking confirm button for 'Still watching?' popup"
+                );
                 button.click();
             }
         });
@@ -208,7 +220,9 @@
 
                     // Handle ad throttling
                     if ("adThrottled" in response) {
-                        logMessage(`Ad throttling response detected: ${response.adThrottled}`);
+                        logMessage(
+                            `Ad throttling response detected: ${response.adThrottled}`
+                        );
                         if (blockEnabled) {
                             logMessage("Replacing ad throttling response");
                             Object.defineProperty(this, "response", {
@@ -217,7 +231,9 @@
                             response.adThrottled = true;
                             this.response = JSON.stringify(response);
                         } else if (response.adSlots) {
-                            logMessage(`Ad slots detected: ${response.adSlots.length}`);
+                            logMessage(
+                                `Ad slots detected: ${response.adSlots.length}`
+                            );
                             adSlots = response.adSlots;
                         }
                     }
@@ -240,7 +256,9 @@
                     { action: "get-youtube-blocker-settings" },
                     function (response) {
                         if (chrome.runtime.lastError) {
-                            logMessage(`Error getting settings: ${chrome.runtime.lastError.message}`);
+                            logMessage(
+                                `Error getting settings: ${chrome.runtime.lastError.message}`
+                            );
                             resolve(false);
                             return;
                         }
@@ -249,10 +267,13 @@
                             blockEnabled =
                                 isYouTube && response.blockYoutubeAds
                                     ? true
-                                    : isYouTubeMusic && response.blockYoutubeMusicAds
+                                    : isYouTubeMusic &&
+                                      response.blockYoutubeMusicAds
                                     ? true
                                     : false;
-                            logMessage(`Settings loaded: blockEnabled=${blockEnabled}`);
+                            logMessage(
+                                `Settings loaded: blockEnabled=${blockEnabled}`
+                            );
                             resolve(true);
                         } else {
                             logMessage("No response from background");
