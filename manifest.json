@@ -1,7 +1,7 @@
 {
     "manifest_version": 3,
     "name": "BrowserGuard Pro",
-    "version": "2.0.23",
+    "version": "2.0.24",
     "description": "Advanced browser optimization with tab management, privacy protection, and performance analytics",
     "minimum_chrome_version": "88",
     "permissions": [
