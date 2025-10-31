@@ -308,7 +308,8 @@ class AdsBlocker {
         try {
             await chrome.storage.local.set({ adsBlockerStats: this.stats });
         } catch (error) {
-            console.error("Error saving ads blocker stats:", error);
+            // Service worker not available - queue for later
+            console.debug("Error saving ads blocker stats:", error.message);
         }
     }
 

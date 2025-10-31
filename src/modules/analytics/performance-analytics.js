@@ -145,6 +145,12 @@ class PerformanceAnalytics {
 
     async getMemoryInfo() {
         try {
+            // Check if chrome.system.memory is available
+            if (!chrome.system || !chrome.system.memory) {
+                console.debug("chrome.system.memory API not available");
+                return this.getDefaultMemoryInfo();
+            }
+
             const memoryInfo = await chrome.system.memory.getInfo();
             const tabs = await chrome.tabs.query({});
 
@@ -162,20 +168,31 @@ class PerformanceAnalytics {
                 ).length,
             };
         } catch (error) {
-            console.error("Error getting memory info:", error);
-            return {
-                totalMemory: 0,
-                availableMemory: 0,
-                usedMemory: 0,
-                usagePercentage: 0,
-                tabCount: 0,
-                suspendedTabCount: 0,
-            };
+            // Service worker not available or API error - return defaults
+            console.debug("Error getting memory info:", error.message);
+            return this.getDefaultMemoryInfo();
         }
+    }
+
+    getDefaultMemoryInfo() {
+        return {
+            totalMemory: 0,
+            availableMemory: 0,
+            usedMemory: 0,
+            usagePercentage: 0,
+            tabCount: 0,
+            suspendedTabCount: 0,
+        };
     }
 
     async getCPUInfo() {
         try {
+            // Check if chrome.system.cpu is available
+            if (!chrome.system || !chrome.system.cpu) {
+                console.debug("chrome.system.cpu API not available");
+                return this.getDefaultCPUInfo();
+            }
+
             const cpuInfo = await chrome.system.cpu.getInfo();
 
             // Calculate average CPU usage
@@ -211,13 +228,18 @@ class PerformanceAnalytics {
                 ),
             };
         } catch (error) {
-            console.error("Error getting CPU info:", error);
-            return {
-                processorCount: 0,
-                averageUsage: 0,
-                maxUsage: 0,
-            };
+            // Service worker not available or API error - return defaults
+            console.debug("Error getting CPU info:", error.message);
+            return this.getDefaultCPUInfo();
         }
+    }
+
+    getDefaultCPUInfo() {
+        return {
+            processorCount: 0,
+            averageUsage: 0,
+            maxUsage: 0,
+        };
     }
 
     async collectTabMetrics(timestamp) {

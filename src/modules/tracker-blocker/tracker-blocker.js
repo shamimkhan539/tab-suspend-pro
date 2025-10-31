@@ -504,8 +504,21 @@ class TrackerBlocker {
             const tabs = await chrome.tabs.query({ active: true });
 
             tabs.forEach((tab) => {
-                // Only track if not on extension pages
-                if (!tab.url.includes("chrome-extension://")) {
+                // Only track if URL exists and is valid
+                if (!tab.url) return;
+
+                // Skip extension pages, chrome pages, and other special URLs
+                if (
+                    tab.url.includes("chrome-extension://") ||
+                    tab.url.startsWith("chrome://") ||
+                    tab.url.startsWith("about:") ||
+                    tab.url.startsWith("edge://") ||
+                    tab.url.startsWith("file://")
+                ) {
+                    return;
+                }
+
+                try {
                     // Randomly track some trackers (realistic blocking)
                     if (Math.random() > 0.6) {
                         // 40% chance per tab per update
@@ -521,6 +534,9 @@ class TrackerBlocker {
                             types[Math.floor(Math.random() * types.length)];
                         this.trackBlockedItem(domain, randomType);
                     }
+                } catch (urlError) {
+                    // Invalid URL - skip silently
+                    console.debug(`Skipping invalid URL: ${tab.url}`);
                 }
             });
 
