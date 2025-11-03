@@ -88,7 +88,17 @@ jobs:
             - name: Check all required files
               run: |
                   echo "🔍 Checking required files..."
-                  required_files=("manifest.json" "background.js" "content.js" "popup.html" "popup.js" "options.html" "options.js" "suspended.html" "suspended.js")
+                  required_files=(
+                    "manifest.json"
+                    "background.js"
+                    "src/content/content.js"
+                    "ui/popup/popup.html"
+                    "ui/popup/popup.js"
+                    "ui/options/options.html"
+                    "ui/options/options.js"
+                    "ui/suspended/suspended.html"
+                    "ui/suspended/suspended.js"
+                  )
                   missing_files=()
 
                   for file in "${required_files[@]}"; do
@@ -108,7 +118,13 @@ jobs:
             - name: Validate JavaScript syntax
               run: |
                   echo "🔍 Checking JavaScript syntax..."
-                  js_files=("background.js" "content.js" "popup.js" "options.js" "suspended.js")
+                  js_files=(
+                    "background.js"
+                    "src/content/content.js"
+                    "ui/popup/popup.js"
+                    "ui/options/options.js"
+                    "ui/suspended/suspended.js"
+                  )
                   syntax_errors=()
 
                   for file in "${js_files[@]}"; do
@@ -128,7 +144,12 @@ jobs:
             - name: Check icons
               run: |
                   echo "🔍 Checking icon files..."
-                  required_icons=("icons/icon16.png" "icons/icon32.png" "icons/icon48.png" "icons/icon128.png")
+                  required_icons=(
+                    "ui/assets/icons/icon16.png"
+                    "ui/assets/icons/icon32.png"
+                    "ui/assets/icons/icon48.png"
+                    "ui/assets/icons/icon128.png"
+                  )
                   missing_icons=()
 
                   for icon in "${required_icons[@]}"; do
@@ -151,9 +172,9 @@ jobs:
                   mkdir -p pr-build-test
 
                   cp manifest.json pr-build-test/
-                  cp *.js pr-build-test/
-                  cp *.html pr-build-test/
-                  cp -r icons pr-build-test/
+                  cp background.js pr-build-test/
+                  cp -r src pr-build-test/
+                  cp -r ui pr-build-test/
                   cp LICENSE pr-build-test/ 2>/dev/null || echo "LICENSE file not found, skipping"
 
                   echo "✅ Build test successful"
