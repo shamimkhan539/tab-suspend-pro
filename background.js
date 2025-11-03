@@ -2643,12 +2643,16 @@ class TabSuspendManager {
                 try {
                     const tabIds = createdTabs.map((t) => t.id);
                     const groupId = await chrome.tabs.group({ tabIds });
+
+                    // Add tab count to group title
+                    const groupTitle = `${name} (${createdTabs.length})`;
+
                     await chrome.tabGroups.update(groupId, {
-                        title: name,
+                        title: groupTitle,
                         color: color || "grey",
                     });
                     console.log(
-                        `[RestoreGroup] Created group "${name}" with ${createdTabs.length} tabs`
+                        `[RestoreGroup] Created group "${groupTitle}" with ${createdTabs.length} tabs`
                     );
                 } catch (groupError) {
                     console.warn(
@@ -3299,3 +3303,114 @@ class TabSuspendManager {
 }
 
 const tabSuspendManager = new TabSuspendManager();
+
+// Tab Group Listeners - Automatically update tab count in group titles
+chrome.tabs.onAttached.addListener(async (tabId, attachInfo) => {
+    try {
+        const tab = await chrome.tabs.get(tabId);
+        if (tab.groupId && tab.groupId !== chrome.tabGroups.TAB_GROUP_ID_NONE) {
+            await updateTabGroupCount(tab.groupId);
+        }
+    } catch (error) {
+        console.debug("Error updating group on tab attach:", error.message);
+    }
+});
+
+chrome.tabs.onRemoved.addListener(async (tabId, removeInfo) => {
+    try {
+        // Get all groups and update their counts
+        const groups = await chrome.tabGroups.query({
+            windowId: removeInfo.windowId,
+        });
+        for (const group of groups) {
+            await updateTabGroupCount(group.id);
+        }
+    } catch (error) {
+        console.debug("Error updating group on tab remove:", error.message);
+    }
+});
+
+chrome.tabs.onUpdated.addListener(async (tabId, changeInfo, tab) => {
+    // Update group count when tab is added to or removed from a group
+    if (changeInfo.groupId !== undefined) {
+        try {
+            // Update the new group
+            if (changeInfo.groupId !== chrome.tabGroups.TAB_GROUP_ID_NONE) {
+                await updateTabGroupCount(changeInfo.groupId);
+            }
+
+            // Update the old group (if tab was moved from another group)
+            const oldGroupTabs = await chrome.tabs.query({
+                groupId: tab.groupId,
+            });
+            if (
+                oldGroupTabs.length > 0 &&
+                tab.groupId !== chrome.tabGroups.TAB_GROUP_ID_NONE
+            ) {
+                await updateTabGroupCount(tab.groupId);
+            }
+        } catch (error) {
+            console.debug("Error updating group on tab update:", error.message);
+        }
+    }
+});
+
+// Helper function to update tab count in group title
+async function updateTabGroupCount(groupId) {
+    try {
+        if (!groupId || groupId === chrome.tabGroups.TAB_GROUP_ID_NONE) {
+            return;
+        }
+
+        const group = await chrome.tabGroups.get(groupId);
+        const groupTabs = await chrome.tabs.query({ groupId });
+        const tabCount = groupTabs.length;
+
+        // Extract base title (remove existing count if present)
+        let baseTitle = group.title || "Tab Group";
+        const countMatch = baseTitle.match(/^(.*?)\s*\((\d+)\)$/);
+        if (countMatch) {
+            baseTitle = countMatch[1].trim();
+        }
+
+        // Update group title with current count
+        const newTitle = `${baseTitle} (${tabCount})`;
+
+        // Only update if title changed
+        if (group.title !== newTitle) {
+            await chrome.tabGroups.update(groupId, {
+                title: newTitle,
+            });
+        }
+    } catch (error) {
+        console.debug("Error updating tab group count:", error.message);
+    }
+}
+
+// Initialize tab counts for all existing groups on extension load
+async function initializeTabGroupCounts() {
+    try {
+        const windows = await chrome.windows.getAll();
+        for (const window of windows) {
+            const groups = await chrome.tabGroups.query({
+                windowId: window.id,
+            });
+            for (const group of groups) {
+                await updateTabGroupCount(group.id);
+            }
+        }
+        console.log("Tab group counts initialized");
+    } catch (error) {
+        console.debug("Error initializing tab group counts:", error.message);
+    }
+}
+
+// Initialize counts when extension loads
+chrome.runtime.onStartup.addListener(() => {
+    initializeTabGroupCounts();
+});
+
+// Also initialize when extension is installed or updated
+chrome.runtime.onInstalled.addListener(() => {
+    initializeTabGroupCounts();
+});
