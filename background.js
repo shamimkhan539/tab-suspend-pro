@@ -1601,6 +1601,7 @@ class TabSuspendManager {
                     const exportedAdsFilters = this.adsBlocker.exportFilters();
                     sendResponse({ success: true, data: exportedAdsFilters });
                     break;
+
                 case "import-ads-filters":
                     await this.adsBlocker.importFilters(message.data);
                     sendResponse({ success: true });
@@ -1608,6 +1609,71 @@ class TabSuspendManager {
                 case "toggle-ads-blocker":
                     await this.adsBlocker.toggleBlocking(message.enabled);
                     sendResponse({ success: true });
+                    break;
+
+                // Cloud Backup Management
+                case "cloud-authenticate":
+                    try {
+                        const authResult =
+                            await this.cloudBackup.authenticateProvider(
+                                message.provider
+                            );
+                        sendResponse({ success: true, ...authResult });
+                    } catch (error) {
+                        console.error("Cloud authentication failed:", error);
+                        sendResponse({ success: false, error: error.message });
+                    }
+                    break;
+                case "cloud-disable-sync":
+                    try {
+                        await this.cloudBackup.disableSync();
+                        sendResponse({ success: true });
+                    } catch (error) {
+                        console.error("Failed to disable cloud sync:", error);
+                        sendResponse({ success: false, error: error.message });
+                    }
+                    break;
+                case "cloud-manual-backup":
+                    try {
+                        const backupResult =
+                            await this.cloudBackup.performBackup();
+                        sendResponse({ success: true, ...backupResult });
+                    } catch (error) {
+                        console.error("Manual backup failed:", error);
+                        sendResponse({ success: false, error: error.message });
+                    }
+                    break;
+
+                case "cloud-update-sync-schedule":
+                    try {
+                        const { frequency } = message;
+                        if (frequency === "never") {
+                            // Disable auto-sync
+                            this.cloudBackup.syncSettings.autoSync = false;
+                            chrome.alarms.clear("cloud-sync");
+                        } else {
+                            // Enable auto-sync with new frequency
+                            this.cloudBackup.syncSettings.autoSync = true;
+                            this.cloudBackup.syncSettings.syncInterval =
+                                frequency;
+                            this.cloudBackup.setupSyncSchedule();
+                        }
+                        await this.cloudBackup.saveSyncSettings();
+                        sendResponse({ success: true });
+                    } catch (error) {
+                        console.error("Failed to update sync schedule:", error);
+                        sendResponse({ success: false, error: error.message });
+                    }
+                    break;
+
+                case "cloud-get-status":
+                    try {
+                        const status = await this.cloudBackup.getSyncStatus();
+                        sendResponse({ success: true, status });
+                    } catch (error) {
+                        console.error("Failed to get cloud status:", error);
+                        sendResponse({ success: false, error: error.message });
+                    }
                     break;
 
                 case "get-youtube-blocker-settings":

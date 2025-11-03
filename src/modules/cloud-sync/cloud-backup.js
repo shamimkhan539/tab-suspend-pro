@@ -117,118 +117,76 @@ class CloudBackupManager {
         }
     }
 
-    // Authentication Methods
+    // Simplified Backup Methods (File-Based instead of OAuth)
+    // NOTE: OAuth for Google Drive/Dropbox/OneDrive requires complex credential setup
+    // Instead, users can:
+    // 1. Export settings to a file
+    // 2. Save it to cloud storage manually
+    // 3. Import it back anytime
+    // 4. Or use Chrome's native "Sync Across Devices" for automatic cross-device sync
+
     async authenticateProvider(provider) {
-        if (!this.isOnline) {
-            throw new Error("No internet connection available");
-        }
+        // Instead of OAuth, provide helpful guidance
+        const guide = {
+            "google-drive":
+                "📁 Use File-Based Backup Instead!\n\n" +
+                "OAuth setup is too complex for quick activation.\n\n" +
+                "✨ Better solutions:\n" +
+                "1. Export Settings → Download your backup\n" +
+                "   Save it to Google Drive manually\n" +
+                "   Import anytime to restore\n\n" +
+                "2. Use 'Sync Across Devices' (recommended!)\n" +
+                "   Automatically syncs settings across all Chrome\n" +
+                "   No setup needed - just toggle it ON!\n" +
+                "   Works as long as you're logged into Chrome",
+            dropbox:
+                "📁 Use File-Based Backup Instead!\n\n" +
+                "OAuth setup is too complex for quick activation.\n\n" +
+                "✨ Better solutions:\n" +
+                "1. Export Settings → Download your backup\n" +
+                "   Save it to Dropbox manually\n" +
+                "   Import anytime to restore\n\n" +
+                "2. Use 'Sync Across Devices' (recommended!)\n" +
+                "   Automatically syncs settings across all Chrome\n" +
+                "   No setup needed - just toggle it ON!\n" +
+                "   Works as long as you're logged into Chrome",
+            onedrive:
+                "📁 Use File-Based Backup Instead!\n\n" +
+                "OAuth setup is too complex for quick activation.\n\n" +
+                "✨ Better solutions:\n" +
+                "1. Export Settings → Download your backup\n" +
+                "   Save it to OneDrive manually\n" +
+                "   Import anytime to restore\n\n" +
+                "2. Use 'Sync Across Devices' (recommended!)\n" +
+                "   Automatically syncs settings across all Chrome\n" +
+                "   No setup needed - just toggle it ON!\n" +
+                "   Works as long as you're logged into Chrome",
+        };
 
-        try {
-            let authUrl;
-            switch (provider) {
-                case "google-drive":
-                    authUrl = await this.getGoogleDriveAuthUrl();
-                    break;
-                case "dropbox":
-                    authUrl = await this.getDropboxAuthUrl();
-                    break;
-                case "onedrive":
-                    authUrl = await this.getOneDriveAuthUrl();
-                    break;
-                default:
-                    throw new Error(`Unsupported provider: ${provider}`);
-            }
-
-            // Use Chrome Identity API for OAuth
-            const redirectUrl = await chrome.identity.launchWebAuthFlow({
-                url: authUrl,
-                interactive: true,
-            });
-
-            await this.handleAuthCallback(provider, redirectUrl);
-
-            this.syncSettings.provider = provider;
-            this.syncSettings.enabled = true;
-            await this.saveSyncSettings();
-
-            return { success: true, provider };
-        } catch (error) {
-            console.error(`Authentication failed for ${provider}:`, error);
-            throw error;
-        }
+        const message =
+            guide[provider] ||
+            "Use file-based export/import or Chrome's 'Sync Across Devices' feature instead.";
+        throw new Error(message);
     }
 
     async getGoogleDriveAuthUrl() {
-        // This would be replaced with actual Google Drive OAuth setup
-        const clientId = "your-google-client-id";
-        const redirectUri = chrome.identity.getRedirectURL();
-        const scope = "https://www.googleapis.com/auth/drive.file";
-
-        return (
-            `https://accounts.google.com/oauth/authorize?` +
-            `client_id=${clientId}&` +
-            `redirect_uri=${encodeURIComponent(redirectUri)}&` +
-            `scope=${encodeURIComponent(scope)}&` +
-            `response_type=code`
-        );
+        throw new Error("Use Export Settings instead of OAuth");
     }
 
     async getDropboxAuthUrl() {
-        // Dropbox OAuth setup
-        const clientId = "your-dropbox-app-key";
-        const redirectUri = chrome.identity.getRedirectURL();
-
-        return (
-            `https://www.dropbox.com/oauth2/authorize?` +
-            `client_id=${clientId}&` +
-            `redirect_uri=${encodeURIComponent(redirectUri)}&` +
-            `response_type=code`
-        );
+        throw new Error("Use Export Settings instead of OAuth");
     }
 
     async getOneDriveAuthUrl() {
-        // Microsoft OneDrive OAuth setup
-        const clientId = "your-microsoft-client-id";
-        const redirectUri = chrome.identity.getRedirectURL();
-        const scope = "files.readwrite";
-
-        return (
-            `https://login.microsoftonline.com/common/oauth2/v2.0/authorize?` +
-            `client_id=${clientId}&` +
-            `redirect_uri=${encodeURIComponent(redirectUri)}&` +
-            `scope=${encodeURIComponent(scope)}&` +
-            `response_type=code`
-        );
+        throw new Error("Use Export Settings instead of OAuth");
     }
 
     async handleAuthCallback(provider, redirectUrl) {
-        const url = new URL(redirectUrl);
-        const code = url.searchParams.get("code");
-
-        if (!code) {
-            throw new Error("Authentication cancelled or failed");
-        }
-
-        // Exchange code for access token
-        const tokenData = await this.exchangeCodeForToken(provider, code);
-
-        // Store tokens securely
-        await chrome.storage.local.set({
-            [`${provider}_token`]: tokenData,
-        });
-
-        console.log(`Successfully authenticated with ${provider}`);
+        throw new Error("OAuth not available");
     }
 
     async exchangeCodeForToken(provider, code) {
-        // This would implement the actual token exchange for each provider
-        // For now, return a mock token structure
-        return {
-            access_token: "mock_access_token",
-            refresh_token: "mock_refresh_token",
-            expires_in: 3600,
-            token_type: "Bearer",
-        };
+        throw new Error("Use file-based backup instead");
     }
 
     // Data Backup Methods

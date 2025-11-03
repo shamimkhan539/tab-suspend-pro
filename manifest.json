@@ -48,7 +48,8 @@
         {
             "matches": ["http://*/*", "https://*/*"],
             "js": ["src/content/content.js"],
-            "run_at": "document_start"
+            "run_at": "document_start",
+            "all_frames": false
         }
     ],
     "action": {

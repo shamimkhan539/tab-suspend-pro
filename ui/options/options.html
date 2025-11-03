@@ -852,26 +852,35 @@
             <div class="settings-section">
                 <h2 class="section-title">☁️ Backup & Sync</h2>
 
-                <div class="setting-item">
+                <!-- Sync Across Devices (RECOMMENDED) -->
+                <div class="setting-item"
+                    style="background: #f0f7ff; border-left: 4px solid #0066cc; padding: 12px; border-radius: 4px; margin-bottom: 16px;">
                     <div class="setting-info">
-                        <div class="setting-label">Google Drive Backup</div>
-                        <div class="setting-description">Automatically backup your settings and saved groups to Google
-                            Drive
+                        <div class="setting-label">✨ Sync Across Devices (Recommended)</div>
+                        <div class="setting-description">
+                            Automatically sync your settings across ALL Chrome installations where you're signed in.
+                            <br><strong>No setup required - just toggle it on!</strong>
                         </div>
                     </div>
                     <div class="setting-control">
-                        <div class="toggle" id="google-drive-toggle"></div>
+                        <label class="sync-toggle-label">
+                            <input type="checkbox" id="sync-toggle" class="sync-toggle" />
+                            <span class="toggle-label">Enable Chrome Sync</span>
+                        </label>
                     </div>
                 </div>
 
                 <div class="setting-item">
                     <div class="setting-info">
-                        <div class="setting-label">Auto Backup Frequency</div>
-                        <div class="setting-description">How often to automatically backup your data</div>
+                        <div class="setting-label">⏱️ Auto Backup Schedule</div>
+                        <div class="setting-description">
+                            Automatically backup your settings on a schedule.
+                            <br><small>Requires 'Sync Across Devices' or manual backup to be configured.</small>
+                        </div>
                     </div>
                     <div class="setting-control">
                         <select id="backup-frequency">
-                            <option value="never">Never</option>
+                            <option value="never">Never (Manual Only)</option>
                             <option value="daily">Daily</option>
                             <option value="weekly" selected>Weekly</option>
                             <option value="monthly">Monthly</option>
@@ -881,8 +890,9 @@
 
                 <div class="setting-item">
                     <div class="setting-info">
-                        <div class="setting-label">Export Settings</div>
-                        <div class="setting-description">Export all settings and saved groups to a file</div>
+                        <div class="setting-label">📤 Export Settings</div>
+                        <div class="setting-description">Download all your settings and saved groups to a file. Save it
+                            to Google Drive, Dropbox, or OneDrive manually.</div>
                     </div>
                     <div class="setting-control">
                         <button class="btn btn-primary" id="export-settings">📤 Export</button>
@@ -891,22 +901,13 @@
 
                 <div class="setting-item">
                     <div class="setting-info">
-                        <div class="setting-label">Import Settings</div>
-                        <div class="setting-description">Import settings and saved groups from a backup file</div>
+                        <div class="setting-label">📥 Import Settings</div>
+                        <div class="setting-description">Restore settings and saved groups from a backup file. Perfect
+                            for moving to a new device or restoring from cloud storage.</div>
                     </div>
                     <div class="setting-control">
                         <input type="file" id="import-file" accept=".json" style="display: none;">
                         <button class="btn btn-secondary" id="import-settings">📥 Import</button>
-                    </div>
-                </div>
-
-                <div class="setting-item">
-                    <div class="setting-info">
-                        <div class="setting-label">Sync Across Devices</div>
-                        <div class="setting-description">Sync settings across all your Chrome installations</div>
-                    </div>
-                    <div class="setting-control">
-                        <div class="toggle" id="sync-toggle"></div>
                     </div>
                 </div>
 
