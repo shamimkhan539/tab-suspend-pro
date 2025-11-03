@@ -226,9 +226,6 @@
             const renderers = document.getElementsByTagName(
                 "ytmusic-you-there-renderer"
             );
-            logMessage(
-                `Found ${renderers.length} YouTube Music YouThere renderers`
-            );
 
             if (renderers.length === 0) return;
 
@@ -246,17 +243,28 @@
         }
 
         // Regular YouTube idle popup - Multiple detection methods
+        // CRITICAL: Only detect "Still watching?" popup, NOT settings or other popups
 
         // Method 1: Look for yt-confirm-dialog-renderer (newer structure)
         const confirmDialog = document.querySelector(
             "yt-confirm-dialog-renderer"
         );
         if (confirmDialog) {
+            // Check if this is actually a "Still watching?" dialog
+            const dialogText = (confirmDialog.textContent || "").toLowerCase();
+
+            // Skip if this is NOT a continue watching dialog
+            if (
+                !dialogText.includes("video paused") &&
+                !dialogText.includes("continue watching") &&
+                !dialogText.includes("still watching") &&
+                !dialogText.includes("still there")
+            ) {
+                return; // Not the idle popup, skip it
+            }
+
             const dialogButtons = confirmDialog.querySelectorAll(
                 "button, yt-button-renderer button, #confirm-button"
-            );
-            logMessage(
-                `Found ${dialogButtons.length} buttons in confirm dialog`
             );
 
             for (const btn of dialogButtons) {
@@ -281,32 +289,25 @@
             }
         }
 
-        // Method 2: Look for #confirm-button directly
-        const confirmButtons = document.querySelectorAll("#confirm-button");
-        logMessage(`Found ${confirmButtons.length} #confirm-button elements`);
-
-        for (const button of confirmButtons) {
-            // Check if visible
-            if (button.checkVisibility && button.checkVisibility()) {
-                logMessage(`Clicking visible #confirm-button`);
-                button.click();
-                return;
-            }
-
-            // Alternative visibility check
-            if (button.offsetWidth > 0 && button.offsetHeight > 0) {
-                logMessage(`Clicking #confirm-button (offset check)`);
-                button.click();
-                return;
-            }
-        }
-
-        // Method 3: Look for paper-dialog with buttons
+        // Method 2: Look for paper-dialog with "Still watching?" text
         const paperDialogs = document.querySelectorAll(
             "paper-dialog, ytd-popup-container"
         );
         for (const dialog of paperDialogs) {
             if (dialog.offsetWidth === 0 || dialog.offsetHeight === 0) continue;
+
+            // Check dialog content to ensure it's the idle popup
+            const dialogText = (dialog.textContent || "").toLowerCase();
+
+            // Skip if this is NOT a continue watching dialog
+            if (
+                !dialogText.includes("video paused") &&
+                !dialogText.includes("continue watching") &&
+                !dialogText.includes("still watching") &&
+                !dialogText.includes("still there")
+            ) {
+                continue; // Not the idle popup, skip to next dialog
+            }
 
             const buttons = dialog.querySelectorAll(
                 "button, yt-button-renderer button, #button"
@@ -324,7 +325,7 @@
                     ariaLabel.includes("continue")
                 ) {
                     logMessage(
-                        `Clicking paper-dialog button: "${btn.textContent}"`
+                        `Clicking idle popup button: "${btn.textContent}"`
                     );
                     btn.click();
                     return;
@@ -332,26 +333,60 @@
             }
         }
 
-        // Method 4: Legacy method (original JAdSkip approach)
-        const legacyButtons = document.querySelectorAll("#confirm-button");
-        for (const button of legacyButtons) {
-            if (!button.data) continue;
+        // Method 3: Legacy method - Look for #confirm-button with proper validation
+        const confirmButtons = document.querySelectorAll("#confirm-button");
 
-            const actions =
-                button.data?.serviceEndpoint?.signalServiceEndpoint?.actions;
-            if (!actions) continue;
-
-            let found = false;
-            actions.forEach((action) => {
-                const signal = action.signalAction?.signal;
-                if (signal === "ACKNOWLEDGE_YOUTHERE") {
-                    logMessage("Clicking confirm button via legacy method");
-                    button.click();
-                    found = true;
+        for (const button of confirmButtons) {
+            // Skip if button is not visible
+            if (!button.checkVisibility || !button.checkVisibility()) {
+                if (button.offsetWidth === 0 || button.offsetHeight === 0) {
+                    continue;
                 }
-            });
+            }
 
-            if (found) return;
+            // Check parent dialog text to ensure it's the idle popup
+            const parentDialog = button.closest(
+                "yt-confirm-dialog-renderer, paper-dialog, ytd-popup-container"
+            );
+            if (parentDialog) {
+                const dialogText = (
+                    parentDialog.textContent || ""
+                ).toLowerCase();
+
+                // Only click if it's actually the idle popup
+                if (
+                    dialogText.includes("video paused") ||
+                    dialogText.includes("continue watching") ||
+                    dialogText.includes("still watching") ||
+                    dialogText.includes("still there")
+                ) {
+                    logMessage(`Clicking idle confirm button`);
+                    button.click();
+                    return;
+                }
+            }
+
+            // Fallback: Check button's data attributes (legacy method)
+            if (button.data) {
+                const actions =
+                    button.data?.serviceEndpoint?.signalServiceEndpoint
+                        ?.actions;
+                if (actions) {
+                    let found = false;
+                    actions.forEach((action) => {
+                        const signal = action.signalAction?.signal;
+                        if (signal === "ACKNOWLEDGE_YOUTHERE") {
+                            logMessage(
+                                "Clicking confirm button via legacy method"
+                            );
+                            button.click();
+                            found = true;
+                        }
+                    });
+
+                    if (found) return;
+                }
+            }
         }
     }
 
@@ -524,10 +559,23 @@
                     tagName === "paper-dialog" ||
                     element.id === "confirm-dialog"
                 ) {
-                    logMessage(
-                        "Popup dialog detected via observer, checking idle"
-                    );
-                    setTimeout(checkIdle, 100); // Small delay for rendering
+                    // CRITICAL: Only check idle if this looks like an idle popup
+                    // Check the text content to avoid interfering with settings/other popups
+                    const elementText = (
+                        element.textContent || ""
+                    ).toLowerCase();
+
+                    if (
+                        elementText.includes("video paused") ||
+                        elementText.includes("continue watching") ||
+                        elementText.includes("still watching") ||
+                        elementText.includes("still there")
+                    ) {
+                        logMessage(
+                            "Idle popup detected via observer, checking idle"
+                        );
+                        setTimeout(checkIdle, 100); // Small delay for rendering
+                    }
                     break;
                 }
             }
