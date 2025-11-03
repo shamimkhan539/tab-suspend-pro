@@ -65,12 +65,18 @@ class OptionsManager {
     }
 
     async init() {
+        // Wake up service worker first
+        await this.wakeUpServiceWorker();
+
         this.setupTabNavigation();
         await this.loadSettings();
         await this.loadTabGroups();
         await this.loadSavedGroups();
         await this.loadTrackerBlockerSettings();
         await this.loadAdsBlockerSettings();
+        await this.loadCloudSyncStatus();
+        await this.loadAutoSyncSettings();
+        await this.loadSyncState();
         this.setupEventListeners();
         this.setupSavedGroupsEventListeners();
         this.setupBackupEventListeners();
@@ -78,6 +84,71 @@ class OptionsManager {
         this.setupAdsBlockerListeners();
         this.updateUI();
         this.updateLastBackupTime();
+    }
+
+    // Wake up the service worker before sending messages
+    async wakeUpServiceWorker() {
+        try {
+            await chrome.runtime.sendMessage({ action: "ping" });
+        } catch (error) {
+            console.warn(
+                "Service worker not responding, will retry on demand:",
+                error
+            );
+        }
+    }
+
+    async loadCloudSyncStatus() {
+        try {
+            const response = await this.sendMessageSafely({
+                action: "cloud-get-status",
+            });
+
+            if (response?.success && response.status) {
+                const driveToggle = document.getElementById(
+                    "google-drive-toggle"
+                );
+                if (
+                    driveToggle &&
+                    response.status.enabled &&
+                    response.status.provider === "google-drive"
+                ) {
+                    driveToggle.classList.add("active");
+                }
+            }
+        } catch (error) {
+            console.error("Failed to load cloud sync status:", error);
+        }
+    }
+
+    async loadAutoSyncSettings() {
+        try {
+            // Load auto-sync frequency from storage
+            const result = await chrome.storage.sync.get(["autoSyncFrequency"]);
+            const frequency = result.autoSyncFrequency || "weekly";
+
+            const frequencySelect = document.getElementById("backup-frequency");
+            if (frequencySelect) {
+                frequencySelect.value = frequency;
+            }
+        } catch (error) {
+            console.error("Failed to load auto-sync settings:", error);
+        }
+    }
+
+    async loadSyncState() {
+        try {
+            // Load the sync enabled state from settings
+            const result = await chrome.storage.sync.get(["syncEnabled"]);
+            const syncEnabled = result.syncEnabled || false;
+
+            const syncToggle = document.getElementById("sync-toggle");
+            if (syncToggle) {
+                syncToggle.checked = syncEnabled;
+            }
+        } catch (error) {
+            console.error("Failed to load sync state:", error);
+        }
     }
 
     setupTabNavigation() {
@@ -105,7 +176,7 @@ class OptionsManager {
 
     async loadTrackerBlockerSettings() {
         try {
-            const result = await chrome.runtime.sendMessage({
+            const result = await this.sendMessageSafely({
                 action: "tracker-get-settings",
             });
 
@@ -126,7 +197,7 @@ class OptionsManager {
             }
 
             // Load whitelist
-            const whitelistResult = await chrome.runtime.sendMessage({
+            const whitelistResult = await this.sendMessageSafely({
                 action: "tracker-get-whitelist",
             });
 
@@ -362,7 +433,7 @@ class OptionsManager {
 
     async loadAdsBlockerSettings() {
         try {
-            const result = await chrome.runtime.sendMessage({
+            const result = await this.sendMessageSafely({
                 action: "get-ads-blocker-data",
             });
 
@@ -1095,14 +1166,37 @@ class OptionsManager {
     // Saved Groups Management
     async loadSavedGroups() {
         try {
-            const response = await chrome.runtime.sendMessage({
+            const response = await this.sendMessageSafely({
                 action: "listSavedGroups",
             });
-            const groups = response.success ? response.groups : [];
+            const groups = response?.success ? response.groups : [];
             this.renderSavedGroups(groups);
         } catch (error) {
             console.error("Error loading saved groups:", error);
             this.renderSavedGroups([]);
+        }
+    }
+
+    // Helper method to safely send messages with retry logic
+    async sendMessageSafely(message, retries = 3) {
+        for (let i = 0; i < retries; i++) {
+            try {
+                const response = await chrome.runtime.sendMessage(message);
+                return response;
+            } catch (error) {
+                if (i === retries - 1) {
+                    // Last retry failed
+                    console.error(
+                        "Failed to send message after retries:",
+                        error
+                    );
+                    throw error;
+                }
+                // Wait before retrying (exponential backoff)
+                await new Promise((resolve) =>
+                    setTimeout(resolve, 100 * Math.pow(2, i))
+                );
+            }
         }
     }
 
@@ -1210,7 +1304,7 @@ class OptionsManager {
                     );
                     if (!name) return;
 
-                    const response = await chrome.runtime.sendMessage({
+                    const response = await this.sendMessageSafely({
                         action: "saveTabGroup",
                         groupId: null,
                         options: { name },
@@ -1236,7 +1330,7 @@ class OptionsManager {
             .getElementById("export-groups")
             .addEventListener("click", async () => {
                 try {
-                    const response = await chrome.runtime.sendMessage({
+                    const response = await this.sendMessageSafely({
                         action: "exportSavedGroups",
                     });
                     if (response.success) {
@@ -1272,7 +1366,7 @@ class OptionsManager {
                         "Merge with existing groups? Click OK to merge, Cancel to replace all groups."
                     );
 
-                    const response = await chrome.runtime.sendMessage({
+                    const response = await this.sendMessageSafely({
                         action: "importSavedGroups",
                         fileContent: content,
                         mergeMode: mergeMode,
@@ -1318,7 +1412,7 @@ class OptionsManager {
                     switch (action) {
                         case "restore":
                             const restoreResponse =
-                                await chrome.runtime.sendMessage({
+                                await this.sendMessageSafely({
                                     action: "restoreSavedGroup",
                                     groupId: groupId,
                                     options: { newWindow: false },
@@ -1333,7 +1427,7 @@ class OptionsManager {
 
                         case "restore-new":
                             const restoreNewResponse =
-                                await chrome.runtime.sendMessage({
+                                await this.sendMessageSafely({
                                     action: "restoreSavedGroup",
                                     groupId: groupId,
                                     options: { newWindow: true },
@@ -1347,11 +1441,10 @@ class OptionsManager {
                             break;
 
                         case "rename":
-                            const groupResponse =
-                                await chrome.runtime.sendMessage({
-                                    action: "getSavedGroup",
-                                    groupId: groupId,
-                                });
+                            const groupResponse = await this.sendMessageSafely({
+                                action: "getSavedGroup",
+                                groupId: groupId,
+                            });
 
                             if (groupResponse.success && groupResponse.group) {
                                 const currentName = groupResponse.group.name;
@@ -1384,11 +1477,10 @@ class OptionsManager {
                             break;
 
                         case "delete":
-                            const groupToDelete =
-                                await chrome.runtime.sendMessage({
-                                    action: "getSavedGroup",
-                                    groupId: groupId,
-                                });
+                            const groupToDelete = await this.sendMessageSafely({
+                                action: "getSavedGroup",
+                                groupId: groupId,
+                            });
 
                             if (groupToDelete.success && groupToDelete.group) {
                                 const confirmDelete = confirm(
@@ -1397,7 +1489,7 @@ class OptionsManager {
                                 if (!confirmDelete) return;
 
                                 const deleteResponse =
-                                    await chrome.runtime.sendMessage({
+                                    await this.sendMessageSafely({
                                         action: "deleteSavedGroup",
                                         groupId: groupId,
                                     });
@@ -1442,6 +1534,14 @@ class OptionsManager {
             backupBtn.addEventListener("click", () => this.backupNow());
         }
 
+        // Auto Backup Frequency
+        const frequencySelect = document.getElementById("backup-frequency");
+        if (frequencySelect) {
+            frequencySelect.addEventListener("change", (e) =>
+                this.updateAutoSyncFrequency(e.target.value)
+            );
+        }
+
         // Google Drive toggle
         const driveToggle = document.getElementById("google-drive-toggle");
         if (driveToggle) {
@@ -1453,7 +1553,37 @@ class OptionsManager {
         // Sync toggle
         const syncToggle = document.getElementById("sync-toggle");
         if (syncToggle) {
-            syncToggle.addEventListener("click", () => this.toggleSync());
+            syncToggle.addEventListener("change", () => this.toggleSync());
+        }
+    }
+
+    async updateAutoSyncFrequency(frequency) {
+        try {
+            // Save frequency preference
+            await chrome.storage.sync.set({ autoSyncFrequency: frequency });
+
+            // Update the sync schedule in background service worker
+            const response = await this.sendMessageSafely({
+                action: "cloud-update-sync-schedule",
+                frequency: frequency,
+            });
+
+            if (response?.success) {
+                this.showStatusMessage(
+                    `Auto-backup frequency set to: ${
+                        frequency === "never" ? "Disabled" : frequency
+                    }`,
+                    "success"
+                );
+            } else {
+                throw new Error("Failed to update sync schedule");
+            }
+        } catch (error) {
+            console.error("Failed to update auto-sync frequency:", error);
+            this.showStatusMessage(
+                "Failed to update backup frequency: " + error.message,
+                "error"
+            );
         }
     }
 
@@ -1563,21 +1693,104 @@ class OptionsManager {
     }
 
     async toggleGoogleDrive() {
-        // Placeholder for Google Drive integration
-        this.showStatusMessage("Google Drive integration coming soon!", "info");
+        try {
+            const driveToggle = document.getElementById("google-drive-toggle");
+            const isCurrentlyEnabled =
+                driveToggle?.classList.contains("active");
+
+            if (isCurrentlyEnabled) {
+                // Disable Google Drive sync
+                const confirmed = confirm(
+                    "Are you sure you want to disable Google Drive backup? This will not delete existing backups."
+                );
+                if (!confirmed) return;
+
+                const response = await this.sendMessageSafely({
+                    action: "cloud-disable-sync",
+                });
+
+                if (response?.success) {
+                    driveToggle.classList.remove("active");
+                    this.showStatusMessage(
+                        "Google Drive backup disabled",
+                        "success"
+                    );
+                } else {
+                    throw new Error("Failed to disable sync");
+                }
+            } else {
+                // Enable Google Drive sync
+                this.showStatusMessage("Connecting to Google Drive...", "info");
+
+                const response = await this.sendMessageSafely({
+                    action: "cloud-authenticate",
+                    provider: "google-drive",
+                });
+
+                if (response?.success) {
+                    driveToggle.classList.add("active");
+                    this.showStatusMessage(
+                        "Google Drive backup enabled successfully!",
+                        "success"
+                    );
+                    await this.updateLastBackupTime();
+                } else {
+                    throw new Error(response?.error || "Authentication failed");
+                }
+            }
+        } catch (error) {
+            console.error("Google Drive toggle failed:", error);
+
+            // Show helpful guidance about better alternatives
+            if (
+                error.message.includes("OAuth") ||
+                error.message.includes("Use File-Based")
+            ) {
+                this.showStatusMessage(
+                    "💡 Google Drive OAuth requires complex setup.\n\n" +
+                        "✨ Better alternatives:\n" +
+                        "1. Use 'Export Settings' → save to Google Drive manually\n" +
+                        "2. Use 'Import Settings' to restore anytime\n" +
+                        "3. Or enable 'Sync Across Devices' for automatic sync across Chrome!",
+                    "error"
+                );
+            } else if (error.message.includes("Use Export Settings")) {
+                this.showStatusMessage(
+                    "Use 'Export Settings' instead:\n" +
+                        "1. Download your backup file\n" +
+                        "2. Save it to Google Drive\n" +
+                        "3. Use 'Import Settings' to restore\n\n" +
+                        "✨ Or enable 'Sync Across Devices' for automatic sync!",
+                    "error"
+                );
+            } else if (error.message.includes("better solutions")) {
+                this.showStatusMessage(error.message, "error");
+            } else if (error.message.includes("cancelled")) {
+                this.showStatusMessage(
+                    "Google Drive authentication was cancelled",
+                    "info"
+                );
+            } else {
+                this.showStatusMessage(
+                    "💡 Tip: Use 'Export Settings' to backup manually, or enable 'Sync Across Devices' for automatic cross-device sync.\n\n" +
+                        "Error: " +
+                        error.message,
+                    "error"
+                );
+            }
+        }
     }
 
     async toggleSync() {
         // This enables Chrome's built-in sync
         try {
-            const syncEnabled = !this.settings.syncEnabled;
-            this.settings.syncEnabled = syncEnabled;
-            await this.saveSettings();
-
             const syncToggle = document.getElementById("sync-toggle");
-            if (syncToggle) {
-                syncToggle.classList.toggle("active", syncEnabled);
-            }
+            const syncEnabled = syncToggle.checked;
+
+            // Save to both settings and chrome.storage.sync for persistence
+            this.settings.syncEnabled = syncEnabled;
+            await chrome.storage.sync.set({ syncEnabled: syncEnabled });
+            await this.saveSettings();
 
             this.showStatusMessage(
                 syncEnabled ? "Chrome sync enabled!" : "Chrome sync disabled!",

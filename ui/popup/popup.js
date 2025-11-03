@@ -55,14 +55,25 @@ class PopupManager {
                 : "Extension Disabled";
         }
 
-        // Update all action buttons
+        // Update all action buttons EXCEPT the toggle button itself
         const actionButtons = document.querySelectorAll(".btn");
         actionButtons.forEach((btn) => {
+            // Skip disabling the toggle button - it needs to stay clickable!
+            if (
+                btn.id === "toggle" ||
+                btn.id === "settings-btn" ||
+                btn.id === "theme-toggle"
+            ) {
+                return;
+            }
+
             btn.disabled = !isEnabled;
             if (!isEnabled) {
                 btn.style.pointerEvents = "none";
+                btn.style.opacity = "0.5";
             } else {
                 btn.style.pointerEvents = "auto";
+                btn.style.opacity = "1";
             }
         });
     }
@@ -240,7 +251,7 @@ class PopupManager {
     }
 
     setupEventListeners() {
-        // Extension toggle
+        // Extension toggle - Only one listener needed!
         const extensionToggle = document.getElementById("toggle");
         if (extensionToggle) {
             extensionToggle.addEventListener("click", async () => {
@@ -261,18 +272,6 @@ class PopupManager {
         const themeToggle = document.getElementById("theme-toggle");
         if (themeToggle) {
             themeToggle.addEventListener("click", () => this.toggleTheme());
-        }
-
-        // Toggle extension
-        const toggle = document.getElementById("toggle");
-        if (toggle) {
-            toggle.addEventListener("click", async () => {
-                this.settings.enabled = !this.settings.enabled;
-                await chrome.storage.sync.set({
-                    tabSuspendSettings: this.settings,
-                });
-                this.updateUI();
-            });
         }
 
         // Settings button
