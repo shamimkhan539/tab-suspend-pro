@@ -92,5 +92,17 @@
         "16": "ui/assets/icons/icon16.png",
         "128": "ui/assets/icons/icon128.png",
         "32": "ui/assets/icons/icon32.png"
-    }
+    },
+    "web_accessible_resources": [
+        {
+            "resources": [
+                "ui/suspended/suspended.html",
+                "ui/suspended/suspended.js",
+                "ui/assets/icons/*",
+                "ui/shared/styles/*",
+                "ui/shared/components/*"
+            ],
+            "matches": ["<all_urls>"]
+        }
+    ]
 }
