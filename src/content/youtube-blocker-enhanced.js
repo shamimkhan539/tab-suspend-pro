@@ -32,6 +32,7 @@
     let adSlots = [];
     let lastBlockedAdURL = "";
     let lastBlockedTime = 0;
+    let autoResumeActive = false;
 
     // Logging function
     function logMessage(msg) {
@@ -73,12 +74,10 @@
     // Click triggers using YouTube's Player API (JAdSkip's approach)
     function clickTriggers(player, slot) {
         if (!player.onAdUxClicked) {
-            logMessage("Player does not support onAdUxClicked API");
             return;
         }
 
         try {
-            // Use YouTube's internal API to skip ads
             player.onAdUxClicked(slot);
             logMessage(`Clicked ad slot trigger via Player API`);
         } catch (e) {
@@ -86,7 +85,7 @@
         }
     }
 
-    // Try to click skip button using YouTube's Player API (JAdSkip's proven method)
+    // Try to click skip button
     async function tryClickSkipButton() {
         if (!blockEnabled) return;
         if (!getAdPlayer()) return;
@@ -94,27 +93,17 @@
         try {
             let player = null;
 
-            // YouTube Music has different player structure
             if (isYouTubeMusic) {
                 const playerElement = document.getElementById("player");
-                if (!playerElement) {
-                    logMessage("Unable to find YouTube Music player");
-                    return;
-                }
+                if (!playerElement) return;
+
                 player = playerElement.getPlayer
                     ? playerElement.getPlayer()
                     : null;
-                if (!player) {
-                    logMessage("Unable to get YouTube Music player instance");
-                    return;
-                }
+                if (!player) return;
             } else {
-                // Regular YouTube
                 const moviePlayer = document.getElementById("movie_player");
-                if (!moviePlayer) {
-                    logMessage("Unable to find movie player");
-                    return;
-                }
+                if (!moviePlayer) return;
 
                 player = moviePlayer;
                 if (player.getPlayerPromise) {
@@ -122,24 +111,16 @@
                 }
             }
 
-            // Check if player supports ad clicks
-            if (!player.onAdUxClicked) {
-                logMessage("Player does not support ad UX clicks");
-                return;
-            }
+            if (!player.onAdUxClicked) return;
 
-            // Get ad slots from player response
-            const playerSlots = player.getPlayerResponse()?.adSlots;
-            if (!playerSlots) {
-                logMessage("No ad slots found in player response");
-                return;
-            }
+            const playerResponse = player.getPlayerResponse?.();
+            const playerSlots = playerResponse?.adSlots;
+            if (!playerSlots) return;
 
             logMessage(
                 `Trying ad slots from player response: ${playerSlots.length}`
             );
 
-            // YouTube Music uses different trigger structure
             if (isYouTubeMusic) {
                 playerSlots.forEach((slot) => {
                     const triggers =
@@ -163,8 +144,6 @@
                     });
                 });
             } else {
-                // Regular YouTube
-                // Try captured ad slots first
                 if (adSlots.length > 0) {
                     logMessage(`Trying captured ad slots: ${adSlots.length}`);
                     adSlots.forEach((slot) => {
@@ -172,7 +151,6 @@
                     });
                 }
 
-                // Try ad slots from player response
                 playerSlots.forEach((slot) => {
                     clickTriggers(player, slot);
                 });
@@ -182,7 +160,7 @@
         }
     }
 
-    // Skip ad by seeking (JAdSkip's approach)
+    // Skip ad by seeking
     async function trySkipAd() {
         if (!blockEnabled) return;
 
@@ -193,21 +171,17 @@
             `Processing ad "${player.src}" at ${player.currentTime} / ${player.duration}`
         );
 
-        // Check if duration is valid
         if (!isFinite(player.duration)) {
             logMessage("Ad duration is not finite, skipping ad skip");
             return;
         }
 
-        // Skip if already processed this ad URL
         if (player.src === lastBlockedAdURL) {
             logMessage("Skipping already processed ad");
             return;
         }
 
-        // For YouTube Music: Skip immediately (no threshold)
-        // For regular YouTube: Wait until 40% through ad (prevents detection)
-        if (!isYouTubeMusic) {
+        if (!isYouTubeMusic && !isYouTubeShorts) {
             const threshold = player.duration * 0.4;
             if (player.currentTime < threshold) {
                 logMessage(
@@ -217,7 +191,6 @@
             }
         }
 
-        // Seek to near end of ad (simple and effective)
         const target = player.duration - 0.1;
         logMessage(`Skipping ad from ${player.currentTime} to ${target}`);
 
@@ -226,71 +199,13 @@
         lastBlockedTime = Date.now();
     }
 
-    // Main ad checking routine (JAdSkip's order of operations)
+    // Main ad checking routine
     async function checkAds() {
         if (!blockEnabled) return;
 
-        // 1. Try clicking skip button first (using Player API)
         await tryClickSkipButton();
-
-        // 2. Wait 1 second (important for skip button to register)
         await new Promise((resolve) => setTimeout(resolve, 1000));
-
-        // 3. Try seeking to skip ad
         await trySkipAd();
-    }
-
-    // YouTube Music next button fix - CRITICAL FIX #1
-    function handleYouTubeMusicButtons() {
-        if (!isYouTubeMusic) return;
-
-        logMessage("Setting up YouTube Music button handlers...");
-
-        const setupButtonHandlers = () => {
-            // Find next/previous buttons and intercept them
-            const buttonSelectors = [
-                '[data-tooltip="Next"], [aria-label*="next"]',
-                '[data-tooltip="Previous"], [aria-label*="previous"]',
-                'button[aria-label*="next"], button[aria-label*="previous"]',
-            ];
-
-            let found = false;
-
-            for (const selector of buttonSelectors) {
-                const buttons = document.querySelectorAll(selector);
-                if (buttons.length === 0) continue;
-
-                found = true;
-                buttons.forEach((btn) => {
-                    if (btn.hasAttribute("music-btn-listener")) return;
-                    btn.setAttribute("music-btn-listener", "1");
-
-                    btn.addEventListener("click", function (e) {
-                        logMessage(
-                            "Music button clicked, preparing for ad check"
-                        );
-                        setTimeout(() => {
-                            checkAds();
-                        }, 1500);
-                    });
-                });
-            }
-
-            if (found) {
-                logMessage("YouTube Music button handlers attached");
-                return true;
-            }
-
-            return false;
-        };
-
-        if (setupButtonHandlers()) return;
-
-        const retryInterval = setInterval(() => {
-            if (setupButtonHandlers()) {
-                clearInterval(retryInterval);
-            }
-        }, 2000);
     }
 
     // Prevent YouTube's auto-pause on idle - CRITICAL FIX #2
@@ -305,19 +220,24 @@
                 function (e) {
                     if (!blockEnabled) return;
 
+                    // Check if video was paused by idle detection
                     setTimeout(() => {
                         const hasIdleDialog = !!document.querySelector(
                             'yt-confirm-dialog-renderer[aria-label*="paused"], paper-dialog[role="alertdialog"], [role="alertdialog"] button'
                         );
 
+                        // If idle dialog appeared or auto-paused (not user click), resume
                         if (video.paused && hasIdleDialog) {
-                            logMessage("Idle dialog detected - checking idle");
-                            checkIdle();
+                            logMessage(
+                                "Idle dialog detected - clicking continue button"
+                            );
+                            checkIdle(); // Handle the dialog
                         } else if (
                             video.paused &&
                             !hasIdleDialog &&
                             !e.isTrusted
                         ) {
+                            // Non-user pause (system pause)
                             logMessage("Auto-resuming from system pause");
                             video.play();
                         }
@@ -326,66 +246,6 @@
                 true
             );
         });
-    }
-
-    // YouTube Shorts specific fixes - CRITICAL FIX #3
-    function handleShorts() {
-        if (!isYouTubeShorts) return;
-
-        logMessage("Handling YouTube Shorts...");
-
-        const shortsPlayer = document.querySelector(
-            "ytd-reel-video-renderer, [data-is-shorts-video], .shorts-player"
-        );
-        if (shortsPlayer) {
-            const videos = shortsPlayer.querySelectorAll("video");
-            videos.forEach((video) => {
-                if (video.hasAttribute("shorts-pause-listener")) return;
-                video.setAttribute("shorts-pause-listener", "1");
-
-                video.addEventListener(
-                    "pause",
-                    function (e) {
-                        if (!blockEnabled) return;
-
-                        if (!e.isTrusted) {
-                            logMessage("Preventing Shorts auto-pause");
-                            setTimeout(() => video.play(), 100);
-                        }
-                    },
-                    true
-                );
-
-                video.addEventListener(
-                    "error",
-                    function (e) {
-                        logMessage(
-                            `Shorts video error: ${this.error?.message}`
-                        );
-                        this.load();
-                    },
-                    true
-                );
-            });
-        }
-
-        setInterval(() => {
-            if (!blockEnabled) return;
-
-            const adElements = document.querySelectorAll(
-                "ytd-ad-slot-renderer, [data-ad-type], .shorts-ad"
-            );
-
-            if (adElements.length > 0) {
-                logMessage(`Detected ${adElements.length} Shorts ad elements`);
-                adElements.forEach((el) => {
-                    if (el.style.display !== "none") {
-                        el.style.display = "none";
-                        logMessage("Hid Shorts ad element");
-                    }
-                });
-            }
-        }, 1000);
     }
 
     // Check for "Still watching?" / "Video paused" popups - CRITICAL FIX #2
@@ -419,6 +279,7 @@
         if (confirmDialog) {
             const dialogText = (confirmDialog.textContent || "").toLowerCase();
 
+            // Verify this is the idle/pause dialog
             if (
                 dialogText.includes("video paused") ||
                 dialogText.includes("continue watching") ||
@@ -530,7 +391,130 @@
         }
     }
 
-    // Intercept XMLHttpRequest to capture ad slots and modify responses (JAdSkip's approach)
+    // YouTube Shorts specific fixes - CRITICAL FIX #3
+    function handleShorts() {
+        if (!isYouTubeShorts) return;
+
+        logMessage("Handling YouTube Shorts...");
+
+        // Prevent Shorts from pausing frequently
+        const shortsPlayer = document.querySelector(
+            "ytd-reel-video-renderer, [data-is-shorts-video], .shorts-player"
+        );
+        if (shortsPlayer) {
+            const videos = shortsPlayer.querySelectorAll("video");
+            videos.forEach((video) => {
+                if (video.hasAttribute("shorts-pause-listener")) return;
+                video.setAttribute("shorts-pause-listener", "1");
+
+                // Prevent auto-pause in Shorts
+                video.addEventListener(
+                    "pause",
+                    function (e) {
+                        if (!blockEnabled) return;
+
+                        // Only auto-resume if this is a system pause, not user pause
+                        if (!e.isTrusted) {
+                            logMessage("Preventing Shorts auto-pause");
+                            setTimeout(() => video.play(), 100);
+                        }
+                    },
+                    true
+                );
+
+                // Watch for play errors (often due to ad injection)
+                video.addEventListener(
+                    "error",
+                    function (e) {
+                        logMessage(
+                            `Shorts video error: ${this.error?.message}`
+                        );
+                        // Try to reload or skip
+                        this.load();
+                    },
+                    true
+                );
+            });
+        }
+
+        // Monitor for Shorts-specific ads
+        setInterval(() => {
+            if (!blockEnabled) return;
+
+            const adElements = document.querySelectorAll(
+                "ytd-ad-slot-renderer, [data-ad-type], .shorts-ad"
+            );
+
+            if (adElements.length > 0) {
+                logMessage(`Detected ${adElements.length} Shorts ad elements`);
+                adElements.forEach((el) => {
+                    if (el.style.display !== "none") {
+                        el.style.display = "none";
+                        logMessage("Hid Shorts ad element");
+                    }
+                });
+            }
+        }, 1000);
+    }
+
+    // YouTube Music next button fix - CRITICAL FIX #1
+    function handleYouTubeMusicButtons() {
+        if (!isYouTubeMusic) return;
+
+        logMessage("Setting up YouTube Music button handlers...");
+
+        // Find next/previous buttons and intercept them
+        const setupButtonHandlers = () => {
+            // Method 1: Direct button selectors
+            const buttonSelectors = [
+                '[data-tooltip="Next"], [aria-label*="next"]',
+                '[data-tooltip="Previous"], [aria-label*="previous"]',
+                'button[aria-label*="next"], button[aria-label*="previous"]',
+            ];
+
+            let found = false;
+
+            for (const selector of buttonSelectors) {
+                const buttons = document.querySelectorAll(selector);
+                if (buttons.length === 0) continue;
+
+                found = true;
+                buttons.forEach((btn) => {
+                    if (btn.hasAttribute("music-btn-listener")) return;
+                    btn.setAttribute("music-btn-listener", "1");
+
+                    btn.addEventListener("click", function (e) {
+                        logMessage(
+                            "Music button clicked, preparing for ad check"
+                        );
+                        // Give player time to load next track
+                        setTimeout(() => {
+                            checkAds();
+                        }, 1500);
+                    });
+                });
+            }
+
+            if (found) {
+                logMessage("YouTube Music button handlers attached");
+                return true;
+            }
+
+            return false;
+        };
+
+        // Try setup immediately and periodically
+        if (setupButtonHandlers()) return;
+
+        // Retry until buttons are found
+        const retryInterval = setInterval(() => {
+            if (setupButtonHandlers()) {
+                clearInterval(retryInterval);
+            }
+        }, 2000);
+    }
+
+    // Intercept XMLHttpRequest to capture ad slots
     const originalSend = XMLHttpRequest.prototype.send;
     XMLHttpRequest.prototype.send = function (...args) {
         const originalOnload = this.onload;
@@ -540,19 +524,11 @@
                 try {
                     const response = JSON.parse(this.response);
 
-                    // Handle ad throttling
                     if ("adThrottled" in response) {
                         logMessage(
                             `Ad throttling response detected: ${response.adThrottled}`
                         );
-                        if (blockEnabled) {
-                            logMessage("Replacing ad throttling response");
-                            Object.defineProperty(this, "response", {
-                                writable: true,
-                            });
-                            response.adThrottled = true;
-                            this.response = JSON.stringify(response);
-                        } else if (response.adSlots) {
+                        if (blockEnabled && response.adSlots) {
                             logMessage(
                                 `Ad slots detected: ${response.adSlots.length}`
                             );
@@ -560,7 +536,7 @@
                         }
                     }
                 } catch (e) {
-                    // Not a JSON response, continue as normal
+                    // Not JSON
                 }
 
                 return originalOnload.apply(this, onloadArgs);
@@ -570,7 +546,7 @@
         return originalSend.apply(this, args);
     };
 
-    // Load settings from background
+    // Load settings
     async function loadSettings() {
         return new Promise((resolve) => {
             try {
@@ -598,7 +574,6 @@
                             );
                             resolve(true);
                         } else {
-                            logMessage("No response from background");
                             resolve(false);
                         }
                     }
@@ -610,31 +585,27 @@
         });
     }
 
-    // Setup video event listeners (JAdSkip's approach)
+    // Setup video listeners
     function setupVideoListeners() {
         const videos = document.querySelectorAll("video");
         logMessage(`Setting up listeners for ${videos.length} videos`);
 
         videos.forEach((video) => {
-            // Skip if already has listeners
-            if (video.hasAttribute("jadskip-listener")) return;
-            video.setAttribute("jadskip-listener", "1");
+            if (video.hasAttribute("blocker-listener")) return;
+            video.setAttribute("blocker-listener", "1");
 
-            // On video play - check for ads
             video.addEventListener("play", () => {
-                logMessage("Video play detected, checking for ads");
+                logMessage("Video play - checking for ads");
                 checkAds();
             });
 
-            // On video pause - check for idle popup
             video.addEventListener("pause", () => {
-                logMessage("Video pause detected, checking for idle popup");
+                logMessage("Video pause - checking for idle popup");
                 checkIdle();
             });
 
-            // Watch for source changes
             const observer = new MutationObserver(() => {
-                logMessage("Video source changed, checking for ads");
+                logMessage("Video source changed");
                 checkAds();
             });
 
@@ -644,13 +615,12 @@
             });
         });
 
-        // Re-run every 2 seconds to catch new videos
         setTimeout(setupVideoListeners, 2000);
     }
 
-    // Listen for YouTube navigation
+    // Navigation handler
     function onNavigate() {
-        logMessage("Navigation detected, resetting state");
+        logMessage("Navigation detected");
         lastBlockedAdURL = "";
         lastBlockedTime = 0;
         adSlots = [];
@@ -659,49 +629,45 @@
         handleShorts();
     }
 
-    // Setup navigation listeners
+    // Setup navigation
     if (window.navigation && window.navigation.addEventListener) {
         window.navigation.addEventListener("navigate", onNavigate);
     } else {
         window.addEventListener("yt-navigate-finish", onNavigate);
     }
 
-    // Periodic ad checking (every 2 seconds when video is playing)
+    // Periodic checks
     setInterval(() => {
         if (blockEnabled && getAdPlayer()) {
-            logMessage("Periodic check: Ad detected");
             checkAds();
         }
     }, 2000);
 
-    // Periodic idle checking (every 1 second - faster to catch popups)
     setInterval(() => {
         if (blockEnabled) {
             checkIdle();
         }
     }, 1000);
 
-    // Watch for popup dialogs appearing in DOM (instant detection)
+    // Popup observer
     const popupObserver = new MutationObserver((mutations) => {
         if (!blockEnabled) return;
 
         for (const mutation of mutations) {
             for (const node of mutation.addedNodes) {
-                if (node.nodeType !== 1) continue; // Element nodes only
+                if (node.nodeType !== 1) continue;
 
                 const element = node;
                 const classList = element.className || "";
                 const tagName = element.tagName?.toLowerCase() || "";
-                const role = element.getAttribute("role") || "";
 
-                // Detect popup containers
                 if (
                     classList.includes("yt-confirm-dialog") ||
                     classList.includes("ytd-popup-container") ||
                     tagName === "yt-confirm-dialog-renderer" ||
                     tagName === "paper-dialog" ||
-                    role === "alertdialog" ||
-                    element.id === "confirm-dialog"
+                    element.id === "confirm-dialog" ||
+                    element.getAttribute("role") === "alertdialog"
                 ) {
                     const elementText = (
                         element.textContent || ""
@@ -714,9 +680,7 @@
                         elementText.includes("still there") ||
                         elementText.includes("paused")
                     ) {
-                        logMessage(
-                            "Idle popup detected via observer, checking idle"
-                        );
+                        logMessage("Idle popup detected via observer");
                         setTimeout(checkIdle, 100);
                     }
                     break;
@@ -725,7 +689,6 @@
         }
     });
 
-    // Observe body for popup additions
     try {
         popupObserver.observe(document.body, {
             childList: true,
@@ -740,21 +703,18 @@
     (async function init() {
         logMessage("Initializing YouTube Ad Blocker Enhanced");
 
-        // Load settings
         const success = await loadSettings();
         if (!success) {
-            logMessage("Failed to load settings, retrying in 1 second...");
+            logMessage("Failed to load settings, retrying...");
             setTimeout(init, 1000);
             return;
         }
 
-        // Setup video listeners
         setupVideoListeners();
         setupAutoContinue();
         handleYouTubeMusicButtons();
         handleShorts();
 
-        // Initial checks
         checkAds();
 
         logMessage("Initialization complete");
