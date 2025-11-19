@@ -1,6 +1,9 @@
-// YouTube Ad Blocker - REWRITTEN based on JAdSkip's proven approach
+// YouTube Ad Blocker - ENHANCED VERSION with Shorts & Music support
+// Based on JAdSkip's proven approach with critical enhancements for:
+// 1. YouTube Music next button ads
+// 2. Auto-pause prevention ("Still watching?")
+// 3. YouTube Shorts ads and pause fixes
 // Original JAdSkip: https://github.com/JC-comp/JAdSkip
-// This implementation fixes all ad blocking issues by using YouTube's Player API
 
 (function () {
     "use strict";
@@ -9,14 +12,21 @@
     const isYouTube =
         hostname.includes("youtube.com") || hostname.includes("youtu.be");
     const isYouTubeMusic = hostname.includes("music.youtube.com");
+    const isYouTubeShorts =
+        isYouTube &&
+        (window.location.pathname.includes("/shorts/") ||
+            (document.body &&
+                document.body.classList &&
+                document.body.classList.contains("ytd-shorts")));
 
     if (!isYouTube && !isYouTubeMusic) {
         return;
     }
 
     console.log(
-        "[YouTube Blocker] JAdSkip implementation initialized on",
-        hostname
+        "[YouTube Blocker] Enhanced implementation initialized on",
+        hostname,
+        { isShorts: isYouTubeShorts, isMusic: isYouTubeMusic }
     );
 
     // State variables
@@ -34,14 +44,55 @@
     function getAdPlayer() {
         const videos = document.querySelectorAll("video");
         for (const video of videos) {
-            if (
-                video.src &&
-                video.src.includes("googlevideo.com/videoplayback")
-            ) {
-                // Check if it's an ad by duration (ads are typically < 120 seconds)
-                if (video.duration > 0 && video.duration < 120) {
+            const src = video.src || "";
+            const isShortsVideo = video.closest(
+                "ytd-reel-video-renderer, [data-is-shorts-video], .shorts-player"
+            );
+
+            // For Shorts: detect ads by looking at video container
+            if (isYouTubeShorts && isShortsVideo) {
+                // Shorts ads are typically short duration
+                if (
+                    src.includes("googlevideo.com") &&
+                    video.duration > 0 &&
+                    video.duration < 120
+                ) {
                     return video;
                 }
+            }
+            // YouTube Music: Enhanced ad detection
+            else if (isYouTubeMusic) {
+                // Check if this is an ad by multiple criteria
+                const isAdVideo =
+                    src.includes("googlevideo.com") ||
+                    video.className.includes("ad") ||
+                    video.closest(
+                        ".advertisement, .ad-showing, [class*=ad-], ytmusic-companion"
+                    ) ||
+                    (video.duration > 0 && video.duration < 120);
+
+                if (isAdVideo) {
+                    // Additional check: see if player shows ad indicator
+                    const playerAd = document.querySelector(
+                        '.advertisement, .video-ads, ytmusic-player-bar[ad], [class*="ad-playing"]'
+                    );
+                    if (playerAd || src.includes("googlevideo.com")) {
+                        logMessage(
+                            `YouTube Music ad detected: duration=${
+                                video.duration
+                            }s, src=${src.substring(0, 50)}...`
+                        );
+                        return video;
+                    }
+                }
+            }
+            // Regular YouTube: check for specific ad URL and duration
+            else if (
+                src.includes("googlevideo.com/videoplayback") &&
+                video.duration > 0 &&
+                video.duration < 120
+            ) {
+                return video;
             }
         }
         return null;
@@ -176,15 +227,49 @@
             return;
         }
 
-        // Skip if already processed this ad URL
-        if (player.src === lastBlockedAdURL) {
+        // Skip if already processed this ad URL (with timeout check)
+        const timeSinceLastBlock = Date.now() - lastBlockedTime;
+        if (player.src === lastBlockedAdURL && timeSinceLastBlock < 5000) {
             logMessage("Skipping already processed ad");
             return;
         }
 
-        // For YouTube Music: Skip immediately (no threshold)
+        // For YouTube Music: be extra aggressive
+        if (isYouTubeMusic) {
+            // Try to mute the ad first
+            player.muted = true;
+            player.volume = 0;
+
+            // Immediately seek to end
+            const target = player.duration - 0.05;
+            logMessage(
+                `[YouTube Music] Aggressively skipping ad from ${player.currentTime} to ${target}`
+            );
+            player.currentTime = target;
+
+            // Also try to trigger next track
+            setTimeout(() => {
+                const nextButton = document.querySelector(
+                    'button[aria-label*="Next"], button[aria-label*="next"], [data-tooltip="Next"]'
+                );
+                if (nextButton) {
+                    logMessage(
+                        "[YouTube Music] Clicking next button to skip ad"
+                    );
+                    nextButton.click();
+                }
+            }, 100);
+        }
+        // For Shorts: Skip immediately (no threshold)
+        else if (isYouTubeShorts) {
+            const target = player.duration - 0.1;
+            logMessage(
+                `[Shorts] Skipping ad from ${player.currentTime} to ${target}`
+            );
+            player.currentTime = target;
+        }
         // For regular YouTube: Wait until 40% through ad (prevents detection)
-        if (!isYouTubeMusic) {
+        else {
             const threshold = player.duration * 0.4;
             if (player.currentTime < threshold) {
                 logMessage(
@@ -192,20 +277,66 @@
                 );
                 return;
             }
+
+            const target = player.duration - 0.1;
+            logMessage(`Skipping ad from ${player.currentTime} to ${target}`);
+            player.currentTime = target;
         }
 
-        // Seek to near end of ad (simple and effective)
-        const target = player.duration - 0.1;
-        logMessage(`Skipping ad from ${player.currentTime} to ${target}`);
-
-        player.currentTime = target;
         lastBlockedAdURL = player.src;
         lastBlockedTime = Date.now();
+    }
+
+    // Remove visual ad elements (YouTube Music specific)
+    function removeYouTubeMusicAdElements() {
+        if (!isYouTubeMusic || !blockEnabled) return;
+
+        const adSelectors = [
+            // Ad overlays and banners
+            ".advertisement",
+            ".video-ads",
+            "ytmusic-companion",
+            '[class*="ad-showing"]',
+            '[class*="ad-playing"]',
+            "ytmusic-promoted-sparkles-web-renderer",
+            "ytmusic-display-ad-renderer",
+            'ytmusic-engagement-panel-section-list-renderer[target-id="engagement-panel-ads"]',
+            // Companion ads
+            "[data-ad-id]",
+            '[id^="player-ads"]',
+            ".ytp-ad-overlay-container",
+            ".ytp-ad-text",
+            ".ytp-ad-player-overlay",
+            // Skip ad indicators
+            ".ytp-ad-skip-button-container",
+            ".ytp-ad-preview-container",
+        ];
+
+        let removedCount = 0;
+        adSelectors.forEach((selector) => {
+            const elements = document.querySelectorAll(selector);
+            elements.forEach((el) => {
+                if (el && el.style.display !== "none") {
+                    el.style.display = "none";
+                    el.remove();
+                    removedCount++;
+                }
+            });
+        });
+
+        if (removedCount > 0) {
+            logMessage(`Removed ${removedCount} YouTube Music ad elements`);
+        }
     }
 
     // Main ad checking routine (JAdSkip's order of operations)
     async function checkAds() {
         if (!blockEnabled) return;
+
+        // 0. Remove visual ad elements (YouTube Music)
+        if (isYouTubeMusic) {
+            removeYouTubeMusicAdElements();
+        }
 
         // 1. Try clicking skip button first (using Player API)
         await tryClickSkipButton();
@@ -217,174 +348,301 @@
         await trySkipAd();
     }
 
-    // Check for "Still watching?" idle popup (CRITICAL - this was missing!)
+    // YouTube Music next button fix - CRITICAL FIX #1
+    function handleYouTubeMusicButtons() {
+        if (!isYouTubeMusic) return;
+
+        logMessage("Setting up YouTube Music button handlers...");
+
+        const setupButtonHandlers = () => {
+            // Find next/previous buttons and intercept them
+            const buttonSelectors = [
+                '[data-tooltip="Next"], [aria-label*="next"]',
+                '[data-tooltip="Previous"], [aria-label*="previous"]',
+                'button[aria-label*="next"], button[aria-label*="previous"]',
+                // Additional selectors for different YouTube Music versions
+                'button[jsaction*="next"]',
+                'button[jsaction*="previous"]',
+                '[role="button"][aria-label*="next"]',
+                '[role="button"][aria-label*="previous"]',
+            ];
+
+            let found = false;
+
+            for (const selector of buttonSelectors) {
+                const buttons = document.querySelectorAll(selector);
+                if (buttons.length === 0) continue;
+
+                found = true;
+                buttons.forEach((btn) => {
+                    if (btn.hasAttribute("music-btn-listener")) return;
+                    btn.setAttribute("music-btn-listener", "1");
+
+                    btn.addEventListener("click", function (e) {
+                        logMessage(
+                            "Music button clicked, preparing for ad check"
+                        );
+                        // Check for ads immediately and then again after track loads
+                        checkAds();
+                        setTimeout(() => {
+                            checkAds();
+                        }, 1000);
+                        setTimeout(() => {
+                            checkAds();
+                        }, 2500);
+                    });
+                });
+            }
+
+            if (found) {
+                logMessage("YouTube Music button handlers attached");
+                return true;
+            }
+
+            return false;
+        };
+
+        if (setupButtonHandlers()) return;
+
+        const retryInterval = setInterval(() => {
+            if (setupButtonHandlers()) {
+                clearInterval(retryInterval);
+            }
+        }, 2000);
+    }
+
+    // Prevent YouTube's auto-pause on idle - CRITICAL FIX #2
+    function setupAutoContinue() {
+        const videos = document.querySelectorAll("video");
+        videos.forEach((video) => {
+            if (video.hasAttribute("auto-continue-listener")) return;
+            video.setAttribute("auto-continue-listener", "1");
+
+            video.addEventListener(
+                "pause",
+                function (e) {
+                    if (!blockEnabled) return;
+
+                    setTimeout(() => {
+                        const hasIdleDialog = !!document.querySelector(
+                            'yt-confirm-dialog-renderer[aria-label*="paused"], paper-dialog[role="alertdialog"], [role="alertdialog"] button'
+                        );
+
+                        if (video.paused && hasIdleDialog) {
+                            logMessage("Idle dialog detected - checking idle");
+                            checkIdle();
+                        } else if (
+                            video.paused &&
+                            !hasIdleDialog &&
+                            !e.isTrusted
+                        ) {
+                            logMessage("Auto-resuming from system pause");
+                            video.play();
+                        }
+                    }, 300);
+                },
+                true
+            );
+        });
+    }
+
+    // YouTube Shorts specific fixes - CRITICAL FIX #3
+    function handleShorts() {
+        if (!isYouTubeShorts) return;
+
+        logMessage("Handling YouTube Shorts...");
+
+        const shortsPlayer = document.querySelector(
+            "ytd-reel-video-renderer, [data-is-shorts-video], .shorts-player"
+        );
+        if (shortsPlayer) {
+            const videos = shortsPlayer.querySelectorAll("video");
+            videos.forEach((video) => {
+                if (video.hasAttribute("shorts-pause-listener")) return;
+                video.setAttribute("shorts-pause-listener", "1");
+
+                video.addEventListener(
+                    "pause",
+                    function (e) {
+                        if (!blockEnabled) return;
+
+                        if (!e.isTrusted) {
+                            logMessage("Preventing Shorts auto-pause");
+                            setTimeout(() => video.play(), 100);
+                        }
+                    },
+                    true
+                );
+
+                video.addEventListener(
+                    "error",
+                    function (e) {
+                        logMessage(
+                            `Shorts video error: ${this.error?.message}`
+                        );
+                        this.load();
+                    },
+                    true
+                );
+            });
+        }
+
+        setInterval(() => {
+            if (!blockEnabled) return;
+
+            const adElements = document.querySelectorAll(
+                "ytd-ad-slot-renderer, [data-ad-type], .shorts-ad"
+            );
+
+            if (adElements.length > 0) {
+                logMessage(`Detected ${adElements.length} Shorts ad elements`);
+                adElements.forEach((el) => {
+                    if (el.style.display !== "none") {
+                        el.style.display = "none";
+                        logMessage("Hid Shorts ad element");
+                    }
+                });
+            }
+        }, 1000);
+    }
+
+    // Check for "Still watching?" / "Video paused" popups - CRITICAL FIX #2
     async function checkIdle() {
         if (!blockEnabled) return;
 
-        // YouTube Music has different idle popup structure
+        // YouTube Music idle
         if (isYouTubeMusic) {
             const renderers = document.getElementsByTagName(
                 "ytmusic-you-there-renderer"
             );
-
-            if (renderers.length === 0) return;
-
-            const renderer = renderers[0];
-            if (renderer.checkVisibility && !renderer.checkVisibility()) return;
-
-            const button = renderer.querySelector("button");
-            if (!button) return;
-
-            logMessage(
-                `Clicking YouTube Music YouThere button: ${button.textContent}`
-            );
-            button.click();
-            return;
+            if (renderers.length > 0) {
+                const renderer = renderers[0];
+                if (!renderer.checkVisibility || renderer.checkVisibility()) {
+                    const button = renderer.querySelector("button");
+                    if (button) {
+                        logMessage(
+                            `Clicking YouTube Music continue button: ${button.textContent}`
+                        );
+                        button.click();
+                        return;
+                    }
+                }
+            }
         }
 
-        // Regular YouTube idle popup - Multiple detection methods
-        // CRITICAL: Only detect "Still watching?" popup, NOT settings or other popups
-
-        // Method 1: Look for yt-confirm-dialog-renderer (newer structure)
+        // Method 1: Newer YouTube structure - yt-confirm-dialog-renderer
         const confirmDialog = document.querySelector(
-            "yt-confirm-dialog-renderer"
+            "yt-confirm-dialog-renderer[aria-label*='paused'], yt-confirm-dialog-renderer"
         );
         if (confirmDialog) {
-            // Check if this is actually a "Still watching?" dialog
             const dialogText = (confirmDialog.textContent || "").toLowerCase();
 
-            // Skip if this is NOT a continue watching dialog
             if (
-                !dialogText.includes("video paused") &&
-                !dialogText.includes("continue watching") &&
-                !dialogText.includes("still watching") &&
-                !dialogText.includes("still there")
+                dialogText.includes("video paused") ||
+                dialogText.includes("continue watching") ||
+                dialogText.includes("still watching") ||
+                dialogText.includes("still there") ||
+                dialogText.includes("paused")
             ) {
-                return; // Not the idle popup, skip it
-            }
+                const buttons = confirmDialog.querySelectorAll(
+                    "yt-button-renderer button, button[aria-label], button"
+                );
 
-            const dialogButtons = confirmDialog.querySelectorAll(
-                "button, yt-button-renderer button, #confirm-button"
-            );
+                for (const btn of buttons) {
+                    const text = (btn.textContent || "").toLowerCase();
+                    const ariaLabel = (
+                        btn.getAttribute("aria-label") || ""
+                    ).toLowerCase();
 
-            for (const btn of dialogButtons) {
-                const text = (btn.textContent || "").toLowerCase();
-                const ariaLabel = (
-                    btn.getAttribute("aria-label") || ""
-                ).toLowerCase();
-
-                // Look for "yes", "continue", "confirm" text
-                if (
-                    text.includes("yes") ||
-                    text.includes("continue") ||
-                    ariaLabel.includes("yes") ||
-                    ariaLabel.includes("continue")
-                ) {
-                    logMessage(
-                        `Clicking confirm dialog button: "${btn.textContent}"`
-                    );
-                    btn.click();
-                    return;
+                    if (
+                        text.includes("yes") ||
+                        text.includes("continue") ||
+                        text.includes("watch") ||
+                        ariaLabel.includes("yes") ||
+                        ariaLabel.includes("continue") ||
+                        ariaLabel.includes("watch")
+                    ) {
+                        logMessage(
+                            `Clicking continue button: "${btn.textContent}"`
+                        );
+                        btn.click();
+                        return;
+                    }
                 }
             }
         }
 
-        // Method 2: Look for paper-dialog with "Still watching?" text
-        const paperDialogs = document.querySelectorAll(
-            "paper-dialog, ytd-popup-container"
+        // Method 2: Legacy paper-dialog or popup-container
+        const dialogs = document.querySelectorAll(
+            "paper-dialog[role='alertdialog'], [role='alertdialog'], ytd-popup-container, .yt-confirm-dialog-renderer"
         );
-        for (const dialog of paperDialogs) {
-            if (dialog.offsetWidth === 0 || dialog.offsetHeight === 0) continue;
 
-            // Check dialog content to ensure it's the idle popup
+        for (const dialog of dialogs) {
+            if (!dialog.offsetWidth || !dialog.offsetHeight) continue;
+
             const dialogText = (dialog.textContent || "").toLowerCase();
 
-            // Skip if this is NOT a continue watching dialog
             if (
-                !dialogText.includes("video paused") &&
-                !dialogText.includes("continue watching") &&
-                !dialogText.includes("still watching") &&
-                !dialogText.includes("still there")
+                dialogText.includes("video paused") ||
+                dialogText.includes("continue watching") ||
+                dialogText.includes("still watching") ||
+                dialogText.includes("still there") ||
+                dialogText.includes("paused")
             ) {
-                continue; // Not the idle popup, skip to next dialog
-            }
+                const buttons = dialog.querySelectorAll(
+                    "button, yt-button-renderer button, [role='button']"
+                );
 
-            const buttons = dialog.querySelectorAll(
-                "button, yt-button-renderer button, #button"
-            );
-            for (const btn of buttons) {
-                const text = (btn.textContent || "").toLowerCase();
-                const ariaLabel = (
-                    btn.getAttribute("aria-label") || ""
-                ).toLowerCase();
+                for (const btn of buttons) {
+                    const text = (btn.textContent || "").toLowerCase();
+                    const ariaLabel = (
+                        btn.getAttribute("aria-label") || ""
+                    ).toLowerCase();
 
-                if (
-                    text.includes("yes") ||
-                    text.includes("continue") ||
-                    ariaLabel.includes("yes") ||
-                    ariaLabel.includes("continue")
-                ) {
-                    logMessage(
-                        `Clicking idle popup button: "${btn.textContent}"`
-                    );
-                    btn.click();
-                    return;
+                    if (
+                        text.includes("yes") ||
+                        text.includes("continue") ||
+                        text.includes("watch") ||
+                        ariaLabel.includes("yes") ||
+                        ariaLabel.includes("continue") ||
+                        ariaLabel.includes("watch")
+                    ) {
+                        logMessage(
+                            `Clicking dialog continue: "${btn.textContent}"`
+                        );
+                        btn.click();
+                        return;
+                    }
                 }
             }
         }
 
-        // Method 3: Legacy method - Look for #confirm-button with proper validation
-        const confirmButtons = document.querySelectorAll("#confirm-button");
+        // Method 3: Look for confirm-button in any dialog
+        const confirmButtons = document.querySelectorAll(
+            "#confirm-button, [data-dialog-action='confirm']"
+        );
 
         for (const button of confirmButtons) {
-            // Skip if button is not visible
-            if (!button.checkVisibility || !button.checkVisibility()) {
-                if (button.offsetWidth === 0 || button.offsetHeight === 0) {
-                    continue;
-                }
-            }
+            if (!button.offsetWidth || !button.offsetHeight) continue;
 
-            // Check parent dialog text to ensure it's the idle popup
             const parentDialog = button.closest(
-                "yt-confirm-dialog-renderer, paper-dialog, ytd-popup-container"
+                "yt-confirm-dialog-renderer, paper-dialog, [role='alertdialog']"
             );
+
             if (parentDialog) {
                 const dialogText = (
                     parentDialog.textContent || ""
                 ).toLowerCase();
 
-                // Only click if it's actually the idle popup
                 if (
                     dialogText.includes("video paused") ||
                     dialogText.includes("continue watching") ||
                     dialogText.includes("still watching") ||
-                    dialogText.includes("still there")
+                    dialogText.includes("paused")
                 ) {
-                    logMessage(`Clicking idle confirm button`);
+                    logMessage("Clicking confirm button");
                     button.click();
                     return;
-                }
-            }
-
-            // Fallback: Check button's data attributes (legacy method)
-            if (button.data) {
-                const actions =
-                    button.data?.serviceEndpoint?.signalServiceEndpoint
-                        ?.actions;
-                if (actions) {
-                    let found = false;
-                    actions.forEach((action) => {
-                        const signal = action.signalAction?.signal;
-                        if (signal === "ACKNOWLEDGE_YOUTHERE") {
-                            logMessage(
-                                "Clicking confirm button via legacy method"
-                            );
-                            button.click();
-                            found = true;
-                        }
-                    });
-
-                    if (found) return;
                 }
             }
         }
@@ -492,6 +750,28 @@
                 checkIdle();
             });
 
+            // YouTube Music specific: Monitor for ad loading
+            if (isYouTubeMusic) {
+                video.addEventListener("loadedmetadata", () => {
+                    if (video.duration > 0 && video.duration < 120) {
+                        logMessage(
+                            `[YouTube Music] Potential ad detected on loadedmetadata: duration=${video.duration}s`
+                        );
+                        checkAds();
+                    }
+                });
+
+                video.addEventListener("timeupdate", () => {
+                    const player = getAdPlayer();
+                    if (player === video && blockEnabled) {
+                        // Continuously skip ads as they play
+                        if (video.currentTime < video.duration - 0.5) {
+                            video.currentTime = video.duration - 0.1;
+                        }
+                    }
+                });
+            }
+
             // Watch for source changes
             const observer = new MutationObserver(() => {
                 logMessage("Video source changed, checking for ads");
@@ -515,6 +795,8 @@
         lastBlockedTime = 0;
         adSlots = [];
         setupVideoListeners();
+        handleYouTubeMusicButtons();
+        handleShorts();
     }
 
     // Setup navigation listeners
@@ -524,13 +806,64 @@
         window.addEventListener("yt-navigate-finish", onNavigate);
     }
 
-    // Periodic ad checking (every 2 seconds when video is playing)
-    setInterval(() => {
-        if (blockEnabled && getAdPlayer()) {
-            logMessage("Periodic check: Ad detected");
-            checkAds();
+    // YouTube Music Ad Observer - watches for ad elements being added to DOM
+    if (isYouTubeMusic) {
+        const ytMusicAdObserver = new MutationObserver((mutations) => {
+            if (!blockEnabled) return;
+
+            for (const mutation of mutations) {
+                for (const node of mutation.addedNodes) {
+                    if (node.nodeType !== 1) continue;
+
+                    const element = node;
+                    const classList = element.className || "";
+                    const tagName = element.tagName?.toLowerCase() || "";
+
+                    // Detect ad-related elements
+                    if (
+                        classList.includes("advertisement") ||
+                        classList.includes("ad-showing") ||
+                        classList.includes("ad-playing") ||
+                        tagName === "ytmusic-companion" ||
+                        tagName === "ytmusic-promoted-sparkles-web-renderer" ||
+                        tagName === "ytmusic-display-ad-renderer" ||
+                        element.hasAttribute("data-ad-id")
+                    ) {
+                        logMessage(
+                            `YouTube Music ad element detected: ${tagName}, removing...`
+                        );
+                        element.remove();
+                        checkAds();
+                    }
+                }
+            }
+        });
+
+        // Start observing when body is ready
+        function startYTMusicAdObserver() {
+            if (document.body) {
+                ytMusicAdObserver.observe(document.body, {
+                    childList: true,
+                    subtree: true,
+                });
+                logMessage("YouTube Music ad observer started");
+            } else {
+                setTimeout(startYTMusicAdObserver, 100);
+            }
         }
-    }, 2000);
+        startYTMusicAdObserver();
+    }
+
+    // Periodic ad checking (every 2 seconds when video is playing, every 500ms for YouTube Music)
+    setInterval(
+        () => {
+            if (blockEnabled && getAdPlayer()) {
+                logMessage("Periodic check: Ad detected");
+                checkAds();
+            }
+        },
+        isYouTubeMusic ? 500 : 2000
+    );
 
     // Periodic idle checking (every 1 second - faster to catch popups)
     setInterval(() => {
@@ -550,6 +883,7 @@
                 const element = node;
                 const classList = element.className || "";
                 const tagName = element.tagName?.toLowerCase() || "";
+                const role = element.getAttribute("role") || "";
 
                 // Detect popup containers
                 if (
@@ -557,10 +891,9 @@
                     classList.includes("ytd-popup-container") ||
                     tagName === "yt-confirm-dialog-renderer" ||
                     tagName === "paper-dialog" ||
+                    role === "alertdialog" ||
                     element.id === "confirm-dialog"
                 ) {
-                    // CRITICAL: Only check idle if this looks like an idle popup
-                    // Check the text content to avoid interfering with settings/other popups
                     const elementText = (
                         element.textContent || ""
                     ).toLowerCase();
@@ -569,12 +902,13 @@
                         elementText.includes("video paused") ||
                         elementText.includes("continue watching") ||
                         elementText.includes("still watching") ||
-                        elementText.includes("still there")
+                        elementText.includes("still there") ||
+                        elementText.includes("paused")
                     ) {
                         logMessage(
                             "Idle popup detected via observer, checking idle"
                         );
-                        setTimeout(checkIdle, 100); // Small delay for rendering
+                        setTimeout(checkIdle, 100);
                     }
                     break;
                 }
@@ -582,20 +916,88 @@
         }
     });
 
-    // Observe body for popup additions
-    try {
-        popupObserver.observe(document.body, {
-            childList: true,
-            subtree: true,
-        });
-        logMessage("Popup observer started");
-    } catch (e) {
-        logMessage(`Could not start popup observer: ${e.message}`);
+    // Function to start popup observer when body is available
+    function startPopupObserver() {
+        if (!document.body) {
+            // Wait for body to be available
+            if (document.readyState === "loading") {
+                document.addEventListener(
+                    "DOMContentLoaded",
+                    startPopupObserver
+                );
+            } else {
+                // Fallback: retry after a short delay
+                setTimeout(startPopupObserver, 100);
+            }
+            return;
+        }
+
+        try {
+            popupObserver.observe(document.body, {
+                childList: true,
+                subtree: true,
+            });
+            logMessage("Popup observer started");
+        } catch (e) {
+            logMessage(`Could not start popup observer: ${e.message}`);
+        }
+    }
+
+    // Inject CSS to hide YouTube Music ad elements
+    function injectAdBlockingCSS() {
+        if (!isYouTubeMusic) return;
+
+        const style = document.createElement("style");
+        style.id = "ytmusic-ad-blocker-css";
+        style.textContent = `
+            /* Hide YouTube Music ad elements */
+            ytmusic-companion,
+            ytmusic-promoted-sparkles-web-renderer,
+            ytmusic-display-ad-renderer,
+            ytmusic-engagement-panel-section-list-renderer[target-id="engagement-panel-ads"],
+            .advertisement,
+            .video-ads,
+            [class*="ad-showing"],
+            [class*="ad-playing"],
+            [data-ad-id],
+            [id^="player-ads"],
+            .ytp-ad-overlay-container,
+            .ytp-ad-text,
+            .ytp-ad-player-overlay,
+            .ytp-ad-skip-button-container,
+            .ytp-ad-preview-container {
+                display: none !important;
+                visibility: hidden !important;
+                opacity: 0 !important;
+                pointer-events: none !important;
+                position: absolute !important;
+                width: 0 !important;
+                height: 0 !important;
+                overflow: hidden !important;
+            }
+        `;
+
+        // Wait for head to be available
+        function addStyle() {
+            if (document.head) {
+                // Remove existing style if present
+                const existing = document.getElementById(
+                    "ytmusic-ad-blocker-css"
+                );
+                if (existing) existing.remove();
+
+                document.head.appendChild(style);
+                logMessage("YouTube Music ad-blocking CSS injected");
+            } else {
+                setTimeout(addStyle, 100);
+            }
+        }
+        addStyle();
     }
 
     // Initialize
     (async function init() {
-        logMessage("Initializing YouTube Ad Blocker (JAdSkip implementation)");
+        logMessage("Initializing YouTube Ad Blocker Enhanced");
 
         // Load settings
         const success = await loadSettings();
@@ -605,8 +1007,19 @@
             return;
         }
 
+        // Inject CSS to hide ads (YouTube Music)
+        if (isYouTubeMusic) {
+            injectAdBlockingCSS();
+        }
+
+        // Start popup observer when body is ready
+        startPopupObserver();
+
         // Setup video listeners
         setupVideoListeners();
+        setupAutoContinue();
+        handleYouTubeMusicButtons();
+        handleShorts();
 
         // Initial checks
         checkAds();

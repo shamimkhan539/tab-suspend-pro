@@ -557,21 +557,45 @@ class AdsBlocker {
             const estimatedAdsPerTab = 2; // Estimate 2 ads per active browsing session
 
             tabs.forEach((tab) => {
-                // Only track if not on extension pages
-                if (!tab.url.includes("chrome-extension://")) {
+                // Only track if URL is valid and not on extension pages
+                if (
+                    tab.url &&
+                    typeof tab.url === "string" &&
+                    tab.url.length > 0 &&
+                    !tab.url.includes("chrome-extension://") &&
+                    !tab.url.includes("chrome://") &&
+                    !tab.url.includes("edge://") &&
+                    !tab.url.includes("about:") &&
+                    !tab.url.includes("file://") &&
+                    (tab.url.startsWith("http://") ||
+                        tab.url.startsWith("https://"))
+                ) {
                     // Randomly track some ads (realistic blocking)
                     if (Math.random() > 0.7) {
                         // 30% chance per tab per update
-                        const domain = new URL(tab.url).hostname;
-                        const types = [
-                            "ads",
-                            "analytics",
-                            "banners",
-                            "cookies",
-                        ];
-                        const randomType =
-                            types[Math.floor(Math.random() * types.length)];
-                        this.trackBlockedAd(domain, randomType);
+                        try {
+                            // Additional validation before URL construction
+                            if (!tab.url || tab.url.trim() === "") {
+                                return;
+                            }
+                            const domain = new URL(tab.url).hostname;
+                            const types = [
+                                "ads",
+                                "analytics",
+                                "banners",
+                                "cookies",
+                            ];
+                            const randomType =
+                                types[Math.floor(Math.random() * types.length)];
+                            this.trackBlockedAd(domain, randomType);
+                        } catch (urlError) {
+                            // Skip invalid URLs silently
+                            console.debug(
+                                "Invalid URL in tab stats:",
+                                tab.url,
+                                urlError
+                            );
+                        }
                     }
                 }
             });
