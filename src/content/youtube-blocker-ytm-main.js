@@ -1,5 +1,5 @@
 // YouTube Music Ad Blocker - MAIN world script (has access to page context)
-// Based on JAdSkip's proven approach
+// Based on JAdSkip's proven approach - simplified version
 (function () {
     "use strict";
 
@@ -7,40 +7,90 @@
     let lastBlockedAdURL = "";
     let blockEnabled = false;
 
-    // Try to click skip button using YouTube Music's Player API
-    const tryClickSkipButton = async () => {
-        // Verify we're actually in an ad
-        if (!isAdPlaying()) {
-            logMessage("No ad detected, skipping tryClickSkipButton");
-            return;
-        }
+    // Check if current video is actually an ad
+    const isCurrentVideoAd = (player) => {
+        try {
+            const playerResponse = player.getPlayerResponse();
+            if (!playerResponse) return false;
 
-        if (!getAdPlayerYTM()) {
-            logMessage("No ad player found");
-            return;
+            // CRITICAL: Check ad indicators FIRST before duration
+            // YouTube Music shows ads as overlays - video duration shows song length!
+            const hasAdPlacements = !!(
+                playerResponse.adPlacements || playerResponse.playerAds
+            );
+
+            if (hasAdPlacements) {
+                logMessage(
+                    `Ad detected via adPlacements/playerAds - ad is present`
+                );
+                return true;
+            }
+
+            // No ad indicators - check duration as secondary verification
+            const videoData = player.getVideoData();
+            const duration = videoData
+                ? parseFloat(videoData.duration) || player.getDuration()
+                : player.getDuration();
+
+            logMessage(`No ad indicators found - Duration: ${duration}s`);
+
+            // If duration < 60s without ad indicators, might be a short video ad
+            if (duration > 0 && duration < 60) {
+                logMessage(
+                    `Short video (${duration}s) without ad indicators - likely an ad`
+                );
+                return true;
+            }
+
+            logMessage(
+                `Long video (${duration}s) - this is content, not an ad`
+            );
+            return false;
+        } catch (e) {
+            logMessage(`Error checking if video is ad: ${e.message}`);
+            return false;
+        }
+    };
+
+    // Try clicking skip button via YouTube API (JAdSkip approach - step 1)
+    const tryClickSkipButton = async () => {
+        const adPlayer = getAdPlayerYTM();
+        if (!adPlayer) {
+            return { hasAds: false, usedApi: false };
         }
 
         const playerElement = document.getElementById("player");
         if (!playerElement || !playerElement.getPlayer) {
-            logMessage("Unable to get YouTube Music player");
-            return;
+            return { hasAds: false, usedApi: false };
         }
 
         const player = playerElement.getPlayer();
         if (!player) {
-            logMessage("Player instance not available");
-            return;
+            logMessage("Unable to get player");
+            return { hasAds: false, usedApi: false };
         }
 
+        // CRITICAL: Check if current video is actually an ad
+        const isAd = isCurrentVideoAd(player);
+        if (!isAd) {
+            logMessage("Current video is not an ad - skipping ad block logic");
+            return { hasAds: false, usedApi: false };
+        }
+
+        // Ad detected, but check if we have ad slots to process via API
         const playerSlots = player.getPlayerResponse()?.adSlots;
         if (!playerSlots || playerSlots.length === 0) {
-            logMessage("No ad slots in player response");
-            return;
+            logMessage(
+                "Ad detected but no ad slots found - will use fallback skip method"
+            );
+            return { hasAds: true, usedApi: false };
         }
 
         logMessage(
-            `Trying ${playerSlots.length} ad slots from YouTube Music player`
+            `Trying ad slots from player response: ${playerSlots.length}`
         );
+
+        // Trigger all skip events via YouTube's internal API
         playerSlots.forEach((slot) => {
             const triggers =
                 slot.adSlotRenderer?.fulfillmentContent?.fulfilledLayout
@@ -53,71 +103,61 @@
                     trigger.skipRequestedTrigger?.triggeringLayoutId;
                 if (triggeringLayoutId) {
                     player.onAdUxClicked("skip-button", triggeringLayoutId);
-                    logMessage(`Clicked skip trigger: ${triggeringLayoutId}`);
                 }
             });
         });
+
+        return { hasAds: true, usedApi: true };
     };
 
-    // Check if we're actually in an ad state
-    const isAdPlaying = () => {
-        // Check for ad-specific UI elements
-        const adBadge = document.querySelector(
-            '.advertisement-div-text, .ytp-ad-text, [class*="ad-badge"]'
-        );
-        const adContainer = document.querySelector(
-            '.advertisement, [class*="ad-showing"], .video-ads'
-        );
-        const skipButton = document.querySelector(
-            '.ytp-ad-skip-button, [class*="skip-ad"]'
-        );
-
-        return !!(adBadge || adContainer || skipButton);
-    };
-
-    // Try to skip ad by seeking to end (immediate for YouTube Music)
+    // Try skipping ad by seeking to end (JAdSkip approach - step 2)
     const trySkipAd = async () => {
-        // Verify we're actually in an ad
-        if (!isAdPlaying()) {
-            logMessage("No ad detected, skipping trySkipAd");
-            return;
-        }
-
-        const player = getAdPlayerYTM();
-        if (!player) {
-            logMessage("No ad player found");
+        const adPlayer = getAdPlayerYTM();
+        if (!adPlayer) {
             return;
         }
 
         logMessage(
-            `Processing YTM ad at ${player.currentTime} / ${player.duration}`
+            `Processing ad "${adPlayer.src}" at ${adPlayer.currentTime} / ${adPlayer.duration}`
         );
 
-        if (!isFinite(player.duration)) {
-            logMessage("Ad duration is not finite");
+        if (!isFinite(adPlayer.duration)) {
+            logMessage("Ad duration is not finite, skipping ad skip");
             return;
         }
 
-        if (player.src === lastBlockedAdURL) {
-            logMessage("Already processed this ad");
+        if (adPlayer.src === lastBlockedAdURL) {
+            logMessage("Skipping already processed ad");
             return;
         }
 
-        // YouTube Music: Skip immediately (no threshold)
-        const target = player.duration - 0.1;
-        logMessage(`Skipping YTM ad from ${player.currentTime} to ${target}`);
+        const target = adPlayer.duration - 0.1;
+        logMessage(`Skipping ad from ${adPlayer.currentTime} to ${target}`);
 
-        player.currentTime = target;
-        lastBlockedAdURL = player.src;
+        adPlayer.currentTime = target;
+        lastBlockedAdURL = adPlayer.src;
         lastBlockedTime = Date.now();
     };
 
-    // Main ad checking routine
+    // Main ad checking routine - EXACTLY like JAdSkip
     const checkAds = async () => {
         if (!blockEnabled) return;
 
-        await tryClickSkipButton();
+        // Step 1: Trigger YouTube's internal skip API first
+        const result = await tryClickSkipButton();
+
+        // CRITICAL: Only proceed if ad was detected
+        // Without this check, we skip CONTENT videos!
+        if (!result.hasAds) {
+            return;
+        }
+
+        // Step 2: Wait 1 second for ad video to load (critical!)
         await new Promise((resolve) => setTimeout(resolve, 1000));
+
+        // Step 3: Seek ad video to end as backup
+        // - If API was used (result.usedApi = true), this is a fallback in case API failed
+        // - If API wasn't used (result.usedApi = false), this is the primary skip method
         await trySkipAd();
     };
 

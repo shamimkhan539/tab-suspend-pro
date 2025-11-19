@@ -34,41 +34,22 @@ const getAdPlayerYT = () => {
 };
 
 // Get the ad player element (YouTube Music specific)
+// Simplified JAdSkip approach - just return the active video element
 const getAdPlayerYTM = () => {
-    // Check for ad container first - YouTube Music shows ads in specific containers
-    const adContainer = document.querySelector(
-        '.advertisement, [class*="ad-showing"], .video-ads'
-    );
-    if (!adContainer) {
-        return null; // No ad container means no ad is playing
-    }
+    const videos = document.querySelectorAll("video");
 
-    // Look for ad indicators in the player
-    const playerBar = document.querySelector("ytmusic-player-bar");
-    if (playerBar) {
-        const adBadge = playerBar.querySelector(
-            '.advertisement-div-text, .ytp-ad-text, [class*="ad-badge"]'
-        );
-        if (!adBadge) {
-            return null; // No ad badge means this is regular content
+    // Return the first playing video (YouTube Music typically has one main video)
+    for (const video of videos) {
+        if (!video.paused && video.duration > 0) {
+            return video;
         }
     }
 
-    // Now find the video element that's actually playing an ad
-    const videos = document.querySelectorAll("video");
+    // Fallback: return first video with valid source
     for (const video of videos) {
         const src = video.src || "";
         if (src.includes("googlevideo.com") && video.duration > 0) {
-            // Additional check: verify this is in an ad context
-            const parent = video.closest(
-                ".html5-video-container, ytmusic-player"
-            );
-            if (
-                parent &&
-                parent.querySelector('.advertisement, [class*="ad-"]')
-            ) {
-                return video;
-            }
+            return video;
         }
     }
 

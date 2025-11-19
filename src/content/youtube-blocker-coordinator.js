@@ -73,20 +73,25 @@
         });
     }
 
-    // Check for ads (with retry)
+    // Check for ads (with retry) - INSTANT on first call for immediate blocking
     function checkAdPresence(retry) {
         if (retry >= MAX_MUTATE_RETRY) return;
         if (!blockEnabled) return;
 
+        // Send checkAds immediately (no delay)
         window.postMessage({
             origin: "ytblocker-extension",
             action: "checkAds",
         });
 
         if (checkAdTimeout) clearTimeout(checkAdTimeout);
+
+        // For YouTube Music, check again quickly to catch any delayed ad loads
+        // First retry after 50ms, then use normal 500ms interval
+        const nextInterval = retry === 0 ? 50 : MUTATE_INTERVAL;
         checkAdTimeout = setTimeout(() => {
             checkAdPresence(retry + 1);
-        }, MUTATE_INTERVAL);
+        }, nextInterval);
     }
 
     // Check for idle popup (with retry)
@@ -137,6 +142,15 @@
         video.addEventListener("play", () => {
             if (checkIdleTimeout) clearTimeout(checkIdleTimeout);
             checkAdPresence(0);
+        });
+
+        // Add timeupdate listener to catch ads that don't trigger src changes
+        video.addEventListener("timeupdate", () => {
+            // Check periodically during playback (every 2 seconds)
+            if (!video._lastAdCheck || Date.now() - video._lastAdCheck > 2000) {
+                video._lastAdCheck = Date.now();
+                checkAdPresence(0);
+            }
         });
 
         checkAdPresence(0);
