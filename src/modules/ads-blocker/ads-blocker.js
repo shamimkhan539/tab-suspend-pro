@@ -560,9 +560,13 @@ class AdsBlocker {
                 // Only track if URL is valid and not on extension pages
                 if (
                     tab.url &&
+                    typeof tab.url === "string" &&
+                    tab.url.length > 0 &&
                     !tab.url.includes("chrome-extension://") &&
                     !tab.url.includes("chrome://") &&
+                    !tab.url.includes("edge://") &&
                     !tab.url.includes("about:") &&
+                    !tab.url.includes("file://") &&
                     (tab.url.startsWith("http://") ||
                         tab.url.startsWith("https://"))
                 ) {
@@ -570,6 +574,10 @@ class AdsBlocker {
                     if (Math.random() > 0.7) {
                         // 30% chance per tab per update
                         try {
+                            // Additional validation before URL construction
+                            if (!tab.url || tab.url.trim() === "") {
+                                return;
+                            }
                             const domain = new URL(tab.url).hostname;
                             const types = [
                                 "ads",

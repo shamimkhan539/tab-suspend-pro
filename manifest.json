@@ -39,10 +39,36 @@
             "matches": [
                 "https://www.youtube.com/*",
                 "https://youtube.com/*",
-                "https://youtu.be/*",
-                "https://music.youtube.com/*"
+                "https://youtu.be/*"
             ],
-            "js": ["src/content/youtube-blocker.js"],
+            "js": ["src/content/youtube-blocker-coordinator.js"],
+            "run_at": "document_start"
+        },
+        {
+            "matches": [
+                "https://www.youtube.com/*",
+                "https://youtube.com/*",
+                "https://youtu.be/*"
+            ],
+            "js": [
+                "src/content/youtube-blocker-shared.js",
+                "src/content/youtube-blocker-yt-main.js"
+            ],
+            "world": "MAIN",
+            "run_at": "document_start"
+        },
+        {
+            "matches": ["https://music.youtube.com/*"],
+            "js": ["src/content/youtube-blocker-coordinator.js"],
+            "run_at": "document_start"
+        },
+        {
+            "matches": ["https://music.youtube.com/*"],
+            "js": [
+                "src/content/youtube-blocker-shared.js",
+                "src/content/youtube-blocker-ytm-main.js"
+            ],
+            "world": "MAIN",
             "run_at": "document_start"
         },
         {

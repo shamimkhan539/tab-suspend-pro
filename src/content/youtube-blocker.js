@@ -15,7 +15,9 @@
     const isYouTubeShorts =
         isYouTube &&
         (window.location.pathname.includes("/shorts/") ||
-            document.body.classList.contains("ytd-shorts"));
+            (document.body &&
+                document.body.classList &&
+                document.body.classList.contains("ytd-shorts")));
 
     if (!isYouTube && !isYouTubeMusic) {
         return;
@@ -58,7 +60,33 @@
                     return video;
                 }
             }
-            // Regular YouTube/Music: check for ad URL and duration
+            // YouTube Music: Enhanced ad detection
+            else if (isYouTubeMusic) {
+                // Check if this is an ad by multiple criteria
+                const isAdVideo =
+                    src.includes("googlevideo.com") ||
+                    video.className.includes("ad") ||
+                    video.closest(
+                        ".advertisement, .ad-showing, [class*=ad-], ytmusic-companion"
+                    ) ||
+                    (video.duration > 0 && video.duration < 120);
+
+                if (isAdVideo) {
+                    // Additional check: see if player shows ad indicator
+                    const playerAd = document.querySelector(
+                        '.advertisement, .video-ads, ytmusic-player-bar[ad], [class*="ad-playing"]'
+                    );
+                    if (playerAd || src.includes("googlevideo.com")) {
+                        logMessage(
+                            `YouTube Music ad detected: duration=${
+                                video.duration
+                            }s, src=${src.substring(0, 50)}...`
+                        );
+                        return video;
+                    }
+                }
+            }
+            // Regular YouTube: check for specific ad URL and duration
             else if (
                 src.includes("googlevideo.com/videoplayback") &&
                 video.duration > 0 &&
@@ -199,15 +227,49 @@
             return;
         }
 
-        // Skip if already processed this ad URL
-        if (player.src === lastBlockedAdURL) {
+        // Skip if already processed this ad URL (with timeout check)
+        const timeSinceLastBlock = Date.now() - lastBlockedTime;
+        if (player.src === lastBlockedAdURL && timeSinceLastBlock < 5000) {
             logMessage("Skipping already processed ad");
             return;
         }
 
-        // For YouTube Music: Skip immediately (no threshold)
+        // For YouTube Music: be extra aggressive
+        if (isYouTubeMusic) {
+            // Try to mute the ad first
+            player.muted = true;
+            player.volume = 0;
+
+            // Immediately seek to end
+            const target = player.duration - 0.05;
+            logMessage(
+                `[YouTube Music] Aggressively skipping ad from ${player.currentTime} to ${target}`
+            );
+            player.currentTime = target;
+
+            // Also try to trigger next track
+            setTimeout(() => {
+                const nextButton = document.querySelector(
+                    'button[aria-label*="Next"], button[aria-label*="next"], [data-tooltip="Next"]'
+                );
+                if (nextButton) {
+                    logMessage(
+                        "[YouTube Music] Clicking next button to skip ad"
+                    );
+                    nextButton.click();
+                }
+            }, 100);
+        }
+        // For Shorts: Skip immediately (no threshold)
+        else if (isYouTubeShorts) {
+            const target = player.duration - 0.1;
+            logMessage(
+                `[Shorts] Skipping ad from ${player.currentTime} to ${target}`
+            );
+            player.currentTime = target;
+        }
         // For regular YouTube: Wait until 40% through ad (prevents detection)
-        if (!isYouTubeMusic) {
+        else {
             const threshold = player.duration * 0.4;
             if (player.currentTime < threshold) {
                 logMessage(
@@ -215,20 +277,66 @@
                 );
                 return;
             }
+
+            const target = player.duration - 0.1;
+            logMessage(`Skipping ad from ${player.currentTime} to ${target}`);
+            player.currentTime = target;
         }
 
-        // Seek to near end of ad (simple and effective)
-        const target = player.duration - 0.1;
-        logMessage(`Skipping ad from ${player.currentTime} to ${target}`);
-
-        player.currentTime = target;
         lastBlockedAdURL = player.src;
         lastBlockedTime = Date.now();
+    }
+
+    // Remove visual ad elements (YouTube Music specific)
+    function removeYouTubeMusicAdElements() {
+        if (!isYouTubeMusic || !blockEnabled) return;
+
+        const adSelectors = [
+            // Ad overlays and banners
+            ".advertisement",
+            ".video-ads",
+            "ytmusic-companion",
+            '[class*="ad-showing"]',
+            '[class*="ad-playing"]',
+            "ytmusic-promoted-sparkles-web-renderer",
+            "ytmusic-display-ad-renderer",
+            'ytmusic-engagement-panel-section-list-renderer[target-id="engagement-panel-ads"]',
+            // Companion ads
+            "[data-ad-id]",
+            '[id^="player-ads"]',
+            ".ytp-ad-overlay-container",
+            ".ytp-ad-text",
+            ".ytp-ad-player-overlay",
+            // Skip ad indicators
+            ".ytp-ad-skip-button-container",
+            ".ytp-ad-preview-container",
+        ];
+
+        let removedCount = 0;
+        adSelectors.forEach((selector) => {
+            const elements = document.querySelectorAll(selector);
+            elements.forEach((el) => {
+                if (el && el.style.display !== "none") {
+                    el.style.display = "none";
+                    el.remove();
+                    removedCount++;
+                }
+            });
+        });
+
+        if (removedCount > 0) {
+            logMessage(`Removed ${removedCount} YouTube Music ad elements`);
+        }
     }
 
     // Main ad checking routine (JAdSkip's order of operations)
     async function checkAds() {
         if (!blockEnabled) return;
+
+        // 0. Remove visual ad elements (YouTube Music)
+        if (isYouTubeMusic) {
+            removeYouTubeMusicAdElements();
+        }
 
         // 1. Try clicking skip button first (using Player API)
         await tryClickSkipButton();
@@ -252,6 +360,11 @@
                 '[data-tooltip="Next"], [aria-label*="next"]',
                 '[data-tooltip="Previous"], [aria-label*="previous"]',
                 'button[aria-label*="next"], button[aria-label*="previous"]',
+                // Additional selectors for different YouTube Music versions
+                'button[jsaction*="next"]',
+                'button[jsaction*="previous"]',
+                '[role="button"][aria-label*="next"]',
+                '[role="button"][aria-label*="previous"]',
             ];
 
             let found = false;
@@ -269,9 +382,14 @@
                         logMessage(
                             "Music button clicked, preparing for ad check"
                         );
+                        // Check for ads immediately and then again after track loads
+                        checkAds();
                         setTimeout(() => {
                             checkAds();
-                        }, 1500);
+                        }, 1000);
+                        setTimeout(() => {
+                            checkAds();
+                        }, 2500);
                     });
                 });
             }
@@ -632,6 +750,28 @@
                 checkIdle();
             });
 
+            // YouTube Music specific: Monitor for ad loading
+            if (isYouTubeMusic) {
+                video.addEventListener("loadedmetadata", () => {
+                    if (video.duration > 0 && video.duration < 120) {
+                        logMessage(
+                            `[YouTube Music] Potential ad detected on loadedmetadata: duration=${video.duration}s`
+                        );
+                        checkAds();
+                    }
+                });
+
+                video.addEventListener("timeupdate", () => {
+                    const player = getAdPlayer();
+                    if (player === video && blockEnabled) {
+                        // Continuously skip ads as they play
+                        if (video.currentTime < video.duration - 0.5) {
+                            video.currentTime = video.duration - 0.1;
+                        }
+                    }
+                });
+            }
+
             // Watch for source changes
             const observer = new MutationObserver(() => {
                 logMessage("Video source changed, checking for ads");
@@ -666,13 +806,64 @@
         window.addEventListener("yt-navigate-finish", onNavigate);
     }
 
-    // Periodic ad checking (every 2 seconds when video is playing)
-    setInterval(() => {
-        if (blockEnabled && getAdPlayer()) {
-            logMessage("Periodic check: Ad detected");
-            checkAds();
+    // YouTube Music Ad Observer - watches for ad elements being added to DOM
+    if (isYouTubeMusic) {
+        const ytMusicAdObserver = new MutationObserver((mutations) => {
+            if (!blockEnabled) return;
+
+            for (const mutation of mutations) {
+                for (const node of mutation.addedNodes) {
+                    if (node.nodeType !== 1) continue;
+
+                    const element = node;
+                    const classList = element.className || "";
+                    const tagName = element.tagName?.toLowerCase() || "";
+
+                    // Detect ad-related elements
+                    if (
+                        classList.includes("advertisement") ||
+                        classList.includes("ad-showing") ||
+                        classList.includes("ad-playing") ||
+                        tagName === "ytmusic-companion" ||
+                        tagName === "ytmusic-promoted-sparkles-web-renderer" ||
+                        tagName === "ytmusic-display-ad-renderer" ||
+                        element.hasAttribute("data-ad-id")
+                    ) {
+                        logMessage(
+                            `YouTube Music ad element detected: ${tagName}, removing...`
+                        );
+                        element.remove();
+                        checkAds();
+                    }
+                }
+            }
+        });
+
+        // Start observing when body is ready
+        function startYTMusicAdObserver() {
+            if (document.body) {
+                ytMusicAdObserver.observe(document.body, {
+                    childList: true,
+                    subtree: true,
+                });
+                logMessage("YouTube Music ad observer started");
+            } else {
+                setTimeout(startYTMusicAdObserver, 100);
+            }
         }
-    }, 2000);
+        startYTMusicAdObserver();
+    }
+
+    // Periodic ad checking (every 2 seconds when video is playing, every 500ms for YouTube Music)
+    setInterval(
+        () => {
+            if (blockEnabled && getAdPlayer()) {
+                logMessage("Periodic check: Ad detected");
+                checkAds();
+            }
+        },
+        isYouTubeMusic ? 500 : 2000
+    );
 
     // Periodic idle checking (every 1 second - faster to catch popups)
     setInterval(() => {
@@ -725,15 +916,83 @@
         }
     });
 
-    // Observe body for popup additions
-    try {
-        popupObserver.observe(document.body, {
-            childList: true,
-            subtree: true,
-        });
-        logMessage("Popup observer started");
-    } catch (e) {
-        logMessage(`Could not start popup observer: ${e.message}`);
+    // Function to start popup observer when body is available
+    function startPopupObserver() {
+        if (!document.body) {
+            // Wait for body to be available
+            if (document.readyState === "loading") {
+                document.addEventListener(
+                    "DOMContentLoaded",
+                    startPopupObserver
+                );
+            } else {
+                // Fallback: retry after a short delay
+                setTimeout(startPopupObserver, 100);
+            }
+            return;
+        }
+
+        try {
+            popupObserver.observe(document.body, {
+                childList: true,
+                subtree: true,
+            });
+            logMessage("Popup observer started");
+        } catch (e) {
+            logMessage(`Could not start popup observer: ${e.message}`);
+        }
+    }
+
+    // Inject CSS to hide YouTube Music ad elements
+    function injectAdBlockingCSS() {
+        if (!isYouTubeMusic) return;
+
+        const style = document.createElement("style");
+        style.id = "ytmusic-ad-blocker-css";
+        style.textContent = `
+            /* Hide YouTube Music ad elements */
+            ytmusic-companion,
+            ytmusic-promoted-sparkles-web-renderer,
+            ytmusic-display-ad-renderer,
+            ytmusic-engagement-panel-section-list-renderer[target-id="engagement-panel-ads"],
+            .advertisement,
+            .video-ads,
+            [class*="ad-showing"],
+            [class*="ad-playing"],
+            [data-ad-id],
+            [id^="player-ads"],
+            .ytp-ad-overlay-container,
+            .ytp-ad-text,
+            .ytp-ad-player-overlay,
+            .ytp-ad-skip-button-container,
+            .ytp-ad-preview-container {
+                display: none !important;
+                visibility: hidden !important;
+                opacity: 0 !important;
+                pointer-events: none !important;
+                position: absolute !important;
+                width: 0 !important;
+                height: 0 !important;
+                overflow: hidden !important;
+            }
+        `;
+
+        // Wait for head to be available
+        function addStyle() {
+            if (document.head) {
+                // Remove existing style if present
+                const existing = document.getElementById(
+                    "ytmusic-ad-blocker-css"
+                );
+                if (existing) existing.remove();
+
+                document.head.appendChild(style);
+                logMessage("YouTube Music ad-blocking CSS injected");
+            } else {
+                setTimeout(addStyle, 100);
+            }
+        }
+        addStyle();
     }
 
     // Initialize
@@ -747,6 +1006,14 @@
             setTimeout(init, 1000);
             return;
         }
+
+        // Inject CSS to hide ads (YouTube Music)
+        if (isYouTubeMusic) {
+            injectAdBlockingCSS();
+        }
+
+        // Start popup observer when body is ready
+        startPopupObserver();
 
         // Setup video listeners
         setupVideoListeners();
