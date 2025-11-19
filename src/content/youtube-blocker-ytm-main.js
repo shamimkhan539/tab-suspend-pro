@@ -9,7 +9,16 @@
 
     // Try to click skip button using YouTube Music's Player API
     const tryClickSkipButton = async () => {
-        if (!getAdPlayerYTM()) return;
+        // Verify we're actually in an ad
+        if (!isAdPlaying()) {
+            logMessage("No ad detected, skipping tryClickSkipButton");
+            return;
+        }
+
+        if (!getAdPlayerYTM()) {
+            logMessage("No ad player found");
+            return;
+        }
 
         const playerElement = document.getElementById("player");
         if (!playerElement || !playerElement.getPlayer) {
@@ -24,7 +33,7 @@
         }
 
         const playerSlots = player.getPlayerResponse()?.adSlots;
-        if (!playerSlots) {
+        if (!playerSlots || playerSlots.length === 0) {
             logMessage("No ad slots in player response");
             return;
         }
@@ -50,10 +59,35 @@
         });
     };
 
+    // Check if we're actually in an ad state
+    const isAdPlaying = () => {
+        // Check for ad-specific UI elements
+        const adBadge = document.querySelector(
+            '.advertisement-div-text, .ytp-ad-text, [class*="ad-badge"]'
+        );
+        const adContainer = document.querySelector(
+            '.advertisement, [class*="ad-showing"], .video-ads'
+        );
+        const skipButton = document.querySelector(
+            '.ytp-ad-skip-button, [class*="skip-ad"]'
+        );
+
+        return !!(adBadge || adContainer || skipButton);
+    };
+
     // Try to skip ad by seeking to end (immediate for YouTube Music)
     const trySkipAd = async () => {
+        // Verify we're actually in an ad
+        if (!isAdPlaying()) {
+            logMessage("No ad detected, skipping trySkipAd");
+            return;
+        }
+
         const player = getAdPlayerYTM();
-        if (!player) return;
+        if (!player) {
+            logMessage("No ad player found");
+            return;
+        }
 
         logMessage(
             `Processing YTM ad at ${player.currentTime} / ${player.duration}`

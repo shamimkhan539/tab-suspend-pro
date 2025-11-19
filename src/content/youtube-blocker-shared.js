@@ -36,15 +36,19 @@ const getAdPlayerYT = () => {
 // Get the ad player element (YouTube Music specific)
 const getAdPlayerYTM = () => {
     // Check for ad container first - YouTube Music shows ads in specific containers
-    const adContainer = document.querySelector('.advertisement, [class*="ad-showing"], .video-ads');
+    const adContainer = document.querySelector(
+        '.advertisement, [class*="ad-showing"], .video-ads'
+    );
     if (!adContainer) {
         return null; // No ad container means no ad is playing
     }
 
     // Look for ad indicators in the player
-    const playerBar = document.querySelector('ytmusic-player-bar');
+    const playerBar = document.querySelector("ytmusic-player-bar");
     if (playerBar) {
-        const adBadge = playerBar.querySelector('.advertisement-div-text, .ytp-ad-text, [class*="ad-badge"]');
+        const adBadge = playerBar.querySelector(
+            '.advertisement-div-text, .ytp-ad-text, [class*="ad-badge"]'
+        );
         if (!adBadge) {
             return null; // No ad badge means this is regular content
         }
@@ -56,13 +60,18 @@ const getAdPlayerYTM = () => {
         const src = video.src || "";
         if (src.includes("googlevideo.com") && video.duration > 0) {
             // Additional check: verify this is in an ad context
-            const parent = video.closest('.html5-video-container, ytmusic-player');
-            if (parent && parent.querySelector('.advertisement, [class*="ad-"]')) {
+            const parent = video.closest(
+                ".html5-video-container, ytmusic-player"
+            );
+            if (
+                parent &&
+                parent.querySelector('.advertisement, [class*="ad-"]')
+            ) {
                 return video;
             }
         }
     }
-    
+
     return null;
 };
 
