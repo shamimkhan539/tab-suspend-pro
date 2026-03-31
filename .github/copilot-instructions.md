@@ -1,242 +1,127 @@
-# BrowserGuard Pro - AI Coding Agent Instructions
+# BrowserGuard Pro — Copilot Instructions
 
-## Project Overview
+**Chrome Manifest V3 extension** — tab suspension, ad/tracker blocking, session management, analytics. See [docs/](../docs/) for feature docs.
 
-**BrowserGuard Pro** is a Chrome Manifest V3 extension providing intelligent tab suspension, ad/tracker blocking, session management, and analytics. Core functionality centers around the `TabSuspendManager` class in `background.js` (3400+ lines) that orchestrates all feature modules.
+## Architecture
 
-## Architecture & Data Flow
+Single service worker (`background.js`, ~3200 lines) with one orchestrator class `TabSuspendManager`. All feature modules are plain JS classes loaded via `importScripts()` — **no ES6 `import/export`**.
 
-### Core Service Worker Pattern
+### Module Map
 
-```
-background.js (Service Worker)
-  ├── TabSuspendManager (main orchestrator)
-  ├── importScripts() → loads feature modules
-  └── Chrome Extension APIs (tabs, storage, alarms, etc.)
-```
+| `importScripts()` order                          | Class                  | Instance                    |
+| ------------------------------------------------ | ---------------------- | --------------------------- |
+| `src/utils/browser-compat.js`                    | — (utilities)          | `browserCompat`             |
+| `src/modules/session-manager/session-manager.js` | `SessionManager`       | `this.sessionManager`       |
+| `src/modules/smart-organizer/smart-organizer.js` | `SmartTabOrganizer`    | `this.smartOrganizer`       |
+| `src/modules/analytics/performance-analytics.js` | `PerformanceAnalytics` | `this.performanceAnalytics` |
+| `src/modules/analytics/activity-analytics.js`    | `TabActivityAnalytics` | `this.activityAnalytics`    |
+| `src/modules/privacy/privacy-manager.js`         | `PrivacyManager`       | `this.privacyManager`       |
+| `src/modules/cloud-sync/cloud-backup.js`         | `CloudBackupManager`   | `this.cloudBackup`          |
+| `src/modules/tracker-blocker/tracker-blocker.js` | `TrackerBlocker`       | `this.trackerBlocker`       |
+| `src/modules/ads-blocker/ads-blocker.js`         | `AdsBlocker`           | `this.adsBlocker`           |
 
-All feature modules are **plain JavaScript classes** loaded via `importScripts()` at the top of `background.js`:
+### YouTube Ad Blocking: Three-World Isolation
 
--   `SessionManager` - session snapshots and templates
--   `SmartTabOrganizer` - auto-grouping and workspace profiles
--   `PerformanceAnalytics` / `TabActivityAnalytics` - memory/usage tracking
--   `PrivacyManager` - privacy controls
--   `CloudBackupManager` - export/import settings
--   `TrackerBlocker` - ad/tracker blocking via declarativeNetRequest
--   `AdsBlocker` - additional ad blocking
+- **ISOLATED world** (`src/content/youtube-blocker-coordinator.js`) — Chrome APIs + `window.postMessage()` to MAIN world
+- **MAIN world** (`youtube-blocker-yt-main.js` / `youtube-blocker-ytm-main.js`) — direct YouTube player API access (`player.onAdUxClicked()`)
+- **Never combine ISOLATED and MAIN world scripts.**
 
-**Critical**: No ES6 modules (`import/export`). Service workers use `importScripts()` exclusively.
+### Storage
 
-### Communication Architecture
-
-**Three-world isolation system for YouTube ad blocking:**
-
-1. **ISOLATED world** (`youtube-blocker-coordinator.js`) - Chrome extension APIs
-
-    - Loads settings via `chrome.runtime.sendMessage()`
-    - Communicates with MAIN world via `window.postMessage()`
-
-2. **MAIN world** (`youtube-blocker-yt-main.js`, `youtube-blocker-ytm-main.js`) - Page context
-
-    - Direct access to YouTube's player API
-    - Receives commands from ISOLATED world via `window.postMessage()`
-    - Based on JAdSkip's proven approach (skip via `player.onAdUxClicked()`)
-
-3. **Background service worker** - Extension logic
-    - Message handler pattern: `chrome.runtime.onMessage.addListener()`
-    - All UI→Background communication uses `action` property
-
-**Message handler pattern example:**
+- `chrome.storage.sync` → `consolidatedSettings` (single key, all feature settings)
+- `chrome.storage.local` → `suspendedTabState` (runtime state), `adsBlockerSettings` (mirror)
+- Always read/write the full `consolidatedSettings` object; never partial updates.
 
 ```javascript
-// In background.js setupMessageHandlers()
-case "get-youtube-blocker-settings":
-    const settings = await chrome.storage.sync.get("consolidatedSettings");
-    sendResponse(settings.consolidatedSettings.adsBlocker);
+const { consolidatedSettings } = await chrome.storage.sync.get(
+    "consolidatedSettings",
+);
+consolidatedSettings.featureName.property = value;
+await chrome.storage.sync.set({ consolidatedSettings });
+```
+
+`consolidatedSettings` shape: see `initializeDefaultSettings()` at line 84 of `background.js`.
+
+## Naming Conventions
+
+| Domain                         | Convention                  | Example                                         |
+| ------------------------------ | --------------------------- | ----------------------------------------------- |
+| Classes                        | PascalCase                  | `TabSuspendManager`, `AdsBlocker`               |
+| Class files / folders          | kebab-case                  | `ads-blocker.js`, `cloud-sync/`                 |
+| Core tab/group message actions | camelCase                   | `suspendTab`, `saveTabGroup`, `restoreAllTabs`  |
+| Feature module message actions | `feature-verb[-noun]` kebab | `tracker-get-dashboard`, `get-ads-blocker-data` |
+| Context menu IDs               | kebab-case                  | `suspend-tab`, `restore-tab-group`              |
+| Alarm IDs                      | kebab-case                  | `cloud-sync`, `privacy-cleanup`                 |
+| UI page managers               | `XxxManager`                | `PopupManager`, `OptionsManager`                |
+
+## Message Passing Pattern
+
+```javascript
+// UI (dashboard/popup) sends:
+const response = await chrome.runtime.sendMessage({ action: "feature-get-data" });
+
+// background.js handleMessage() handles:
+case "feature-get-data":
+    sendResponse(this.featureModule.getDashboardData());
     break;
 ```
 
-### Storage Strategy
+All message handling is in `handleMessage()` → big switch on `message.action`.
 
--   **`chrome.storage.sync`**: User settings (consolidated under `consolidatedSettings` key)
--   **`chrome.storage.local`**: Runtime state (suspended tabs metadata, statistics)
--   **Metadata versioning**: `metadataVersion` field for schema migrations
--   **Suspended tabs**: Stored in `suspendedMeta` Map with `{ originalUrl, title, favicon, suspendedAt, groupId }`
+## Adding a New Feature
 
-## Critical Developer Workflows
+1. Create `src/modules/<feature>/<feature>.js` with a plain JS class
+2. Add `importScripts('src/modules/<feature>/<feature>.js')` at the top of `background.js`
+3. Instantiate: `this.featureName = new FeatureClass()` in `TabSuspendManager` constructor
+4. Add `case` blocks in `handleMessage()` using `feature-verb` kebab action names
+5. Add UI in `ui/dashboards/<feature>/` and/or `ui/options/sections/`
+6. Add to `consolidatedSettings` in `initializeDefaultSettings()`
+7. Update `manifest.json` if new Chrome API permissions are needed
 
-### Local Development & Testing
+## Critical Gotchas
 
-```powershell
-# Load extension
-# Navigate to: chrome://extensions/ → Developer mode → Load unpacked
+- **Service worker sleeps**: Always re-read state from `chrome.storage` in message handlers — in-memory state may be gone.
+- **3s init delay**: `restoreOrphanedSuspendedTabs` runs after 3s intentionally (avoids Chrome session-restore race).
+- **`isRecreating` flag**: Guards against infinite tab recreation loops — never remove it.
+- **Tab groups**: Always use `browserCompat` wrappers, not `chrome.tabGroups` directly — not supported on all Chromium browsers.
+- **CSP**: No inline scripts in any HTML file. All logic must be in separate `.js` files.
+- **DeclarativeNetRequest**: Rule IDs must be unique positive integers. Extension cap: 30,000 rules.
+- **Suspended tab detection**: Uses 30% URL similarity threshold for duplicate detection.
 
-# Watch for errors (service worker)
-# chrome://extensions/ → Background page → Console
+## Development & Testing
 
-# Test YouTube blocking
-# Navigate to youtube.com with DevTools console open
-# Look for: "[YouTube Blocker Coordinator] Initialized"
-```
+No build step. Load via `chrome://extensions` → Developer mode → Load unpacked.
 
-**Debugging tips:**
-
--   Service worker console resets on sleep/wake - check immediately after actions
--   Content script console is per-tab (DevTools → Console → select content script context)
--   Use `console.log` with clear prefixes: `[YouTube Blocker]`, `[Background]`, etc.
-
-### Building & Deployment
-
-No build step required - pure JavaScript extension. Key files to verify:
-
-1. `manifest.json` - Ensure permissions and content_scripts are correct
-2. `background.js` - Check all `importScripts()` paths
-3. Content scripts must match URL patterns in manifest
-
-### Testing Approach
-
-Located in `tests/` but currently minimal coverage:
-
--   `tests/integration/` - Manual test suites (see `dashboard-test.js`)
--   `tests/unit/` - Unit test stubs
--   **Primary testing**: Manual testing via extension popup and dashboards
-
-## Project-Specific Patterns
-
-### Tab Suspension Flow
-
-```javascript
-// 1. Mark tab as suspended
-suspendedTabs.add(tabId);
-suspendedMeta.set(tabId, { originalUrl, title, favicon, suspendedAt });
-
-// 2. Navigate to suspended placeholder
-chrome.tabs.update(tabId, {
-    url:
-        chrome.runtime.getURL("ui/suspended/suspended.html") +
-        "?url=" +
-        encodeURIComponent(originalUrl),
-});
-
-// 3. Store metadata persistently
-await chrome.storage.local.set({ suspendedTabState: [...suspendedMeta] });
-```
-
-**Critical timing issues:**
-
--   3-second delay on init (`setTimeout`) to avoid Chrome session restore conflicts
--   `isRecreating` flag prevents infinite tab recreation loops
--   Duplicate detection uses 30% similarity threshold
-
-### Settings Consolidation Pattern
-
-All feature settings stored under single `consolidatedSettings` key:
-
-```javascript
-{
-    adsBlocker: { enabled: true, blockYoutubeAds: true, ... },
-    trackerBlocker: { enabled: true, blockAds: true, ... },
-    sessionManager: { enabled: true, autoSaveFrequency: "daily", ... },
-    // etc.
-}
-```
-
-Always access via `chrome.storage.sync.get("consolidatedSettings")` and update entire object.
-
-### Browser Compatibility Layer
-
-`src/utils/browser-compat.js` provides cross-browser wrappers:
-
-```javascript
-// Don't use chrome.tabGroups directly
-await browserCompat.safeTabGroupsUpdate(groupId, properties);
-
-// Check capabilities before using
-if (browserCompat.capabilities.tabGroups) { ... }
-```
-
-Handles Edge, Brave, Opera differences (e.g., tab groups not supported everywhere).
-
-### Context Menu Pattern
-
-All context menus created in `setupContextMenus()`:
-
--   Menu IDs use kebab-case: `"suspend-tab"`, `"restore-tab-group"`
--   Click handler in `handleContextMenuClick(info, tab)`
--   Always check `info.menuItemId` in switch statement
-
-### Dashboard Communication
-
-UI dashboards (`ui/dashboards/*`) communicate via messages:
-
-```javascript
-// Dashboard sends
-const response = await chrome.runtime.sendMessage({
-    action: "get-ads-blocker-data"
-});
-
-// Background handles
-case "get-ads-blocker-data":
-    return this.adsBlocker.getDashboardData();
-```
-
-All actions prefixed by feature: `get-ads-blocker-data`, `update-tracker-blocker-settings`, etc.
-
-## Common Gotchas
-
-1. **Service worker lifecycle**: Background script can sleep. Always reload state from storage in message handlers.
-2. **Suspended tab restoration**: Check if URL still exists before restoring (handle 404s gracefully).
-3. **Tab groups**: Not all browsers support them. Use `browserCompat` wrappers.
-4. **YouTube ad blocking**: Requires both ISOLATED and MAIN world scripts. Don't combine.
-5. **CSP violations**: No inline scripts in HTML. All logic in separate `.js` files.
-6. **Manifest permissions**: Adding new Chrome APIs requires updating `permissions` in `manifest.json`.
-7. **DeclarativeNetRequest**: Rule IDs must be unique integers. Max 30k rules per extension.
-
-## Key Files Reference
-
--   `background.js` - Main orchestrator (study `handleMessage()` for all actions)
--   `manifest.json` - Permissions, content scripts, commands
--   `src/content/youtube-blocker-coordinator.js` - ISOLATED world coordinator
--   `src/content/youtube-blocker-yt-main.js` - MAIN world YouTube player manipulation
--   `src/utils/browser-compat.js` - Cross-browser API wrappers
--   `ui/popup/popup.js` - Main popup interface
--   `ui/options/options.js` - Settings page (2000+ lines)
-
-## When Adding New Features
-
-1. Create module class in `src/modules/<feature>/`
-2. Add `importScripts()` in `background.js` constructor
-3. Initialize in `TabSuspendManager` constructor: `this.featureName = new FeatureClass()`
-4. Add message handlers in `handleMessage()` switch statement
-5. Add UI in `ui/dashboards/<feature>/` or `ui/options/`
-6. Update `manifest.json` if new permissions needed
-7. Add to `consolidatedSettings` schema if configurable
+- Service worker logs: Extensions page → "background page" → Console (resets on sleep)
+- Content script logs: DevTools → Console → select content script context (per-tab)
+- Tests: `tests/integration/` (manual, run in-browser); `tests/unit/` (stubs). Primary method is manual testing.
+- Log prefix convention: `[YouTube Blocker]`, `[Background]`, `[TabSuspendManager]`
 
 ## Documentation Standards
 
-**CRITICAL**: All documentation must be managed in the `docs/` folder:
-
--   **Always read** documentation from `docs/` when researching features
--   **Add new docs** to `docs/` - never create `.md` files in project root
--   **Update existing docs** in `docs/` folder only
--   **Delete obsolete docs** from `docs/` (never leave orphaned files in root)
+- All docs go in `docs/` (`docs/features/`, `docs/api/`, `docs/guides/`, `docs/development/`)
+- Never create `.md` files in subdirectories other than `docs/`
+- Exception: `README.md`, `CHANGELOG.md`, `LICENSE` stay in root
+- Update `CHANGELOG.md` via `node scripts/update-changelog.js`
+- **Update existing docs** in `docs/` folder only
+- **Delete obsolete docs** from `docs/` (never leave orphaned files in root)
 
 Exception files (keep in root):
 
--   `README.md` - Main project readme
--   `CHANGELOG.md` - Version history (use `scripts/update-changelog.js`)
--   `LICENSE` - License file
+- `README.md` - Main project readme
+- `CHANGELOG.md` - Version history (use `scripts/update-changelog.js`)
+- `LICENSE` - License file
 
 Documentation structure:
 
--   `docs/features/` - Feature-specific guides
--   `docs/api/` - API documentation
--   `docs/guides/` - User guides and tutorials
--   `docs/development/` - Development documentation
+- `docs/features/` - Feature-specific guides
+- `docs/api/` - API documentation
+- `docs/guides/` - User guides and tutorials
+- `docs/development/` - Development documentation
 
 ## Recent Major Changes
 
--   **v2.1.0**: Added TrackerBlocker with 600+ patterns
--   **v2.0.0**: Migrated to consolidated settings, fixed duplicate tab restoration
--   YouTube blocking uses JAdSkip approach (seek to end + trigger `onAdUxClicked`)
--   Removed Google Drive OAuth (CSP compliance, simplified to local export/import)
+- **v2.1.0**: Added TrackerBlocker with 600+ patterns
+- **v2.0.0**: Migrated to consolidated settings, fixed duplicate tab restoration
+- YouTube blocking uses JAdSkip approach (seek to end + trigger `onAdUxClicked`)
+- Removed Google Drive OAuth (CSP compliance, simplified to local export/import)
