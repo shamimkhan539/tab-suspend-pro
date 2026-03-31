@@ -15,36 +15,24 @@
 
             // CRITICAL: Check ad indicators FIRST before duration
             // YouTube Music shows ads as overlays - video duration shows song length!
-            const hasAdPlacements = !!(
-                playerResponse.adPlacements || playerResponse.playerAds
-            );
+            // Use Array.isArray + length check — !!(adPlacements) is TRUE even for []
+            const hasAdPlacements =
+                (Array.isArray(playerResponse.adPlacements) &&
+                    playerResponse.adPlacements.length > 0) ||
+                (Array.isArray(playerResponse.playerAds) &&
+                    playerResponse.playerAds.length > 0);
 
             if (hasAdPlacements) {
                 logMessage(
-                    `Ad detected via adPlacements/playerAds - ad is present`
+                    `Ad detected via adPlacements/playerAds - ad is present`,
                 );
                 return true;
             }
 
-            // No ad indicators - check duration as secondary verification
-            const videoData = player.getVideoData();
-            const duration = videoData
-                ? parseFloat(videoData.duration) || player.getDuration()
-                : player.getDuration();
-
-            logMessage(`No ad indicators found - Duration: ${duration}s`);
-
-            // If duration < 60s without ad indicators, might be a short video ad
-            if (duration > 0 && duration < 60) {
-                logMessage(
-                    `Short video (${duration}s) without ad indicators - likely an ad`
-                );
-                return true;
-            }
-
-            logMessage(
-                `Long video (${duration}s) - this is content, not an ad`
-            );
+            // No ad placement indicators found — this is content, not an ad.
+            // Do NOT use duration as a fallback: songs on YouTube Music can be
+            // any length, including under 60 seconds.
+            logMessage(`No ad indicators found - treating as content`);
             return false;
         } catch (e) {
             logMessage(`Error checking if video is ad: ${e.message}`);
@@ -81,13 +69,13 @@
         const playerSlots = player.getPlayerResponse()?.adSlots;
         if (!playerSlots || playerSlots.length === 0) {
             logMessage(
-                "Ad detected but no ad slots found - will use fallback skip method"
+                "Ad detected but no ad slots found - will use fallback skip method",
             );
             return { hasAds: true, usedApi: false };
         }
 
         logMessage(
-            `Trying ad slots from player response: ${playerSlots.length}`
+            `Trying ad slots from player response: ${playerSlots.length}`,
         );
 
         // Trigger all skip events via YouTube's internal API
@@ -118,7 +106,7 @@
         }
 
         logMessage(
-            `Processing ad "${adPlayer.src}" at ${adPlayer.currentTime} / ${adPlayer.duration}`
+            `Processing ad "${adPlayer.src}" at ${adPlayer.currentTime} / ${adPlayer.duration}`,
         );
 
         if (!isFinite(adPlayer.duration)) {
@@ -166,7 +154,7 @@
         if (!blockEnabled) return;
 
         const renderers = document.getElementsByTagName(
-            "ytmusic-you-there-renderer"
+            "ytmusic-you-there-renderer",
         );
         logMessage(`Found ${renderers.length} YouThere renderers`);
 
@@ -178,7 +166,7 @@
         const button = renderer.querySelector("button");
         if (button) {
             logMessage(
-                `Clicking YouTube Music continue button: ${button.textContent}`
+                `Clicking YouTube Music continue button: ${button.textContent}`,
             );
             button.click();
         }

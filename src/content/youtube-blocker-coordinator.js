@@ -32,7 +32,7 @@
                     function (response) {
                         if (chrome.runtime.lastError) {
                             console.error(
-                                `[YouTube Blocker] Error loading settings: ${chrome.runtime.lastError.message}`
+                                `[YouTube Blocker] Error loading settings: ${chrome.runtime.lastError.message}`,
                             );
                             resolve(false);
                             return;
@@ -53,20 +53,20 @@
                             });
 
                             console.log(
-                                `[YouTube Blocker] Settings loaded: blockEnabled=${blockEnabled}`
+                                `[YouTube Blocker] Settings loaded: blockEnabled=${blockEnabled}`,
                             );
                             resolve(true);
                         } else {
                             console.error(
-                                "[YouTube Blocker] No response from background"
+                                "[YouTube Blocker] No response from background",
                             );
                             resolve(false);
                         }
-                    }
+                    },
                 );
             } catch (error) {
                 console.error(
-                    `[YouTube Blocker] Error sending message: ${error.message}`
+                    `[YouTube Blocker] Error sending message: ${error.message}`,
                 );
                 resolve(false);
             }
@@ -144,14 +144,23 @@
             checkAdPresence(0);
         });
 
-        // Add timeupdate listener to catch ads that don't trigger src changes
-        video.addEventListener("timeupdate", () => {
-            // Check periodically during playback (every 2 seconds)
-            if (!video._lastAdCheck || Date.now() - video._lastAdCheck > 2000) {
-                video._lastAdCheck = Date.now();
-                checkAdPresence(0);
-            }
-        });
+        // Note: timeupdate polling is intentionally omitted for YouTube Music.
+        // Ads are detected reliably via src-change (MutationObserver) and the
+        // play event above. Polling every 2s caused false positives that skipped
+        // regular songs shorter than 60 seconds.
+        if (!isYouTubeMusic) {
+            // On regular YouTube, poll during playback to catch mid-roll ads
+            // that don't always trigger a src change.
+            video.addEventListener("timeupdate", () => {
+                if (
+                    !video._lastAdCheck ||
+                    Date.now() - video._lastAdCheck > 2000
+                ) {
+                    video._lastAdCheck = Date.now();
+                    checkAdPresence(0);
+                }
+            });
+        }
 
         checkAdPresence(0);
     }
@@ -224,7 +233,7 @@
         const success = await loadSettings();
         if (!success) {
             console.log(
-                "[YouTube Blocker] Failed to load settings, retrying..."
+                "[YouTube Blocker] Failed to load settings, retrying...",
             );
             setTimeout(init, 1000);
             return;
