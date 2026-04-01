@@ -93,7 +93,7 @@ class OptionsManager {
         } catch (error) {
             console.warn(
                 "Service worker not responding, will retry on demand:",
-                error
+                error,
             );
         }
     }
@@ -106,7 +106,7 @@ class OptionsManager {
 
             if (response?.success && response.status) {
                 const driveToggle = document.getElementById(
-                    "google-drive-toggle"
+                    "google-drive-toggle",
                 );
                 if (
                     driveToggle &&
@@ -162,7 +162,7 @@ class OptionsManager {
                 // Remove active class from all buttons and contents
                 tabButtons.forEach((btn) => btn.classList.remove("active"));
                 tabContents.forEach((content) =>
-                    content.classList.remove("active")
+                    content.classList.remove("active"),
                 );
 
                 // Add active class to clicked button and corresponding content
@@ -202,7 +202,7 @@ class OptionsManager {
             });
 
             if (whitelistResult && whitelistResult.whitelist) {
-                this.updateWhitelistUI(whitelistResult.whitelist);
+                this.updateTrackerWhitelistUI(whitelistResult.whitelist);
             }
         } catch (error) {
             console.error("Error loading tracker blocker settings:", error);
@@ -216,28 +216,28 @@ class OptionsManager {
 
         this.setToggleState(
             "tracker-blocker-enabled",
-            this.trackerSettings.enabled
+            this.trackerSettings.enabled,
         );
         this.setToggleState("block-ads", this.trackerSettings.categories.ads);
         this.setToggleState(
             "block-trackers",
-            this.trackerSettings.categories.trackers
+            this.trackerSettings.categories.trackers,
         );
         this.setToggleState(
             "block-social",
-            this.trackerSettings.categories.socialMedia
+            this.trackerSettings.categories.socialMedia,
         );
         this.setToggleState(
             "block-mining",
-            this.trackerSettings.categories.cryptoMining
+            this.trackerSettings.categories.cryptoMining,
         );
         this.setToggleState(
             "block-malware",
-            this.trackerSettings.categories.malware
+            this.trackerSettings.categories.malware,
         );
         this.setToggleState(
             "track-stats",
-            this.trackerSettings.trackStatistics
+            this.trackerSettings.trackStatistics,
         );
 
         // Load custom filters
@@ -248,16 +248,16 @@ class OptionsManager {
         }
     }
 
-    updateWhitelistUI(whitelist) {
+    updateTrackerWhitelistUI(whitelist) {
         const listElement = document.getElementById("tracker-whitelist-list");
         if (!listElement) return;
 
         listElement.innerHTML = "";
         whitelist.forEach((domain) => {
             const li = document.createElement("li");
-            li.className = "url-item";
+            li.className = "url-list-item";
             li.innerHTML = `
-                <span>${domain}</span>
+                <code>${domain}</code>
                 <button class="btn btn-danger btn-sm remove-tracker-whitelist" data-domain="${domain}">Remove</button>
             `;
             listElement.appendChild(li);
@@ -386,7 +386,7 @@ class OptionsManager {
             ?.addEventListener("click", () => {
                 chrome.tabs.create({
                     url: chrome.runtime.getURL(
-                        "ui/dashboards/tracker-blocker/tracker-dashboard.html"
+                        "ui/dashboards/tracker-blocker/tracker-dashboard.html",
                     ),
                 });
             });
@@ -397,7 +397,7 @@ class OptionsManager {
             ?.addEventListener("click", () => {
                 chrome.tabs.create({
                     url: chrome.runtime.getURL(
-                        "ui/dashboards/privacy/privacy-dashboard.html"
+                        "ui/dashboards/privacy/privacy-dashboard.html",
                     ),
                 });
             });
@@ -407,17 +407,7 @@ class OptionsManager {
             ?.addEventListener("click", () => {
                 chrome.tabs.create({
                     url: chrome.runtime.getURL(
-                        "ui/dashboards/main/dashboard.html"
-                    ),
-                });
-            });
-
-        document
-            .getElementById("open-advanced-options")
-            ?.addEventListener("click", () => {
-                chrome.tabs.create({
-                    url: chrome.runtime.getURL(
-                        "ui/options/sections/advanced-options.html"
+                        "ui/dashboards/main/dashboard.html",
                     ),
                 });
             });
@@ -467,36 +457,36 @@ class OptionsManager {
 
         this.setToggleState(
             "ads-blocker-enabled",
-            this.adsBlockerSettings.enabled
+            this.adsBlockerSettings.enabled,
         );
         this.setToggleState("ads-block-ads", this.adsBlockerSettings.blockAds);
         this.setToggleState(
             "ads-block-analytics",
-            this.adsBlockerSettings.blockAnalytics
+            this.adsBlockerSettings.blockAnalytics,
         );
         this.setToggleState(
             "ads-block-banners",
-            this.adsBlockerSettings.blockBanners
+            this.adsBlockerSettings.blockBanners,
         );
         this.setToggleState(
             "ads-block-popups",
-            this.adsBlockerSettings.blockPopups
+            this.adsBlockerSettings.blockPopups,
         );
         this.setToggleState(
             "ads-block-cookies",
-            this.adsBlockerSettings.blockCookieTrackers
+            this.adsBlockerSettings.blockCookieTrackers,
         );
         this.setToggleState(
             "ads-block-social",
-            this.adsBlockerSettings.blockSocialWidgets
+            this.adsBlockerSettings.blockSocialWidgets,
         );
         this.setToggleState(
             "ads-block-youtube",
-            this.adsBlockerSettings.blockYoutubeAds
+            this.adsBlockerSettings.blockYoutubeAds,
         );
         this.setToggleState(
             "ads-block-youtube-music",
-            this.adsBlockerSettings.blockYoutubeMusicAds
+            this.adsBlockerSettings.blockYoutubeMusicAds,
         );
 
         // Load custom filters
@@ -515,9 +505,9 @@ class OptionsManager {
         listElement.innerHTML = "";
         whitelist.forEach((domain) => {
             const li = document.createElement("li");
-            li.className = "url-item";
+            li.className = "url-list-item";
             li.innerHTML = `
-                <span>${domain}</span>
+                <code>${domain}</code>
                 <button class="btn btn-danger btn-sm remove-ads-whitelist" data-domain="${domain}">Remove</button>
             `;
             listElement.appendChild(li);
@@ -622,7 +612,7 @@ class OptionsManager {
             ?.addEventListener("click", () => {
                 chrome.tabs.create({
                     url: chrome.runtime.getURL(
-                        "ui/dashboards/ads-blocker/ads-dashboard.html"
+                        "ui/dashboards/ads-blocker/ads-dashboard.html",
                     ),
                 });
             });
@@ -673,7 +663,7 @@ class OptionsManager {
             console.error("Error saving settings:", error);
             this.showStatusMessage(
                 "Error saving settings. Please try again.",
-                "error"
+                "error",
             );
         }
     }
@@ -700,7 +690,7 @@ class OptionsManager {
                 item.className = "group-item";
 
                 const isExcluded = this.settings.excludedGroups.includes(
-                    group.id
+                    group.id,
                 );
 
                 item.innerHTML = `
@@ -740,7 +730,7 @@ class OptionsManager {
 
         // Saved groups toggle
         const savedGroupsToggle = document.getElementById(
-            "saved-groups-toggle"
+            "saved-groups-toggle",
         );
         if (savedGroupsToggle) {
             savedGroupsToggle.addEventListener("click", () => {
@@ -764,7 +754,7 @@ class OptionsManager {
 
         // Analytics enabled toggle
         const analyticsEnabledToggle = document.getElementById(
-            "analytics-enabled-toggle"
+            "analytics-enabled-toggle",
         );
         if (analyticsEnabledToggle) {
             analyticsEnabledToggle.addEventListener("click", () => {
@@ -777,7 +767,7 @@ class OptionsManager {
 
         // Organization toggle
         const organizationToggle = document.getElementById(
-            "organization-toggle"
+            "organization-toggle",
         );
         if (organizationToggle) {
             organizationToggle.addEventListener("click", () => {
@@ -801,7 +791,7 @@ class OptionsManager {
                     } else {
                         this.settings.excludedGroups =
                             this.settings.excludedGroups.filter(
-                                (id) => id !== groupId
+                                (id) => id !== groupId,
                             );
                     }
                 }
@@ -907,7 +897,7 @@ class OptionsManager {
         }
 
         const smartGroupingToggle = document.getElementById(
-            "smart-grouping-toggle"
+            "smart-grouping-toggle",
         );
         if (smartGroupingToggle) {
             smartGroupingToggle.addEventListener("click", () => {
@@ -934,7 +924,7 @@ class OptionsManager {
         }
 
         const customizeShortcuts = document.getElementById(
-            "customize-shortcuts"
+            "customize-shortcuts",
         );
         if (customizeShortcuts) {
             customizeShortcuts.addEventListener("click", () => {
@@ -961,7 +951,7 @@ class OptionsManager {
 
     removeWhitelistUrl(url) {
         this.settings.whitelistedUrls = this.settings.whitelistedUrls.filter(
-            (u) => u !== url
+            (u) => u !== url,
         );
         this.updateWhitelistUI();
     }
@@ -978,28 +968,28 @@ class OptionsManager {
 
         // Notifications toggle
         const notificationsToggle = document.getElementById(
-            "notifications-toggle"
+            "notifications-toggle",
         );
         notificationsToggle.classList.toggle(
             "active",
-            this.settings.showNotifications
+            this.settings.showNotifications,
         );
 
         // Aggressive mode toggle
         const aggressiveToggle = document.getElementById("aggressive-toggle");
         aggressiveToggle.classList.toggle(
             "active",
-            this.settings.aggressiveMode
+            this.settings.aggressiveMode,
         );
 
         // Saved groups toggle
         const savedGroupsToggle = document.getElementById(
-            "saved-groups-toggle"
+            "saved-groups-toggle",
         );
         if (savedGroupsToggle) {
             savedGroupsToggle.classList.toggle(
                 "active",
-                this.settings.savedGroupsEnabled
+                this.settings.savedGroupsEnabled,
             );
         }
 
@@ -1008,27 +998,27 @@ class OptionsManager {
         if (sessionsToggle) {
             sessionsToggle.classList.toggle(
                 "active",
-                this.settings.sessionsEnabled
+                this.settings.sessionsEnabled,
             );
         }
 
         const analyticsEnabledToggle = document.getElementById(
-            "analytics-enabled-toggle"
+            "analytics-enabled-toggle",
         );
         if (analyticsEnabledToggle) {
             analyticsEnabledToggle.classList.toggle(
                 "active",
-                this.settings.analyticsEnabled
+                this.settings.analyticsEnabled,
             );
         }
 
         const organizationToggle = document.getElementById(
-            "organization-toggle"
+            "organization-toggle",
         );
         if (organizationToggle) {
             organizationToggle.classList.toggle(
                 "active",
-                this.settings.organizationEnabled
+                this.settings.organizationEnabled,
             );
         }
 
@@ -1037,7 +1027,7 @@ class OptionsManager {
         if (analyticsToggle) {
             analyticsToggle.classList.toggle(
                 "active",
-                this.settings.analyticsEnabled
+                this.settings.analyticsEnabled,
             );
         }
 
@@ -1045,7 +1035,7 @@ class OptionsManager {
         if (performanceToggle) {
             performanceToggle.classList.toggle(
                 "active",
-                this.settings.performanceMonitoring
+                this.settings.performanceMonitoring,
             );
         }
 
@@ -1058,7 +1048,7 @@ class OptionsManager {
         if (autoFocusToggle) {
             autoFocusToggle.classList.toggle(
                 "active",
-                this.settings.autoFocusModeEnabled
+                this.settings.autoFocusModeEnabled,
             );
         }
 
@@ -1078,12 +1068,12 @@ class OptionsManager {
         }
 
         const smartGroupingToggle = document.getElementById(
-            "smart-grouping-toggle"
+            "smart-grouping-toggle",
         );
         if (smartGroupingToggle) {
             smartGroupingToggle.classList.toggle(
                 "active",
-                this.settings.smartGroupingEnabled
+                this.settings.smartGroupingEnabled,
             );
         }
 
@@ -1096,7 +1086,7 @@ class OptionsManager {
         if (predictiveToggle) {
             predictiveToggle.classList.toggle(
                 "active",
-                this.settings.predictiveSuspension
+                this.settings.predictiveSuspension,
             );
         }
 
@@ -1107,7 +1097,7 @@ class OptionsManager {
 
     updateSavedGroupsVisibility() {
         const savedGroupsActions = document.querySelector(
-            ".saved-groups-actions"
+            ".saved-groups-actions",
         );
         const savedGroupsList = document.getElementById("saved-groups-list");
 
@@ -1121,7 +1111,7 @@ class OptionsManager {
 
         // Also update the saved groups section in popup if this is being called from there
         const popupSavedGroupsSection = document.getElementById(
-            "saved-groups-section"
+            "saved-groups-section",
         );
         if (popupSavedGroupsSection) {
             popupSavedGroupsSection.style.display = this.settings
@@ -1140,10 +1130,10 @@ class OptionsManager {
 
         this.settings.whitelistedUrls.forEach((url) => {
             const item = document.createElement("li");
-            item.className = "url-item";
+            item.className = "url-list-item";
 
-            const span = document.createElement("span");
-            span.textContent = url;
+            const code = document.createElement("code");
+            code.textContent = url;
 
             const btn = document.createElement("button");
             btn.className = "btn btn-danger";
@@ -1155,7 +1145,7 @@ class OptionsManager {
                 this.saveSettings();
             });
 
-            item.appendChild(span);
+            item.appendChild(code);
             item.appendChild(btn);
             fragment.appendChild(item);
         });
@@ -1188,13 +1178,13 @@ class OptionsManager {
                     // Last retry failed
                     console.error(
                         "Failed to send message after retries:",
-                        error
+                        error,
                     );
                     throw error;
                 }
                 // Wait before retrying (exponential backoff)
                 await new Promise((resolve) =>
-                    setTimeout(resolve, 100 * Math.pow(2, i))
+                    setTimeout(resolve, 100 * Math.pow(2, i)),
                 );
             }
         }
@@ -1230,7 +1220,7 @@ class OptionsManager {
 
                 const colorStyle = colorMap[group.color] || "#9aa0a6";
                 const createdDate = new Date(
-                    group.createdAt
+                    group.createdAt,
                 ).toLocaleDateString();
                 const previewUrls = group.tabs
                     .slice(0, 3)
@@ -1248,14 +1238,14 @@ class OptionsManager {
                     <div class="group-color-indicator" style="background-color: ${colorStyle};"></div>
                     <div class="saved-group-info">
                         <div class="saved-group-name">${this.escapeHtml(
-                            group.name
+                            group.name,
                         )}</div>
                         <div class="saved-group-meta">
                             <span>📄 ${group.tabCount} tabs</span>
                             <span>📅 ${createdDate}</span>
                         </div>
                         <div class="group-preview">${this.escapeHtml(
-                            previewUrls
+                            previewUrls,
                         )}</div>
                     </div>
                     <div class="saved-group-actions">
@@ -1300,7 +1290,7 @@ class OptionsManager {
                 try {
                     const name = prompt(
                         "Enter a name for this group:",
-                        `Window Group ${new Date().toLocaleDateString()}`
+                        `Window Group ${new Date().toLocaleDateString()}`,
                     );
                     if (!name) return;
 
@@ -1314,7 +1304,7 @@ class OptionsManager {
                         await this.loadSavedGroups();
                         this.showStatusMessage(
                             `Saved "${name}" successfully!`,
-                            "success"
+                            "success",
                         );
                     } else {
                         this.showStatusMessage("Failed to save group", "error");
@@ -1336,12 +1326,12 @@ class OptionsManager {
                     if (response.success) {
                         this.showStatusMessage(
                             `Exported ${response.result.count} groups`,
-                            "success"
+                            "success",
                         );
                     } else {
                         this.showStatusMessage(
                             "Failed to export groups",
-                            "error"
+                            "error",
                         );
                     }
                 } catch (error) {
@@ -1363,7 +1353,7 @@ class OptionsManager {
                 try {
                     const content = await file.text();
                     const mergeMode = confirm(
-                        "Merge with existing groups? Click OK to merge, Cancel to replace all groups."
+                        "Merge with existing groups? Click OK to merge, Cancel to replace all groups.",
                     );
 
                     const response = await this.sendMessageSafely({
@@ -1380,19 +1370,19 @@ class OptionsManager {
                                     ? `, skipped ${response.result.duplicates} duplicates`
                                     : ""
                             }`,
-                            "success"
+                            "success",
                         );
                     } else {
                         this.showStatusMessage(
                             "Failed to import groups",
-                            "error"
+                            "error",
                         );
                     }
                 } catch (error) {
                     console.error("Error importing groups:", error);
                     this.showStatusMessage(
                         "Error importing groups. Please check the file format.",
-                        "error"
+                        "error",
                     );
                 }
             });
@@ -1420,7 +1410,7 @@ class OptionsManager {
                             if (restoreResponse.success) {
                                 this.showStatusMessage(
                                     "Group restored successfully!",
-                                    "success"
+                                    "success",
                                 );
                             }
                             break;
@@ -1435,7 +1425,7 @@ class OptionsManager {
                             if (restoreNewResponse.success) {
                                 this.showStatusMessage(
                                     "Group restored in new window!",
-                                    "success"
+                                    "success",
                                 );
                             }
                             break;
@@ -1450,7 +1440,7 @@ class OptionsManager {
                                 const currentName = groupResponse.group.name;
                                 const newName = prompt(
                                     "Enter new name:",
-                                    currentName
+                                    currentName,
                                 );
                                 if (!newName || newName === currentName) return;
 
@@ -1471,7 +1461,7 @@ class OptionsManager {
                                 await this.loadSavedGroups();
                                 this.showStatusMessage(
                                     "Group renamed successfully!",
-                                    "success"
+                                    "success",
                                 );
                             }
                             break;
@@ -1484,7 +1474,7 @@ class OptionsManager {
 
                             if (groupToDelete.success && groupToDelete.group) {
                                 const confirmDelete = confirm(
-                                    `Are you sure you want to delete "${groupToDelete.group.name}"? This action cannot be undone.`
+                                    `Are you sure you want to delete "${groupToDelete.group.name}"? This action cannot be undone.`,
                                 );
                                 if (!confirmDelete) return;
 
@@ -1498,7 +1488,7 @@ class OptionsManager {
                                     await this.loadSavedGroups();
                                     this.showStatusMessage(
                                         "Group deleted successfully!",
-                                        "success"
+                                        "success",
                                     );
                                 }
                             }
@@ -1524,7 +1514,7 @@ class OptionsManager {
         if (importBtn && importFile) {
             importBtn.addEventListener("click", () => importFile.click());
             importFile.addEventListener("change", (e) =>
-                this.importSettings(e)
+                this.importSettings(e),
             );
         }
 
@@ -1538,7 +1528,7 @@ class OptionsManager {
         const frequencySelect = document.getElementById("backup-frequency");
         if (frequencySelect) {
             frequencySelect.addEventListener("change", (e) =>
-                this.updateAutoSyncFrequency(e.target.value)
+                this.updateAutoSyncFrequency(e.target.value),
             );
         }
 
@@ -1546,7 +1536,7 @@ class OptionsManager {
         const driveToggle = document.getElementById("google-drive-toggle");
         if (driveToggle) {
             driveToggle.addEventListener("click", () =>
-                this.toggleGoogleDrive()
+                this.toggleGoogleDrive(),
             );
         }
 
@@ -1573,7 +1563,7 @@ class OptionsManager {
                     `Auto-backup frequency set to: ${
                         frequency === "never" ? "Disabled" : frequency
                     }`,
-                    "success"
+                    "success",
                 );
             } else {
                 throw new Error("Failed to update sync schedule");
@@ -1582,7 +1572,7 @@ class OptionsManager {
             console.error("Failed to update auto-sync frequency:", error);
             this.showStatusMessage(
                 "Failed to update backup frequency: " + error.message,
-                "error"
+                "error",
             );
         }
     }
@@ -1619,7 +1609,7 @@ class OptionsManager {
 
             this.showStatusMessage(
                 "Settings exported successfully!",
-                "success"
+                "success",
             );
             this.updateLastBackupTime();
         } catch (error) {
@@ -1642,7 +1632,7 @@ class OptionsManager {
 
             // Confirm import
             const confirmed = confirm(
-                "This will replace all current settings and saved groups. Are you sure you want to continue?"
+                "This will replace all current settings and saved groups. Are you sure you want to continue?",
             );
             if (!confirmed) return;
 
@@ -1662,7 +1652,7 @@ class OptionsManager {
 
             this.showStatusMessage(
                 "Settings imported successfully! Please refresh the page.",
-                "success"
+                "success",
             );
 
             // Reload the page after a delay
@@ -1701,7 +1691,7 @@ class OptionsManager {
             if (isCurrentlyEnabled) {
                 // Disable Google Drive sync
                 const confirmed = confirm(
-                    "Are you sure you want to disable Google Drive backup? This will not delete existing backups."
+                    "Are you sure you want to disable Google Drive backup? This will not delete existing backups.",
                 );
                 if (!confirmed) return;
 
@@ -1713,7 +1703,7 @@ class OptionsManager {
                     driveToggle.classList.remove("active");
                     this.showStatusMessage(
                         "Google Drive backup disabled",
-                        "success"
+                        "success",
                     );
                 } else {
                     throw new Error("Failed to disable sync");
@@ -1731,7 +1721,7 @@ class OptionsManager {
                     driveToggle.classList.add("active");
                     this.showStatusMessage(
                         "Google Drive backup enabled successfully!",
-                        "success"
+                        "success",
                     );
                     await this.updateLastBackupTime();
                 } else {
@@ -1752,7 +1742,7 @@ class OptionsManager {
                         "1. Use 'Export Settings' → save to Google Drive manually\n" +
                         "2. Use 'Import Settings' to restore anytime\n" +
                         "3. Or enable 'Sync Across Devices' for automatic sync across Chrome!",
-                    "error"
+                    "error",
                 );
             } else if (error.message.includes("Use Export Settings")) {
                 this.showStatusMessage(
@@ -1761,21 +1751,21 @@ class OptionsManager {
                         "2. Save it to Google Drive\n" +
                         "3. Use 'Import Settings' to restore\n\n" +
                         "✨ Or enable 'Sync Across Devices' for automatic sync!",
-                    "error"
+                    "error",
                 );
             } else if (error.message.includes("better solutions")) {
                 this.showStatusMessage(error.message, "error");
             } else if (error.message.includes("cancelled")) {
                 this.showStatusMessage(
                     "Google Drive authentication was cancelled",
-                    "info"
+                    "info",
                 );
             } else {
                 this.showStatusMessage(
                     "💡 Tip: Use 'Export Settings' to backup manually, or enable 'Sync Across Devices' for automatic cross-device sync.\n\n" +
                         "Error: " +
                         error.message,
-                    "error"
+                    "error",
                 );
             }
         }
@@ -1794,13 +1784,13 @@ class OptionsManager {
 
             this.showStatusMessage(
                 syncEnabled ? "Chrome sync enabled!" : "Chrome sync disabled!",
-                "success"
+                "success",
             );
         } catch (error) {
             console.error("Sync toggle failed:", error);
             this.showStatusMessage(
                 "Sync toggle failed: " + error.message,
-                "error"
+                "error",
             );
         }
     }
@@ -1825,11 +1815,17 @@ class OptionsManager {
     }
 
     showStatusMessage(message, type) {
+        // Use the new toast system if available (redesigned options page)
+        if (typeof window.showToast === "function") {
+            window.showToast(message, type === "success" ? "success" : "error");
+            return;
+        }
+        // Fallback for any legacy context
         const statusElement = document.getElementById("status-message");
+        if (!statusElement) return;
         statusElement.textContent = message;
         statusElement.className = `status-message status-${type}`;
         statusElement.style.display = "block";
-
         setTimeout(() => {
             statusElement.style.display = "none";
         }, 3000);
@@ -1838,3 +1834,49 @@ class OptionsManager {
 
 // Initialize options manager
 const optionsManager = new OptionsManager();
+
+// Tab navigation
+document.querySelectorAll(".nav-item").forEach((btn) => {
+    btn.addEventListener("click", () => {
+        const tab = btn.dataset.tab;
+        document
+            .querySelectorAll(".nav-item")
+            .forEach((b) => b.classList.remove("active"));
+        document
+            .querySelectorAll(".tab-panel")
+            .forEach((p) => p.classList.remove("active"));
+        btn.classList.add("active");
+        document.getElementById("tab-" + tab).classList.add("active");
+        document.getElementById("topbar-title").textContent =
+            btn.textContent.trim();
+    });
+});
+
+// Toast helper
+window.showToast = function (msg, type) {
+    const t = document.getElementById("toast");
+    t.textContent = msg;
+    t.className = "show " + (type || "");
+    clearTimeout(window._toastTimer);
+    window._toastTimer = setTimeout(() => {
+        t.className = "";
+    }, 3000);
+};
+
+// Secondary dashboard buttons
+document
+    .getElementById("open-privacy-dashboard-2")
+    ?.addEventListener("click", () => {
+        chrome.tabs.create({
+            url: chrome.runtime.getURL(
+                "ui/dashboards/privacy/privacy-dashboard.html",
+            ),
+        });
+    });
+document
+    .getElementById("open-analytics-dashboard-2")
+    ?.addEventListener("click", () => {
+        chrome.tabs.create({
+            url: chrome.runtime.getURL("ui/dashboards/main/dashboard.html"),
+        });
+    });

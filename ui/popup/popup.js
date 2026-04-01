@@ -173,7 +173,7 @@ class PopupManager {
         groups.forEach((group) => {
             const groupTabs = tabs.filter((tab) => tab.groupId === group.id);
             const suspendedCount = groupTabs.filter(
-                (tab) => tab.url && tab.url.includes("suspended.html")
+                (tab) => tab.url && tab.url.includes("suspended.html"),
             ).length;
             const totalCount = groupTabs.length;
 
@@ -335,14 +335,14 @@ class PopupManager {
 
         // Toggle combined group selector
         const toggleGroupSelector = document.getElementById(
-            "toggle-combined-group-selector"
+            "toggle-combined-group-selector",
         );
         if (toggleGroupSelector) {
             toggleGroupSelector.addEventListener("click", () => {
                 if (!this.settings.enabled) return;
 
                 const selector = document.getElementById(
-                    "combined-group-selector"
+                    "combined-group-selector",
                 );
                 if (selector) {
                     const isVisible = selector.style.display !== "none";
@@ -357,7 +357,7 @@ class PopupManager {
 
         // Group dropdown change
         const groupDropdown = document.getElementById(
-            "combined-group-dropdown"
+            "combined-group-dropdown",
         );
         if (groupDropdown) {
             groupDropdown.addEventListener("change", (e) => {
@@ -373,7 +373,7 @@ class PopupManager {
                 if (!this.settings.enabled) return;
 
                 const dropdown = document.getElementById(
-                    "combined-group-dropdown"
+                    "combined-group-dropdown",
                 );
                 if (dropdown) {
                     const selectedGroupId = dropdown.value;
@@ -398,7 +398,7 @@ class PopupManager {
                 if (!this.settings.enabled) return;
 
                 const dropdown = document.getElementById(
-                    "combined-group-dropdown"
+                    "combined-group-dropdown",
                 );
                 if (dropdown) {
                     const selectedGroupId = dropdown.value;
@@ -435,7 +435,7 @@ class PopupManager {
 
         // Never suspend domain button
         const neverSuspendDomain = document.getElementById(
-            "never-suspend-domain"
+            "never-suspend-domain",
         );
         if (neverSuspendDomain) {
             neverSuspendDomain.addEventListener("click", async () => {
@@ -454,13 +454,13 @@ class PopupManager {
 
         // Tracker Blocker button
         const trackerBlockerBtn = document.getElementById(
-            "tracker-blocker-btn"
+            "tracker-blocker-btn",
         );
         if (trackerBlockerBtn) {
             trackerBlockerBtn.addEventListener("click", () => {
                 chrome.tabs.create({
                     url: chrome.runtime.getURL(
-                        "ui/dashboards/tracker-blocker/tracker-dashboard.html"
+                        "ui/dashboards/tracker-blocker/tracker-dashboard.html",
                     ),
                 });
             });
@@ -472,7 +472,7 @@ class PopupManager {
             adsBlockerBtn.addEventListener("click", () => {
                 chrome.tabs.create({
                     url: chrome.runtime.getURL(
-                        "ui/dashboards/ads-blocker/ads-dashboard.html"
+                        "ui/dashboards/ads-blocker/ads-dashboard.html",
                     ),
                 });
             });
@@ -499,7 +499,7 @@ class PopupManager {
 
         // Saved groups list event delegation
         const savedGroupsList = document.getElementById(
-            "popup-saved-groups-list"
+            "popup-saved-groups-list",
         );
         if (savedGroupsList) {
             savedGroupsList.addEventListener("click", async (e) => {
@@ -694,7 +694,7 @@ class PopupManager {
                     `Error sending message to background (attempt ${
                         attempt + 1
                     }/${maxAttempts}):`,
-                    error
+                    error,
                 );
                 return false;
             }
@@ -809,14 +809,14 @@ class PopupManager {
         if (hasAnyAdvancedFeatures) {
             // Show tab interface
             tabContainer.style.display = "block";
-            content.classList.add("has-tabs");
+            if (content) content.classList.add("has-tabs");
 
             // Show/hide individual tabs based on settings
             this.updateTabVisibility();
         } else {
             // Hide tab interface
             tabContainer.style.display = "none";
-            content.classList.remove("has-tabs");
+            if (content) content.classList.remove("has-tabs");
 
             // Show suspend content directly
             const suspendContent = document.getElementById("content-suspend");
@@ -925,10 +925,10 @@ class PopupManager {
                     retries--;
                     if (retries > 0) {
                         console.log(
-                            `Retrying to connect to background script... (${retries} attempts left)`
+                            `Retrying to connect to background script... (${retries} attempts left)`,
                         );
                         await new Promise((resolve) =>
-                            setTimeout(resolve, 100)
+                            setTimeout(resolve, 100),
                         );
                     } else {
                         throw error;
@@ -938,7 +938,7 @@ class PopupManager {
 
             if (!response) {
                 console.error(
-                    "No response from background script after retries"
+                    "No response from background script after retries",
                 );
                 this.renderPopupSavedGroups([]);
                 return;
@@ -973,13 +973,13 @@ class PopupManager {
         container.innerHTML = groups
             .map((group) => {
                 const createdDate = new Date(
-                    group.createdAt
+                    group.createdAt,
                 ).toLocaleDateString();
                 return `
                 <div class="popup-saved-group-item">
                     <div class="popup-group-info">
                         <div class="popup-group-name">${this.escapeHtml(
-                            group.name
+                            group.name,
                         )}</div>
                         <div class="popup-group-meta">${
                             group.tabCount
@@ -1122,7 +1122,7 @@ class PopupManager {
             saveSessionBtn.addEventListener("click", async () => {
                 const name = prompt(
                     "Enter session name:",
-                    `Session ${new Date().toLocaleDateString()}`
+                    `Session ${new Date().toLocaleDateString()}`,
                 );
                 if (name) {
                     try {
@@ -1137,7 +1137,7 @@ class PopupManager {
                     } catch (error) {
                         this.showPopupMessage(
                             "Failed to save session",
-                            "error"
+                            "error",
                         );
                     }
                 }
@@ -1167,13 +1167,13 @@ class PopupManager {
                         isEnabled
                             ? "Focus mode disabled"
                             : "Focus mode enabled",
-                        "success"
+                        "success",
                     );
                     this.loadAnalyticsData();
                 } catch (error) {
                     this.showPopupMessage(
                         "Failed to toggle focus mode",
-                        "error"
+                        "error",
                     );
                 }
             });
@@ -1204,7 +1204,7 @@ class PopupManager {
                 } catch (error) {
                     this.showPopupMessage(
                         "Failed to export analytics",
-                        "error"
+                        "error",
                     );
                 }
             });
@@ -1223,7 +1223,7 @@ class PopupManager {
                     if (response.success) {
                         this.showPopupMessage(
                             `Switched to ${response.profile.name}`,
-                            "success"
+                            "success",
                         );
                     }
                 } catch (error) {
@@ -1270,7 +1270,7 @@ class PopupManager {
                 if (tabs.length < 2) {
                     this.showPopupMessage(
                         "Select at least 2 tabs to create a stack",
-                        "error"
+                        "error",
                     );
                     return;
                 }
@@ -1287,7 +1287,7 @@ class PopupManager {
                     } catch (error) {
                         this.showPopupMessage(
                             "Failed to create tab stack",
-                            "error"
+                            "error",
                         );
                     }
                 }
@@ -1343,7 +1343,7 @@ class PopupManager {
                     <button class="template-delete-btn" data-template-id="${template.id}" title="Delete template">🗑️</button>
                 </div>
             </div>
-        `
+        `,
             )
             .join("");
 
@@ -1391,7 +1391,7 @@ class PopupManager {
                     }" title="Delete session">🗑️</button>
                 </div>
             </div>
-        `
+        `,
             )
             .join("");
 
@@ -1455,7 +1455,7 @@ class PopupManager {
 
         if (memoryUsage && data.currentMetrics) {
             memoryUsage.textContent = `${Math.round(
-                data.currentMetrics.memoryUsagePercent || 0
+                data.currentMetrics.memoryUsagePercent || 0,
             )}%`;
         }
         if (activeTabs && data.currentMetrics) {
@@ -1513,11 +1513,11 @@ class PopupManager {
                     site.memoryUsage
                         ? this.formatBytes(site.memoryUsage * 1024 * 1024)
                         : site.timeSpent
-                        ? this.formatMinutes(site.timeSpent)
-                        : site.visits + " visits"
+                          ? this.formatMinutes(site.timeSpent)
+                          : site.visits + " visits"
                 }</div>
             </div>
-        `
+        `,
             )
             .join("");
     }
@@ -1552,7 +1552,7 @@ class PopupManager {
         selector.innerHTML = profiles
             .map(
                 (profile) =>
-                    `<option value="${profile.id}">${profile.name}</option>`
+                    `<option value="${profile.id}">${profile.name}</option>`,
             )
             .join("");
     }
@@ -1615,7 +1615,7 @@ class PopupManager {
             if (response.success) {
                 this.showPopupMessage(
                     "Template deleted successfully!",
-                    "success"
+                    "success",
                 );
                 // Refresh the templates list
                 this.loadSessionsData();
@@ -1642,7 +1642,7 @@ class PopupManager {
             if (response.success) {
                 this.showPopupMessage(
                     "Session deleted successfully!",
-                    "success"
+                    "success",
                 );
                 // Refresh the sessions list
                 this.loadSessionsData();

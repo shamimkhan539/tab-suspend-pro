@@ -140,43 +140,18 @@ class AdsBlocker {
                 "*://*.wistia.net/*",
                 "*://*.wistia.com/*",
                 "*://*.vimeo.com/api/*",
-                // YouTube Tracking
-                "*://*.youtube.com/api/*",
-                "*://*.youtube.com/track/*",
-                "*://*.youtube.com/logging/*",
-                "*://*.youtube.com/youtubei/*",
-                "*://*.youtube.com/oembed/*",
-                "*://*.youtube.com/embed/*",
-                "*://*.m.youtube.com/api/*",
-                "*://*.m.youtube.com/youtubei/*",
-                "*://*.www.youtube.com/api/*",
-                "*://*.www.youtube.com/youtubei/*",
-                // YouTube Music Tracking
-                "*://*.music.youtube.com/api/*",
-                "*://*.music.youtube.com/logging/*",
-                "*://*.music.youtube.com/youtubei/*",
-                "*://*.music.youtube.com/tracking/*",
-                // Google Analytics for YouTube
+                // YouTube Analytics Tracking (only actual tracking endpoints, not player/embed)
                 "*://*.youtube.com/s/player/*analytics*",
-                "*://*.yt4.ggpht.com/*",
             ],
 
-            // Banner Ads (including responsive banners and YouTube ads)
+            // Banner Ads (real ad-serving domains only)
             banners: [
-                "*://*.adsbygoogle.js/*",
-                "*://*.banner.js/*",
-                "*://*.banners/*",
-                "*://*.ad-banner/*",
                 "*://*.ads.google.com/*",
-                "*://*.pagead.js/*",
-                "*://*.show_ads.js/*",
-                "*://*.widgetads.js/*",
-                "*://*.pub.min.js/*",
-                // YouTube Banner Ad Scripts
+                "*://*.pagead2.googlesyndication.com/pagead/*",
+                "*://*.adssettings.google.com/*",
+                // YouTube Banner Ad Scripts (player-level ad scripts only, not the player itself)
                 "*://*.youtube.com/s/player/*banner*",
                 "*://*.youtube.com/s/player/*ads*",
-                "*://*.youtube.com/js/www-player*",
-                "*://*.youtube.com/js/player*",
                 // YouTube Music Banner Ad Scripts
                 "*://*.music.youtube.com/s/player/*banner*",
                 "*://*.music.youtube.com/s/player/*ads*",
@@ -256,7 +231,7 @@ class AdsBlocker {
             } else {
                 // Fallback: check sync storage if local storage is empty
                 console.log(
-                    "[AdsBlocker] No settings in local storage, checking sync storage..."
+                    "[AdsBlocker] No settings in local storage, checking sync storage...",
                 );
                 const syncResult = await chrome.storage.sync.get([
                     "consolidatedSettings",
@@ -271,7 +246,7 @@ class AdsBlocker {
                         adsBlockerSettings: this.settings,
                     });
                     console.log(
-                        "[AdsBlocker] Loaded settings from sync storage and synced to local"
+                        "[AdsBlocker] Loaded settings from sync storage and synced to local",
                     );
                 }
             }
@@ -343,11 +318,24 @@ class AdsBlocker {
             }
 
             console.log(
-                `Ads Blocker: Setup ${rulesToAdd.length} blocking rules`
+                `Ads Blocker: Setup ${rulesToAdd.length} blocking rules`,
             );
         } catch (error) {
             console.error("Error setting up blocking rules:", error);
         }
+    }
+
+    // Convert a Chrome match pattern (e.g. *://*.doubleclick.net/*) to a
+    // declarativeNetRequest urlFilter (e.g. ||doubleclick.net/).
+    // Rules:
+    //   *://*.domain/path* → ||domain/path   (domain anchor, strip trailing *)
+    //   *://domain/path*   → ||domain/path
+    //   interior * wildcards are kept as-is.
+    _matchPatternToUrlFilter(pattern) {
+        return pattern
+            .replace(/^\*:\/\/\*\./, "||") // *://*. → || (domain anchor + subdomain wildcard)
+            .replace(/^\*:\/\//, "||") // *://  → || (domain anchor)
+            .replace(/\*$/, ""); // remove trailing * (implicit in DNR)
     }
 
     generateRules() {
@@ -361,29 +349,47 @@ class AdsBlocker {
             this.settings.blockPopups && "popups",
         ].filter(Boolean);
 
+        // Build the whitelist condition once — exclude requests initiated from
+        // whitelisted domains so those sites are not affected.
+        const whitelistedDomains = Array.isArray(
+            this.settings.whitelistedDomains,
+        )
+            ? this.settings.whitelistedDomains.filter(Boolean)
+            : [];
+
         categories.forEach((category) => {
             const patterns = this.filterLists[category] || [];
             patterns.forEach((pattern) => {
                 if (this.currentRuleId > 100000) this.currentRuleId = 10000; // Reset if needed
 
+                const urlFilter = this._matchPatternToUrlFilter(pattern);
+                if (!urlFilter) {
+                    this.currentRuleId++;
+                    return; // skip empty/invalid filters
+                }
+
+                const condition = {
+                    urlFilter,
+                    resourceTypes: [
+                        "script",
+                        "image",
+                        "stylesheet",
+                        "font",
+                        "sub_frame",
+                        "media",
+                        "xmlhttprequest",
+                    ],
+                };
+
+                if (whitelistedDomains.length > 0) {
+                    condition.excludedInitiatorDomains = whitelistedDomains;
+                }
+
                 const rule = {
                     id: this.currentRuleId,
                     priority: 1,
-                    action: {
-                        type: "block",
-                    },
-                    condition: {
-                        urlFilter: pattern.replace(/\*/g, ""),
-                        resourceTypes: [
-                            "script",
-                            "image",
-                            "stylesheet",
-                            "font",
-                            "sub_frame",
-                            "media",
-                            "xmlhttprequest",
-                        ],
-                    },
+                    action: { type: "block" },
+                    condition,
                 };
 
                 rules.push(rule);
@@ -593,7 +599,7 @@ class AdsBlocker {
                             console.debug(
                                 "Invalid URL in tab stats:",
                                 tab.url,
-                                urlError
+                                urlError,
                             );
                         }
                     }

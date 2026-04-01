@@ -6,132 +6,185 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Tab Suspended</title>
     <style>
-        body {
-            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        * {
+            box-sizing: border-box;
             margin: 0;
             padding: 0;
-            display: flex;
-            justify-content: center;
-            align-items: center;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", system-ui, sans-serif;
+            background: #f0f2f8;
+            color: #1a1d2e;
             min-height: 100vh;
-            color: white;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 24px;
         }
 
-        .container {
+        .card {
+            background: #ffffff;
+            border: 1px solid #e2e5ef;
+            border-radius: 14px;
+            box-shadow: 0 4px 24px rgba(0, 0, 0, .08);
+            padding: 36px 32px 28px;
+            max-width: 480px;
+            width: 100%;
             text-align: center;
-            padding: 2rem;
-            border-radius: 12px;
-            background: rgba(255, 255, 255, 0.1);
-            backdrop-filter: blur(10px);
-            border: 1px solid rgba(255, 255, 255, 0.2);
-            max-width: 500px;
-            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
         }
 
-        .icon {
-            font-size: 4rem;
-            margin-bottom: 1rem;
-            opacity: 0.8;
+        .brand {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
+            margin-bottom: 28px;
+        }
+
+        .brand img {
+            width: 32px;
+            height: 32px;
+            border-radius: 8px;
+        }
+
+        .brand-name {
+            font-size: 15px;
+            font-weight: 700;
+            color: #4f46e5;
+        }
+
+        .sleep-icon {
+            font-size: 48px;
+            line-height: 1;
+            margin-bottom: 12px;
         }
 
         h1 {
-            margin: 0 0 1rem 0;
-            font-size: 2rem;
-            font-weight: 300;
+            font-size: 22px;
+            font-weight: 700;
+            color: #1a1d2e;
+            margin-bottom: 6px;
+        }
+
+        .subtitle {
+            font-size: 13.5px;
+            color: #5a607a;
+            margin-bottom: 24px;
         }
 
         .tab-info {
-            background: rgba(0, 0, 0, 0.2);
-            padding: 1rem;
-            border-radius: 8px;
-            margin: 1.5rem 0;
+            background: #f7f8fc;
+            border: 1px solid #e2e5ef;
+            border-radius: 10px;
+            padding: 14px 16px;
+            margin-bottom: 24px;
             display: flex;
             align-items: center;
             gap: 12px;
+            text-align: left;
         }
 
-        .favicon {
-            width: 24px;
-            height: 24px;
+        #favicon {
+            width: 22px;
+            height: 22px;
             border-radius: 4px;
             flex-shrink: 0;
         }
 
-        .tab-title {
-            font-weight: 500;
-            text-align: left;
+        .tab-text {
+            flex: 1;
+            min-width: 0;
+        }
+
+        #tab-title {
+            font-size: 13.5px;
+            font-weight: 600;
+            color: #1a1d2e;
             overflow: hidden;
             text-overflow: ellipsis;
             white-space: nowrap;
         }
 
-        .tab-url {
-            font-size: 0.85rem;
-            opacity: 0.7;
-            text-align: left;
+        #tab-url {
+            font-size: 11.5px;
+            color: #9ba3bf;
+            margin-top: 3px;
             overflow: hidden;
             text-overflow: ellipsis;
             white-space: nowrap;
         }
 
-        .restore-btn {
-            background: rgba(255, 255, 255, 0.2);
-            border: 2px solid rgba(255, 255, 255, 0.3);
-            color: white;
-            padding: 12px 24px;
-            border-radius: 6px;
-            font-size: 1rem;
+        #restore-btn {
+            background: #4f46e5;
+            color: #fff;
+            border: none;
+            padding: 12px 32px;
+            border-radius: 8px;
+            font-size: 14px;
+            font-weight: 600;
+            font-family: inherit;
             cursor: pointer;
-            transition: all 0.2s ease;
-            margin: 0.5rem;
+            transition: background .15s, transform .1s;
+            margin-bottom: 18px;
         }
 
-        .restore-btn:hover {
-            background: rgba(255, 255, 255, 0.3);
-            border-color: rgba(255, 255, 255, 0.5);
-            transform: translateY(-2px);
+        #restore-btn:hover {
+            background: #4338ca;
+            transform: translateY(-1px);
         }
 
-        .memory-saved {
-            font-size: 0.9rem;
-            opacity: 0.8;
-            margin-top: 1rem;
+        #restore-btn:active {
+            transform: translateY(0);
         }
 
-        .auto-restore {
-            font-size: 0.85rem;
-            opacity: 0.7;
-            margin-top: 1rem;
-            font-style: italic;
+        .memory-badge {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            background: #ecfdf5;
+            color: #10b981;
+            border: 1px solid #a7f3d0;
+            border-radius: 20px;
+            padding: 5px 14px;
+            font-size: 12.5px;
+            font-weight: 600;
+            margin-bottom: 14px;
+        }
+
+        .hint {
+            font-size: 12px;
+            color: #9ba3bf;
         }
     </style>
 </head>
 
 <body>
-    <div class="container">
-        <div class="icon"><img class="logo" src="../assets/icons/icon128.png" alt=""></div>
+    <div class="card">
+        <div class="brand">
+            <img src="../assets/icons/icon32.png" alt="">
+            <span class="brand-name">BrowserGuard Pro</span>
+        </div>
+
+        <div class="sleep-icon">💤</div>
         <h1>Tab Suspended</h1>
+        <p class="subtitle">This tab has been suspended to save memory.</p>
 
         <div class="tab-info">
-            <img class="favicon" id="favicon" src="" alt="">
-            <div style="flex: 1; min-width: 0;">
-                <div class="tab-title" id="tab-title"></div>
-                <div class="tab-url" id="tab-url"></div>
+            <img id="favicon" src="" alt="">
+            <div class="tab-text">
+                <div id="tab-title"></div>
+                <div id="tab-url"></div>
             </div>
         </div>
 
-        <button class="restore-btn" id="restore-btn">
-            🔄 Restore Tab
-        </button>
+        <button id="restore-btn">Restore Tab</button>
 
-        <div class="memory-saved">
-            💾 Estimated memory saved: <span id="memory-estimate">~50MB</span>
+        <div class="memory-badge">
+            💾 Memory saved: <span id="memory-estimate">~50 MB</span>
         </div>
 
-        <div class="auto-restore">
-            This tab will automatically restore when you click on it
-        </div>
+        <p class="hint">Click Restore Tab or simply click on this tab to resume.</p>
     </div>
 
     <script src="suspended.js"></script>
