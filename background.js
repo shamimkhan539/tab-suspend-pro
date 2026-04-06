@@ -10,7 +10,7 @@ importScripts(
     "src/modules/privacy/privacy-manager.js",
     "src/modules/cloud-sync/cloud-backup.js",
     "src/modules/tracker-blocker/tracker-blocker.js",
-    "src/modules/ads-blocker/ads-blocker.js"
+    "src/modules/ads-blocker/ads-blocker.js",
 );
 
 // Background service worker for BrowserGuard Pro
@@ -74,7 +74,7 @@ class TabSuspendManager {
             this.startMonitoring();
             this.startMetadataCleanup();
             console.log(
-                `✅ BrowserGuard Pro initialized on ${browserInfo.name}`
+                `✅ BrowserGuard Pro initialized on ${browserInfo.name}`,
             );
         } catch (error) {
             console.error("Error initializing extension:", error);
@@ -89,10 +89,11 @@ class TabSuspendManager {
             ]);
             if (!stored.consolidatedSettings) {
                 console.log(
-                    "[Background] Initializing default settings on first install"
+                    "[Background] Initializing default settings on first install",
                 );
 
                 const defaults = {
+                    extensionEnabled: true,
                     adsBlocker: {
                         enabled: true,
                         blockYoutubeAds: true,
@@ -122,13 +123,13 @@ class TabSuspendManager {
                     trackerBlockerSettings: defaults.trackerBlocker,
                 });
                 console.log(
-                    "[Background] Default settings initialized and synced"
+                    "[Background] Default settings initialized and synced",
                 );
             }
         } catch (error) {
             console.log(
                 "[Background] Error initializing default settings:",
-                error
+                error,
             );
         }
     }
@@ -151,7 +152,7 @@ class TabSuspendManager {
                         "[Meta] Migrating metadata from version",
                         raw.version,
                         "to",
-                        this.metadataVersion
+                        this.metadataVersion,
                     );
                     // For now same shape; future migrations go here
                 }
@@ -184,14 +185,14 @@ class TabSuspendManager {
                 console.log(
                     "[Load] Restored metadata for",
                     this.suspendedMeta.size,
-                    "suspended tabs"
+                    "suspended tabs",
                 );
             }
             if (this.lostSuspended.length) {
                 console.log(
                     "[Load] Found",
                     this.lostSuspended.length,
-                    "previously lost suspended tabs"
+                    "previously lost suspended tabs",
                 );
             }
         } catch (e) {
@@ -220,7 +221,7 @@ class TabSuspendManager {
         try {
             const tabs = await chrome.tabs.query({});
             const suspendedPrefix = chrome.runtime.getURL(
-                "ui/suspended/suspended.html"
+                "ui/suspended/suspended.html",
             );
             let rebuilt = 0;
             for (const tab of tabs) {
@@ -257,7 +258,7 @@ class TabSuspendManager {
                 console.log(
                     "[Reconstruct] Rebuilt suspended tab state for",
                     rebuilt,
-                    "tabs after service worker start"
+                    "tabs after service worker start",
                 );
             }
         } catch (err) {
@@ -286,7 +287,7 @@ class TabSuspendManager {
             const isSessionRestore = await this.detectSessionRestore();
             if (isSessionRestore) {
                 console.log(
-                    "[Recreate] Session restore detected, handling carefully"
+                    "[Recreate] Session restore detected, handling carefully",
                 );
                 await this.handleSessionRestore();
                 return;
@@ -298,7 +299,7 @@ class TabSuspendManager {
             const tabs = await chrome.tabs.query({});
             const existingTabIds = new Set(tabs.map((t) => t.id));
             const suspendedPrefix = chrome.runtime.getURL(
-                "ui/suspended/suspended.html"
+                "ui/suspended/suspended.html",
             );
 
             // Also check existing suspended tabs to avoid duplicates
@@ -323,7 +324,7 @@ class TabSuspendManager {
                     // Check if we already have a suspended tab for this URL
                     if (existingSuspendedUrls.has(meta.originalUrl)) {
                         console.log(
-                            `[Recreate] Skipping duplicate for ${meta.originalUrl}`
+                            `[Recreate] Skipping duplicate for ${meta.originalUrl}`,
                         );
                         // Clean up the orphaned metadata
                         this.suspendedMeta.delete(tabId);
@@ -372,13 +373,13 @@ class TabSuspendManager {
                                             newGroupId,
                                             {
                                                 title: meta.groupTitle,
-                                            }
+                                            },
                                         );
                                     }
                                 } catch (groupError) {
                                     console.warn(
                                         "Failed to restore group for recreated tab:",
-                                        groupError
+                                        groupError,
                                     );
                                 }
                             }
@@ -391,17 +392,17 @@ class TabSuspendManager {
                         existingSuspendedUrls.add(meta.originalUrl);
 
                         console.log(
-                            `[Recreate] Restored suspended tab: ${meta.title}`
+                            `[Recreate] Restored suspended tab: ${meta.title}`,
                         );
                     } catch (error) {
                         console.warn(
                             `[Recreate] Failed to restore tab: ${meta.title}`,
-                            error
+                            error,
                         );
                         // Move to lost list if recreation fails
                         if (
                             !this.lostSuspended.some(
-                                (l) => l.originalUrl === meta.originalUrl
+                                (l) => l.originalUrl === meta.originalUrl,
                             )
                         ) {
                             this.lostSuspended.push({
@@ -419,7 +420,7 @@ class TabSuspendManager {
             if (recreated > 0) {
                 await this.persistSuspendedMeta();
                 console.log(
-                    `[Recreate] Successfully recreated ${recreated} suspended tabs after extension reload`
+                    `[Recreate] Successfully recreated ${recreated} suspended tabs after extension reload`,
                 );
 
                 // Show notification to user
@@ -447,7 +448,7 @@ class TabSuspendManager {
         try {
             const tabs = await chrome.tabs.query({});
             const suspendedPrefix = chrome.runtime.getURL(
-                "ui/suspended/suspended.html"
+                "ui/suspended/suspended.html",
             );
 
             // Get all original URLs from suspended tabs
@@ -493,12 +494,12 @@ class TabSuspendManager {
     async handleSessionRestore() {
         try {
             console.log(
-                "[SessionRestore] Handling browser session restoration"
+                "[SessionRestore] Handling browser session restoration",
             );
 
             const tabs = await chrome.tabs.query({});
             const suspendedPrefix = chrome.runtime.getURL(
-                "ui/suspended/suspended.html"
+                "ui/suspended/suspended.html",
             );
 
             // Map suspended tabs to their original URLs and groups
@@ -535,7 +536,7 @@ class TabSuspendManager {
                 if (normalTab) {
                     // We have both suspended and normal versions
                     console.log(
-                        `[SessionRestore] Found duplicate for: ${originalUrl}`
+                        `[SessionRestore] Found duplicate for: ${originalUrl}`,
                     );
 
                     if (normalTab.groupId && normalTab.groupId !== -1) {
@@ -544,10 +545,10 @@ class TabSuspendManager {
 
                         // Clean up metadata for suspended tab
                         this.suspendedMeta.delete(
-                            suspendedInfo.suspendedTab.id
+                            suspendedInfo.suspendedTab.id,
                         );
                         this.suspendedTabs.delete(
-                            suspendedInfo.suspendedTab.id
+                            suspendedInfo.suspendedTab.id,
                         );
                     } else {
                         // Normal tab is not in a group
@@ -570,20 +571,20 @@ class TabSuspendManager {
                                     });
                                     // Try to get group title from metadata if available
                                     const meta = this.suspendedMeta.get(
-                                        suspendedInfo.suspendedTab.id
+                                        suspendedInfo.suspendedTab.id,
                                     );
                                     if (meta && meta.groupTitle) {
                                         await chrome.tabGroups.update(
                                             newGroupId,
                                             {
                                                 title: meta.groupTitle,
-                                            }
+                                            },
                                         );
                                     }
                                 } catch (groupError) {
                                     console.warn(
                                         "[SessionRestore] Failed to restore group:",
-                                        groupError
+                                        groupError,
                                     );
                                 }
                             }
@@ -594,10 +595,10 @@ class TabSuspendManager {
 
                         // Clean up metadata
                         this.suspendedMeta.delete(
-                            suspendedInfo.suspendedTab.id
+                            suspendedInfo.suspendedTab.id,
                         );
                         this.suspendedTabs.delete(
-                            suspendedInfo.suspendedTab.id
+                            suspendedInfo.suspendedTab.id,
                         );
                     }
                 }
@@ -606,7 +607,7 @@ class TabSuspendManager {
             // Close duplicate suspended tabs
             if (tabsToClose.length > 0) {
                 console.log(
-                    `[SessionRestore] Closing ${tabsToClose.length} duplicate suspended tabs`
+                    `[SessionRestore] Closing ${tabsToClose.length} duplicate suspended tabs`,
                 );
                 for (const tabId of tabsToClose) {
                     try {
@@ -614,7 +615,7 @@ class TabSuspendManager {
                     } catch (error) {
                         console.warn(
                             `[SessionRestore] Failed to close tab ${tabId}:`,
-                            error
+                            error,
                         );
                     }
                 }
@@ -624,7 +625,7 @@ class TabSuspendManager {
             await this.persistSuspendedMeta();
 
             console.log(
-                "[SessionRestore] Session restoration cleanup completed"
+                "[SessionRestore] Session restoration cleanup completed",
             );
         } catch (error) {
             console.error("Error handling session restore:", error);
@@ -658,7 +659,7 @@ class TabSuspendManager {
                         try {
                             const suspendedUrl =
                                 chrome.runtime.getURL(
-                                    "ui/suspended/suspended.html"
+                                    "ui/suspended/suspended.html",
                                 ) +
                                 "?url=" +
                                 encodeURIComponent(meta.originalUrl) +
@@ -683,12 +684,12 @@ class TabSuspendManager {
                             recoveredCount++;
 
                             console.log(
-                                `[Recovery] Recovered missing suspended tab: ${meta.title}`
+                                `[Recovery] Recovered missing suspended tab: ${meta.title}`,
                             );
                         } catch (error) {
                             console.warn(
                                 `[Recovery] Failed to recover tab: ${meta.title}`,
-                                error
+                                error,
                             );
                         }
                     }
@@ -698,7 +699,7 @@ class TabSuspendManager {
             if (recoveredCount > 0) {
                 await this.persistSuspendedMeta();
                 console.log(
-                    `[Recovery] Recovered ${recoveredCount} missing suspended tabs`
+                    `[Recovery] Recovered ${recoveredCount} missing suspended tabs`,
                 );
             }
         } catch (error) {
@@ -724,7 +725,7 @@ class TabSuspendManager {
                         if (
                             isOldEnough &&
                             !this.lostSuspended.some(
-                                (l) => l.originalUrl === meta.originalUrl
+                                (l) => l.originalUrl === meta.originalUrl,
                             )
                         ) {
                             this.lostSuspended.push({
@@ -743,7 +744,7 @@ class TabSuspendManager {
                 console.log(
                     "[Cleanup] Moved",
                     moved,
-                    "orphaned suspended entries to lost list"
+                    "orphaned suspended entries to lost list",
                 );
                 this.persistSuspendedMeta();
             }
@@ -751,13 +752,13 @@ class TabSuspendManager {
             const weekAgo = Date.now() - 7 * 24 * 60 * 60 * 1000;
             const before = this.lostSuspended.length;
             this.lostSuspended = this.lostSuspended.filter(
-                (l) => (l.lostAt || l.suspendedAt || 0) > weekAgo
+                (l) => (l.lostAt || l.suspendedAt || 0) > weekAgo,
             );
             if (this.lostSuspended.length !== before) {
                 console.log(
                     "[Cleanup] Pruned",
                     before - this.lostSuspended.length,
-                    "stale lost entries"
+                    "stale lost entries",
                 );
                 this.persistSuspendedMeta();
             }
@@ -774,7 +775,7 @@ class TabSuspendManager {
             if (stored.tabSuspendSettings) {
                 this.settings = Object.assign(
                     this.settings,
-                    stored.tabSuspendSettings
+                    stored.tabSuspendSettings,
                 );
             }
 
@@ -786,7 +787,7 @@ class TabSuspendManager {
             if (consolidated.consolidatedSettings) {
                 console.log(
                     "[Background] Loading consolidated settings:",
-                    consolidated.consolidatedSettings
+                    consolidated.consolidatedSettings,
                 );
 
                 if (consolidated.consolidatedSettings.adsBlocker) {
@@ -795,7 +796,7 @@ class TabSuspendManager {
                             consolidated.consolidatedSettings.adsBlocker,
                     });
                     console.log(
-                        "[Background] Ads blocker settings synced to local storage"
+                        "[Background] Ads blocker settings synced to local storage",
                     );
                 }
                 if (consolidated.consolidatedSettings.trackerBlocker) {
@@ -804,12 +805,12 @@ class TabSuspendManager {
                             consolidated.consolidatedSettings.trackerBlocker,
                     });
                     console.log(
-                        "[Background] Tracker blocker settings synced to local storage"
+                        "[Background] Tracker blocker settings synced to local storage",
                     );
                 }
             } else {
                 console.log(
-                    "[Background] No consolidated settings found in sync storage"
+                    "[Background] No consolidated settings found in sync storage",
                 );
             }
         } catch (error) {
@@ -980,7 +981,7 @@ class TabSuspendManager {
                 ) {
                     console.log(
                         "Suspended tab was restored externally:",
-                        tabId
+                        tabId,
                     );
                     this.suspendedTabs.delete(tabId);
                 }
@@ -1005,7 +1006,7 @@ class TabSuspendManager {
                 ) {
                     const meta = this.suspendedMeta.get(tabId);
                     console.log(
-                        `[TabRemoved] Preserving metadata for suspended tab: ${meta.title}`
+                        `[TabRemoved] Preserving metadata for suspended tab: ${meta.title}`,
                     );
                     // Don't delete metadata immediately - let cleanup process handle it
                     // or restoreOrphanedSuspendedTabs will recreate it
@@ -1019,7 +1020,7 @@ class TabSuspendManager {
                 if (changes.tabSuspendSettings) {
                     this.settings = Object.assign(
                         this.settings,
-                        changes.tabSuspendSettings.newValue
+                        changes.tabSuspendSettings.newValue,
                     );
                 }
             });
@@ -1068,7 +1069,7 @@ class TabSuspendManager {
             (message, sender, sendResponse) => {
                 this.handleMessage(message, sender, sendResponse);
                 return true;
-            }
+            },
         );
     }
 
@@ -1129,7 +1130,7 @@ class TabSuspendManager {
                 case "saveTabGroup":
                     const savedGroup = await this.saveTabGroup(
                         message.groupId,
-                        message.options
+                        message.options,
                     );
                     sendResponse({ success: true, group: savedGroup });
                     break;
@@ -1144,7 +1145,7 @@ class TabSuspendManager {
                 case "restoreSavedGroup":
                     const result = await this.restoreSavedGroup(
                         message.groupId,
-                        message.options
+                        message.options,
                     );
                     sendResponse({ success: true, result: result });
                     break;
@@ -1159,7 +1160,7 @@ class TabSuspendManager {
                 case "importSavedGroups":
                     const importResult = await this.importSavedGroups(
                         message.fileContent,
-                        message.mergeMode
+                        message.mergeMode,
                     );
                     sendResponse({ success: true, result: importResult });
                     break;
@@ -1168,7 +1169,7 @@ class TabSuspendManager {
                 case "saveCompleteSession":
                     const session =
                         await this.sessionManager.saveCompleteSession(
-                            message.name
+                            message.name,
                         );
                     sendResponse({ success: true, session });
                     break;
@@ -1176,13 +1177,13 @@ class TabSuspendManager {
                     const restoreResult =
                         await this.sessionManager.restoreSession(
                             message.sessionId,
-                            message.options
+                            message.options,
                         );
                     sendResponse({ success: true, result: restoreResult });
                     break;
                 case "getSessions":
                     const sessions = await this.sessionManager.getSessions(
-                        message.limit
+                        message.limit,
                     );
                     sendResponse({ success: true, sessions });
                     break;
@@ -1190,7 +1191,7 @@ class TabSuspendManager {
                     const template =
                         await this.sessionManager.createSessionTemplate(
                             message.name,
-                            message.workflowType
+                            message.workflowType,
                         );
                     sendResponse({ success: true, template });
                     break;
@@ -1200,7 +1201,7 @@ class TabSuspendManager {
                     break;
                 case "deleteSessionTemplate":
                     await this.sessionManager.deleteTemplate(
-                        message.templateId
+                        message.templateId,
                     );
                     sendResponse({ success: true });
                     break;
@@ -1212,7 +1213,7 @@ class TabSuspendManager {
                 // Smart Organization
                 case "switchProfile":
                     const profile = await this.smartOrganizer.switchProfile(
-                        message.profileId
+                        message.profileId,
                     );
                     sendResponse({ success: true, profile });
                     break;
@@ -1224,20 +1225,20 @@ class TabSuspendManager {
                     const newProfile = await this.smartOrganizer.createProfile(
                         message.name,
                         message.description,
-                        message.rules
+                        message.rules,
                     );
                     sendResponse({ success: true, profile: newProfile });
                     break;
                 case "groupByTimeOpened":
                     await this.smartOrganizer.groupByTimeOpened(
-                        message.windowId
+                        message.windowId,
                     );
                     sendResponse({ success: true });
                     break;
                 case "convertGroupToBookmarks":
                     const bookmarkFolder =
                         await this.smartOrganizer.convertGroupToBookmarks(
-                            message.groupId
+                            message.groupId,
                         );
                     sendResponse({ success: true, folder: bookmarkFolder });
                     break;
@@ -1262,7 +1263,7 @@ class TabSuspendManager {
                     break;
                 case "enableFocusMode":
                     await this.activityAnalytics.enableFocusMode(
-                        message.options
+                        message.options,
                     );
                     sendResponse({ success: true });
                     break;
@@ -1272,14 +1273,14 @@ class TabSuspendManager {
                     break;
                 case "updateDailyGoals":
                     await this.activityAnalytics.updateDailyGoals(
-                        message.goals
+                        message.goals,
                     );
                     sendResponse({ success: true });
                     break;
                 case "getSiteStats":
                     const siteStats =
                         await this.activityAnalytics.getDetailedSiteStats(
-                            message.domain
+                            message.domain,
                         );
                     sendResponse({ success: true, stats: siteStats });
                     break;
@@ -1317,7 +1318,7 @@ class TabSuspendManager {
                 case "authenticateCloudProvider":
                     const authResult =
                         await this.cloudBackup.authenticateProvider(
-                            message.provider
+                            message.provider,
                         );
                     sendResponse({ success: true, result: authResult });
                     break;
@@ -1366,7 +1367,7 @@ class TabSuspendManager {
                     break;
                 case "focus-start":
                     await this.activityAnalytics.enableFocusMode(
-                        message.options || {}
+                        message.options || {},
                     );
                     sendResponse({ success: true });
                     break;
@@ -1378,7 +1379,7 @@ class TabSuspendManager {
                     const currentSession =
                         await this.sessionManager.saveCompleteSession(
                             message.name ||
-                                `Session ${new Date().toLocaleString()}`
+                                `Session ${new Date().toLocaleString()}`,
                         );
                     sendResponse({ success: true, session: currentSession });
                     break;
@@ -1414,7 +1415,7 @@ class TabSuspendManager {
                 case "privacy-update-setting":
                     await this.privacyManager.updateSetting(
                         message.setting,
-                        message.value
+                        message.value,
                     );
                     sendResponse({ success: true });
                     break;
@@ -1439,14 +1440,14 @@ class TabSuspendManager {
                 case "cloud-connect-provider":
                     const connectResult =
                         await this.cloudBackup.authenticateProvider(
-                            message.provider
+                            message.provider,
                         );
                     sendResponse({ success: true, result: connectResult });
                     break;
                 case "cloud-disconnect-provider":
                     const disconnectResult =
                         await this.cloudBackup.disconnectProvider(
-                            message.provider
+                            message.provider,
                         );
                     sendResponse({ success: true, result: disconnectResult });
                     break;
@@ -1460,25 +1461,25 @@ class TabSuspendManager {
                     break;
                 case "analytics-get-stats":
                     const analyticsStats = await this.getAnalyticsStats(
-                        message.period
+                        message.period,
                     );
                     sendResponse({ success: true, stats: analyticsStats });
                     break;
                 case "analytics-get-usage-trends":
                     const usageTrends = await this.getUsageTrends(
-                        message.period
+                        message.period,
                     );
                     sendResponse({ success: true, data: usageTrends });
                     break;
                 case "analytics-get-performance-data":
                     const performanceData = await this.getPerformanceData(
-                        message.period
+                        message.period,
                     );
                     sendResponse({ success: true, data: performanceData });
                     break;
                 case "analytics-get-categories-data":
                     const categoriesData = await this.getCategoriesData(
-                        message.period
+                        message.period,
                     );
                     sendResponse({ success: true, data: categoriesData });
                     break;
@@ -1488,7 +1489,7 @@ class TabSuspendManager {
                     break;
                 case "analytics-get-insights":
                     const insights = await this.getAnalyticsInsights(
-                        message.period
+                        message.period,
                     );
                     sendResponse({ success: true, insights: insights });
                     break;
@@ -1513,7 +1514,7 @@ class TabSuspendManager {
                     break;
                 case "tracker-remove-whitelist":
                     await this.trackerBlocker.removeFromWhitelist(
-                        message.domain
+                        message.domain,
                     );
                     sendResponse({ success: true });
                     break;
@@ -1523,7 +1524,7 @@ class TabSuspendManager {
                     break;
                 case "tracker-remove-custom-filter":
                     await this.trackerBlocker.removeCustomFilter(
-                        message.pattern
+                        message.pattern,
                     );
                     sendResponse({ success: true });
                     break;
@@ -1570,7 +1571,7 @@ class TabSuspendManager {
                                 },
                                 () => {
                                     // Ignore errors for tabs that don't have content script
-                                }
+                                },
                             );
                         });
                     }
@@ -1616,7 +1617,7 @@ class TabSuspendManager {
                     try {
                         const authResult =
                             await this.cloudBackup.authenticateProvider(
-                                message.provider
+                                message.provider,
                             );
                         sendResponse({ success: true, ...authResult });
                     } catch (error) {
@@ -1684,13 +1685,13 @@ class TabSuspendManager {
 
                     console.log(
                         "[Background] Getting YouTube blocker settings. Local storage:",
-                        adsSettings
+                        adsSettings,
                     );
 
                     // If not in local storage, check sync storage (from consolidated settings)
                     if (!adsSettings.adsBlockerSettings) {
                         console.log(
-                            "[Background] Settings not in local storage, checking sync..."
+                            "[Background] Settings not in local storage, checking sync...",
                         );
                         const syncSettings = await chrome.storage.sync.get([
                             "consolidatedSettings",
@@ -1700,7 +1701,7 @@ class TabSuspendManager {
                                 syncSettings.consolidatedSettings.adsBlocker;
                             console.log(
                                 "[Background] Found in sync storage:",
-                                adsSettings.adsBlockerSettings
+                                adsSettings.adsBlockerSettings,
                             );
                         }
                     }
@@ -1720,12 +1721,12 @@ class TabSuspendManager {
                         };
                         console.log(
                             "[Background] Sending YouTube blocker settings:",
-                            response
+                            response,
                         );
                         sendResponse(response);
                     } else {
                         console.log(
-                            "[Background] No ads blocker settings found, using defaults (enabled)"
+                            "[Background] No ads blocker settings found, using defaults (enabled)",
                         );
                         // Default to enabled for YouTube ads blocking
                         sendResponse({
@@ -1743,7 +1744,7 @@ class TabSuspendManager {
                         });
                         console.log(
                             "[Background] Ads blocker settings updated:",
-                            message.settings.adsBlocker
+                            message.settings.adsBlocker,
                         );
                     }
                     sendResponse({ success: true });
@@ -1857,21 +1858,21 @@ class TabSuspendManager {
                 case "page-analytics-dashboard":
                     chrome.tabs.create({
                         url: chrome.runtime.getURL(
-                            "ui/dashboards/main/dashboard.html"
+                            "ui/dashboards/main/dashboard.html",
                         ),
                     });
                     break;
                 case "page-tracker-blocker":
                     chrome.tabs.create({
                         url: chrome.runtime.getURL(
-                            "ui/dashboards/tracker-blocker/tracker-dashboard.html"
+                            "ui/dashboards/tracker-blocker/tracker-dashboard.html",
                         ),
                     });
                     break;
                 case "page-ads-blocker":
                     chrome.tabs.create({
                         url: chrome.runtime.getURL(
-                            "ui/dashboards/ads-blocker/ads-dashboard.html"
+                            "ui/dashboards/ads-blocker/ads-dashboard.html",
                         ),
                     });
                     break;
@@ -1922,14 +1923,14 @@ class TabSuspendManager {
                 case "open-dashboard":
                     await chrome.tabs.create({
                         url: chrome.runtime.getURL(
-                            "ui/dashboards/main/dashboard.html"
+                            "ui/dashboards/main/dashboard.html",
                         ),
                     });
                     break;
                 case "save-session":
                     const session =
                         await this.sessionManager.saveCompleteSession(
-                            `Quick Session ${new Date().toLocaleTimeString()}`
+                            `Quick Session ${new Date().toLocaleTimeString()}`,
                         );
                     chrome.notifications.create({
                         type: "basic",
@@ -1951,7 +1952,7 @@ class TabSuspendManager {
             if (this.isWhitelisted(tab.url)) {
                 console.log(
                     "Tab is whitelisted, skipping suspension:",
-                    tab.url
+                    tab.url,
                 );
                 return;
             }
@@ -2007,7 +2008,7 @@ class TabSuspendManager {
             this.performanceAnalytics.recordSuspension(
                 tabId,
                 tab.url,
-                estimatedMemory
+                estimatedMemory,
             );
 
             await chrome.tabs.update(tabId, { url: suspendedUrl });
@@ -2047,7 +2048,7 @@ class TabSuspendManager {
             } catch (e) {
                 console.warn(
                     "Could not parse suspended tab URL for restoration",
-                    e
+                    e,
                 );
             }
 
@@ -2068,7 +2069,7 @@ class TabSuspendManager {
                 console.log("Tab restored");
             } else {
                 console.warn(
-                    "Original URL missing in suspended tab, cannot restore"
+                    "Original URL missing in suspended tab, cannot restore",
                 );
             }
         } catch (error) {
@@ -2304,7 +2305,7 @@ class TabSuspendManager {
             console.log(
                 "[RestoreLost] Restored",
                 toRestore.length,
-                "lost tabs"
+                "lost tabs",
             );
         } catch (e) {
             console.error("Error restoring lost tabs:", e);
@@ -2323,7 +2324,7 @@ class TabSuspendManager {
                     urlToAdd = urlObj.hostname;
                 } catch (error) {
                     const match = url.match(
-                        /(?:https?:\/\/)?(?:www\.)?([^\/]+)/
+                        /(?:https?:\/\/)?(?:www\.)?([^\/]+)/,
                     );
                     urlToAdd = match ? match[1] : url;
                 }
@@ -2571,12 +2572,12 @@ class TabSuspendManager {
                     !tab.url.startsWith("chrome-extension://") &&
                     !tab.url.startsWith("about:") &&
                     !tab.url.startsWith("edge://") &&
-                    !tab.url.includes("suspended.html")
+                    !tab.url.includes("suspended.html"),
             );
 
             if (validTabs.length === 0) {
                 throw new Error(
-                    "No valid tabs to save (filtered out extension and system pages)"
+                    "No valid tabs to save (filtered out extension and system pages)",
                 );
             }
 
@@ -2616,7 +2617,7 @@ class TabSuspendManager {
             });
 
             console.log(
-                `[SaveGroup] Saved group "${groupName}" with ${validTabs.length} tabs`
+                `[SaveGroup] Saved group "${groupName}" with ${validTabs.length} tabs`,
             );
             return savedGroup;
         } catch (error) {
@@ -2636,7 +2637,7 @@ class TabSuspendManager {
             const stored = await chrome.storage.local.get(["savedTabGroups"]);
             const savedGroups = stored.savedTabGroups || {};
             return Object.values(savedGroups).sort(
-                (a, b) => b.createdAt - a.createdAt
+                (a, b) => b.createdAt - a.createdAt,
             );
         } catch (error) {
             console.error("Error listing saved groups:", error);
@@ -2718,12 +2719,12 @@ class TabSuspendManager {
                         color: color || "grey",
                     });
                     console.log(
-                        `[RestoreGroup] Created group "${groupTitle}" with ${createdTabs.length} tabs`
+                        `[RestoreGroup] Created group "${groupTitle}" with ${createdTabs.length} tabs`,
                     );
                 } catch (groupError) {
                     console.warn(
                         "Could not create tab group after restore:",
-                        groupError
+                        groupError,
                     );
                 }
             }
@@ -2763,9 +2764,9 @@ class TabSuspendManager {
                                   (tabs) =>
                                       tabs.find((t) =>
                                           createdTabs.some(
-                                              (ct) => ct.id === t.id
-                                          )
-                                      )?.groupId
+                                              (ct) => ct.id === t.id,
+                                          ),
+                                      )?.groupId,
                               )
                         : null,
             };
@@ -2846,19 +2847,19 @@ class TabSuspendManager {
                 importData = JSON.parse(fileContent);
             } catch (parseError) {
                 throw new Error(
-                    "Invalid JSON format. Please select a valid export file."
+                    "Invalid JSON format. Please select a valid export file.",
                 );
             }
 
             if (!importData || typeof importData !== "object") {
                 throw new Error(
-                    "Invalid import file structure. Expected JSON object."
+                    "Invalid import file structure. Expected JSON object.",
                 );
             }
 
             if (!importData.groups || !Array.isArray(importData.groups)) {
                 throw new Error(
-                    "Invalid import file format. Missing 'groups' array."
+                    "Invalid import file format. Missing 'groups' array.",
                 );
             }
 
@@ -2875,7 +2876,7 @@ class TabSuspendManager {
                 const isDuplicate = Object.values(savedGroups).some(
                     (existing) =>
                         existing.name === group.name &&
-                        existing.tabCount === group.tabCount
+                        existing.tabCount === group.tabCount,
                 );
 
                 if (isDuplicate && mergeMode) {
@@ -3042,7 +3043,7 @@ class TabSuspendManager {
                         </div>
                         <div class="stat">
                             <h3>${Math.round(
-                                quickStats.memorySaved / (1024 * 1024)
+                                quickStats.memorySaved / (1024 * 1024),
                             )}MB</h3>
                             <p>Memory Saved</p>
                         </div>
@@ -3115,7 +3116,7 @@ class TabSuspendManager {
                     ? Math.floor(
                           (Date.now() - dashboardData.focusMode.startTime) /
                               1000 /
-                              60
+                              60,
                       )
                     : 0,
                 autoSuspensions: this.suspendedTabs.size,
@@ -3178,7 +3179,7 @@ class TabSuspendManager {
                     label: "CPU Usage",
                     value: Math.min(
                         100,
-                        Math.round((this.suspendedTabs.size / 10) * 20)
+                        Math.round((this.suspendedTabs.size / 10) * 20),
                     ),
                     unit: "%",
                 },
@@ -3236,7 +3237,7 @@ class TabSuspendManager {
 
             if (metrics.workSites) {
                 const workUsed = mostUsed.filter((site) =>
-                    metrics.workSites.has(site.domain)
+                    metrics.workSites.has(site.domain),
                 );
                 categories.push({
                     label: "Work",
