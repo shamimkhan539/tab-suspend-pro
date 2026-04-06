@@ -4,448 +4,669 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>BrowserGuard Pro - Settings</title>
+    <title>BrowserGuard Pro — Settings</title>
     <style>
+        :root {
+            --bg: #f5f6fa;
+            --surface: #ffffff;
+            --surface-hover: #f8f9ff;
+            --border: #e8eaf0;
+            --border-focus: #4f46e5;
+            --text: #1a1d2e;
+            --text-secondary: #6b7280;
+            --text-muted: #9ca3af;
+            --accent: #4f46e5;
+            --accent-hover: #4338ca;
+            --accent-light: #eef2ff;
+            --success: #10b981;
+            --success-light: #ecfdf5;
+            --danger: #ef4444;
+            --danger-light: #fef2f2;
+            --warning: #f59e0b;
+            --warning-light: #fffbeb;
+            --sidebar-width: 220px;
+            --radius: 10px;
+            --radius-sm: 6px;
+            --shadow: 0 1px 3px rgba(0, 0, 0, .08), 0 1px 2px rgba(0, 0, 0, .04);
+            --shadow-md: 0 4px 12px rgba(0, 0, 0, .08);
+        }
+
         * {
             box-sizing: border-box;
+            margin: 0;
+            padding: 0;
         }
 
         body {
-            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-            background: #ffffff;
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, sans-serif;
+            background: var(--bg);
+            color: var(--text);
             min-height: 100vh;
-            margin: 0;
-            padding: 0;
-            line-height: 1.6;
-            color: #333;
+            font-size: 14px;
+            line-height: 1.5;
         }
 
-        .container {
-            max-width: 800px;
-            margin: 0 auto;
-            padding: 20px;
+        /* ─── Layout ─────────────────────────────────────────────── */
+        .layout {
+            display: flex;
+            min-height: 100vh;
         }
 
-        .header {
-            background: #ffffff;
-            color: #333;
-            padding: 20px;
-            border-radius: 0;
+        /* ─── Sidebar ────────────────────────────────────────────── */
+        .sidebar {
+            width: var(--sidebar-width);
+            background: var(--surface);
+            border-right: 1px solid var(--border);
+            display: flex;
+            flex-direction: column;
+            position: fixed;
+            top: 0;
+            left: 0;
+            bottom: 0;
+            z-index: 10;
+        }
+
+        .sidebar-brand {
+            padding: 20px 16px 16px;
+            border-bottom: 1px solid var(--border);
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .sidebar-brand img {
+            width: 28px;
+            height: 28px;
+            border-radius: 6px;
+        }
+
+        .sidebar-brand-name {
+            font-size: 13px;
+            font-weight: 700;
+            color: var(--text);
+            line-height: 1.2;
+        }
+
+        .sidebar-brand-sub {
+            font-size: 10px;
+            color: var(--text-muted);
+            font-weight: 400;
+        }
+
+        .sidebar-nav {
+            flex: 1;
+            padding: 8px 8px;
+            overflow-y: auto;
+        }
+
+        .nav-section-label {
+            font-size: 10px;
+            font-weight: 600;
+            color: var(--text-muted);
+            text-transform: uppercase;
+            letter-spacing: .06em;
+            padding: 12px 8px 4px;
+        }
+
+        .nav-item {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            padding: 8px 10px;
+            border-radius: var(--radius-sm);
+            cursor: pointer;
+            color: var(--text-secondary);
+            font-size: 13px;
+            font-weight: 500;
+            transition: all .15s;
+            border: none;
+            background: none;
+            width: 100%;
+            text-align: left;
+        }
+
+        .nav-item:hover {
+            background: var(--surface-hover);
+            color: var(--text);
+        }
+
+        .nav-item.active {
+            background: var(--accent-light);
+            color: var(--accent);
+            font-weight: 600;
+        }
+
+        .nav-item .nav-icon {
+            font-size: 15px;
+            width: 20px;
             text-align: center;
-            margin-bottom: 20px;
-            border-bottom: 1px solid #e0e0e0;
+            flex-shrink: 0;
         }
 
-        .header h1 {
-            margin: 0;
-            font-size: 2rem;
-            font-weight: 600;
-            color: #333;
+        .sidebar-footer {
+            padding: 12px;
+            border-top: 1px solid var(--border);
         }
 
-        .header p {
-            margin: 0.5rem 0 0 0;
-            color: #666;
+        /* ─── Main ───────────────────────────────────────────────── */
+        .main {
+            margin-left: var(--sidebar-width);
+            flex: 1;
+            display: flex;
+            flex-direction: column;
         }
 
-        .settings-section {
-            background: #ffffff;
-            padding: 20px;
-            border-radius: 0;
-            margin-bottom: 20px;
-            border-bottom: 1px solid #e0e0e0;
+        .topbar {
+            background: var(--surface);
+            border-bottom: 1px solid var(--border);
+            padding: 14px 28px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            position: sticky;
+            top: 0;
+            z-index: 5;
         }
 
-        .section-title {
-            font-size: 1.25rem;
-            font-weight: 600;
-            margin: 0 0 20px 0;
-            color: #333;
+        .topbar-title {
+            font-size: 16px;
+            font-weight: 700;
+            color: var(--text);
+        }
+
+        .topbar-actions {
             display: flex;
             align-items: center;
             gap: 8px;
         }
 
-        .setting-item {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            padding: 20px 0;
-            border-bottom: 1px solid #e0e0e0;
+        .content-area {
+            padding: 28px;
+            max-width: 760px;
         }
 
-        .setting-item:last-child {
+        /* ─── Tab Panels ─────────────────────────────────────────── */
+        .tab-panel {
+            display: none;
+        }
+
+        .tab-panel.active {
+            display: block;
+            animation: fadeSlide .2s ease;
+        }
+
+        @keyframes fadeSlide {
+            from {
+                opacity: 0;
+                transform: translateY(6px);
+            }
+
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        /* ─── Card ───────────────────────────────────────────────── */
+        .card {
+            background: var(--surface);
+            border: 1px solid var(--border);
+            border-radius: var(--radius);
+            margin-bottom: 16px;
+            box-shadow: var(--shadow);
+            overflow: hidden;
+        }
+
+        .card-header {
+            padding: 14px 20px;
+            border-bottom: 1px solid var(--border);
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .card-header h2 {
+            font-size: 14px;
+            font-weight: 600;
+            color: var(--text);
+        }
+
+        .card-header .header-icon {
+            font-size: 16px;
+        }
+
+        .card-header-badge {
+            margin-left: auto;
+        }
+
+        /* ─── Setting Row ────────────────────────────────────────── */
+        .setting-row {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 14px 20px;
+            border-bottom: 1px solid var(--border);
+            gap: 16px;
+            transition: background .1s;
+        }
+
+        .setting-row:last-child {
             border-bottom: none;
+        }
+
+        .setting-row:hover {
+            background: var(--surface-hover);
         }
 
         .setting-info {
             flex: 1;
+            min-width: 0;
         }
 
         .setting-label {
+            font-size: 13.5px;
             font-weight: 500;
-            margin-bottom: 0.25rem;
-            color: #333;
+            color: var(--text);
+            margin-bottom: 1px;
         }
 
-        .setting-description {
-            font-size: 0.9rem;
-            color: #666;
+        .setting-desc {
+            font-size: 12px;
+            color: var(--text-secondary);
+            line-height: 1.4;
         }
 
         .setting-control {
-            margin-left: 20px;
+            flex-shrink: 0;
         }
 
+        /* ─── Toggle ─────────────────────────────────────────────── */
         .toggle {
             position: relative;
-            width: 50px;
+            width: 44px;
             height: 24px;
-            background: #e0e0e0;
-            border: 1px solid #d0d0d0;
+            background: #d1d5db;
             border-radius: 12px;
             cursor: pointer;
-            transition: all 0.3s ease;
+            transition: background .2s;
+            flex-shrink: 0;
         }
 
         .toggle.active {
-            background: #4caf50;
-            border-color: #45a049;
+            background: var(--accent);
         }
 
         .toggle::after {
             content: '';
             position: absolute;
-            width: 20px;
-            height: 20px;
+            width: 18px;
+            height: 18px;
+            background: #fff;
             border-radius: 50%;
-            background: white;
-            top: 2px;
-            left: 2px;
-            transition: transform 0.2s;
+            top: 3px;
+            left: 3px;
+            transition: transform .2s;
+            box-shadow: 0 1px 3px rgba(0, 0, 0, .2);
         }
 
         .toggle.active::after {
-            transform: translateX(26px);
+            transform: translateX(20px);
+        }
+
+        /* ─── Inputs ─────────────────────────────────────────────── */
+        input[type="number"],
+        input[type="text"],
+        input[type="time"],
+        select,
+        textarea {
+            padding: 7px 10px;
+            border: 1px solid var(--border);
+            border-radius: var(--radius-sm);
+            font-size: 13px;
+            font-family: inherit;
+            color: var(--text);
+            background: var(--surface);
+            outline: none;
+            transition: border-color .15s;
+        }
+
+        input[type="number"]:focus,
+        input[type="text"]:focus,
+        input[type="time"]:focus,
+        select:focus,
+        textarea:focus {
+            border-color: var(--border-focus);
+            box-shadow: 0 0 0 3px rgba(79, 70, 229, .1);
         }
 
         .time-input {
             display: flex;
             align-items: center;
-            gap: 8px;
+            gap: 6px;
         }
 
-        .time-input input {
-            width: 80px;
-            padding: 8px 12px;
-            border: 1px solid #d0d0d0;
-            border-radius: 4px;
-            font-size: 0.9rem;
-            background: #ffffff;
-            color: #333;
+        .time-input input[type="number"] {
+            width: 72px;
         }
 
-        .time-input select {
-            padding: 8px 12px;
-            border: 1px solid #d0d0d0;
-            border-radius: 4px;
-            font-size: 0.9rem;
-            background: #ffffff;
-            color: #333;
-        }
-
-        .group-list {
-            max-height: 200px;
-            overflow-y: auto;
-            border: 1px solid #d0d0d0;
-            border-radius: 4px;
-            margin-top: 0.5rem;
-            background: #f5f5f5;
-        }
-
-        .group-item {
-            display: flex;
-            align-items: center;
-            padding: 12px;
-            border-bottom: 1px solid #e0e0e0;
-            background: #ffffff;
-            transition: background-color 0.3s ease;
-        }
-
-        .group-item:hover {
-            background: #f9f9f9;
-        }
-
-        .group-item:last-child {
-            border-bottom: none;
-        }
-
-        .group-checkbox {
-            margin-right: 8px;
-        }
-
-        .group-name {
-            flex: 1;
-            font-size: 0.9rem;
-        }
-
-        .group-count {
-            font-size: 0.8rem;
-            color: #666;
-        }
-
-        .whitelist-section {
-            margin-top: 20px;
-        }
-
-        .url-input {
-            display: flex;
-            gap: 8px;
-            margin-bottom: 12px;
-        }
-
-        .url-input input {
-            flex: 1;
-            padding: 10px 12px;
-            border: 1px solid #d0d0d0;
-            border-radius: 4px;
-            font-size: 0.9rem;
-            background: #ffffff;
-            color: #333;
-        }
-
+        /* ─── Buttons ────────────────────────────────────────────── */
         .btn {
-            padding: 10px 16px;
-            border: 1px solid #d0d0d0;
-            border-radius: 4px;
-            font-size: 0.9rem;
-            cursor: pointer;
-            transition: all 0.2s ease;
-            background: #f0f0f0;
-            color: #333;
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            padding: 7px 14px;
+            border-radius: var(--radius-sm);
+            font-size: 13px;
             font-weight: 500;
-        }
-
-        .btn:hover {
-            background: #e0e0e0;
-            transform: translateY(-1px);
+            font-family: inherit;
+            cursor: pointer;
+            border: 1px solid transparent;
+            transition: all .15s;
+            text-decoration: none;
         }
 
         .btn-primary {
-            background: #2196F3;
-            color: white;
-            border-color: #1976D2;
+            background: var(--accent);
+            color: #fff;
+            border-color: var(--accent);
         }
 
         .btn-primary:hover {
-            background: #1976D2;
-            transform: translateY(-1px);
+            background: var(--accent-hover);
+            border-color: var(--accent-hover);
         }
 
         .btn-secondary {
-            background: #757575;
-            color: white;
-            border-color: #616161;
+            background: var(--surface);
+            color: var(--text);
+            border-color: var(--border);
         }
 
         .btn-secondary:hover {
-            background: #616161;
-            transform: translateY(-1px);
+            background: var(--surface-hover);
+            border-color: #c4c7d4;
         }
 
         .btn-danger {
-            background: #f44336;
-            color: white;
-            border-color: #d32f2f;
+            background: var(--danger-light);
+            color: var(--danger);
+            border-color: #fca5a5;
         }
 
         .btn-danger:hover {
-            background: #d32f2f;
-            transform: translateY(-1px);
+            background: #fee2e2;
+        }
+
+        .btn-success {
+            background: var(--success-light);
+            color: var(--success);
+            border-color: #6ee7b7;
+        }
+
+        .btn-success:hover {
+            background: #d1fae5;
+        }
+
+        .btn-save-all {
+            background: var(--accent);
+            color: #fff;
+            padding: 8px 20px;
+            font-size: 13.5px;
+            border-radius: var(--radius-sm);
+        }
+
+        .btn-save-all:hover {
+            background: var(--accent-hover);
+        }
+
+        .btn-sm {
+            padding: 4px 10px;
+            font-size: 12px;
+        }
+
+        /* ─── Url list ───────────────────────────────────────────── */
+        .url-add-row {
+            display: flex;
+            gap: 8px;
+            padding: 14px 20px;
+            border-bottom: 1px solid var(--border);
+        }
+
+        .url-add-row input {
+            flex: 1;
         }
 
         .url-list {
             list-style: none;
             padding: 0;
-            margin: 0;
         }
 
+        .url-list-item {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 9px 20px;
+            border-bottom: 1px solid var(--border);
+            font-size: 13px;
+            color: var(--text);
+            gap: 8px;
+        }
+
+        .url-list-item:last-child {
+            border-bottom: none;
+        }
+
+        .url-list-item code {
+            font-family: 'Menlo', 'Consolas', monospace;
+            font-size: 12px;
+            background: var(--bg);
+            padding: 2px 6px;
+            border-radius: 4px;
+            flex: 1;
+            word-break: break-all;
+        }
+
+        /* Backward compatibility for legacy JS class names */
         .url-item {
             display: flex;
+            align-items: center;
             justify-content: space-between;
-            align-items: center;
-            padding: 10px 12px;
-            background: #f5f5f5;
-            border: 1px solid #e0e0e0;
-            border-radius: 4px;
-            margin-bottom: 8px;
-            font-size: 0.9rem;
-        }
-
-        .time-range {
-            display: flex;
-            align-items: center;
+            padding: 9px 20px;
+            border-bottom: 1px solid var(--border);
+            font-size: 13px;
+            color: var(--text);
             gap: 8px;
-            font-size: 0.9rem;
         }
 
-        .time-range input[type="time"] {
-            padding: 8px 12px;
-            border: 1px solid #d0d0d0;
+        .url-item:last-child {
+            border-bottom: none;
+        }
+
+        .url-item code,
+        .url-item span {
+            font-family: 'Menlo', 'Consolas', monospace;
+            font-size: 12px;
+            background: var(--bg);
+            padding: 2px 6px;
             border-radius: 4px;
-            font-size: 0.9rem;
-            background: #ffffff;
-            color: #333;
-        }
-
-        .setting-control select {
-            padding: 8px 12px;
-            border: 1px solid #d0d0d0;
-            border-radius: 4px;
-            font-size: 0.9rem;
-            background: #ffffff;
-            color: #333;
-            min-width: 120px;
-        }
-
-        .save-section {
-            text-align: center;
-            padding: 20px;
-            background: #ffffff;
-            border-bottom: 1px solid #e0e0e0;
-            border-radius: 0;
-            margin-bottom: 20px;
-        }
-
-        .btn-save {
-            background: #4caf50;
-            color: white;
-            padding: 12px 32px;
-            font-size: 1rem;
-            font-weight: 600;
-            border: 1px solid #45a049;
-            border-radius: 4px;
-        }
-
-        .btn-save:hover {
-            background: #45a049;
-            transform: translateY(-2px);
-        }
-
-        .status-message {
-            margin-top: 12px;
-            padding: 10px 16px;
-            border-radius: 4px;
-            display: none;
-        }
-
-        .status-success {
-            background: #d4edda;
-            color: #155724;
-            border: 1px solid #c3e6cb;
-        }
-
-        .status-error {
-            background: #f8d7da;
-            color: #721c24;
-            border: 1px solid #f5c6cb;
-        }
-
-        /* Tab Navigation */
-        .tabs-nav {
-            display: flex;
-            gap: 8px;
-            background: #ffffff;
-            border: 1px solid #e0e0e0;
-            border-radius: 0;
-            padding: 12px;
-            margin-bottom: 20px;
-            flex-wrap: wrap;
-        }
-
-        .tab-button {
             flex: 1;
-            min-width: 140px;
+            word-break: break-all;
+        }
+
+        /* ─── Textarea ───────────────────────────────────────────── */
+        .filter-textarea {
+            width: 100%;
             padding: 12px 20px;
-            background: #f0f0f0;
-            border: 1px solid #d0d0d0;
-            border-radius: 4px;
-            color: #333;
-            font-size: 0.95rem;
-            font-weight: 500;
-            cursor: pointer;
-            transition: all 0.2s ease;
-            text-align: center;
-        }
-
-        .tab-button:hover {
-            background: #e0e0e0;
-            transform: translateY(-1px);
-        }
-
-        .tab-button.active {
-            background: #2196F3;
-            border-color: #1976D2;
-            color: white;
-            font-weight: 600;
-        }
-
-        .tab-content {
-            display: none;
-        }
-
-        .tab-content.active {
             display: block;
+            border: none;
+            border-radius: 0;
+            border-top: 1px solid var(--border);
+            resize: vertical;
+            min-height: 110px;
+            font-family: 'Menlo', 'Consolas', monospace;
+            font-size: 12px;
+            color: var(--text);
+            background: var(--surface);
         }
 
-        .feature-toggle {
+        .filter-hint {
+            padding: 8px 20px 14px;
+            font-size: 11.5px;
+            color: var(--text-muted);
+        }
+
+        /* ─── Notice boxes ───────────────────────────────────────── */
+        .notice {
+            display: flex;
+            gap: 10px;
+            padding: 12px 14px;
+            border-radius: var(--radius-sm);
+            font-size: 12.5px;
+            line-height: 1.5;
+            margin: 14px 20px;
+        }
+
+        .notice-info {
+            background: var(--accent-light);
+            color: #3730a3;
+            border: 1px solid #c7d2fe;
+        }
+
+        .notice-warning {
+            background: var(--warning-light);
+            color: #92400e;
+            border: 1px solid #fcd34d;
+        }
+
+        .notice-icon {
+            font-size: 15px;
+            flex-shrink: 0;
+        }
+
+        /* ─── Feature master toggle ──────────────────────────────── */
+        .feature-master {
             display: flex;
             align-items: center;
-            justify-content: space-between;
-            padding: 20px;
-            background: #ffffff;
-            border: 1px solid #e0e0e0;
-            border-radius: 0;
-            margin-bottom: 20px;
+            gap: 14px;
+            padding: 16px 20px;
+            background: var(--accent-light);
+            border-bottom: 1px solid #c7d2fe;
         }
 
-        .feature-toggle h3 {
-            margin: 0;
-            font-size: 1.1rem;
-            color: #333;
+        .feature-master .master-info {
+            flex: 1;
         }
 
-        .feature-toggle p {
-            margin: 0.25rem 0 0 0;
-            font-size: 0.9rem;
-            color: #666;
+        .feature-master .master-title {
+            font-size: 14px;
+            font-weight: 700;
+            color: #3730a3;
         }
 
-        .saved-groups-list {
-            border: 1px solid #d0d0d0;
-            border-radius: 4px;
-            margin-top: 12px;
-            max-height: 400px;
-            overflow-y: auto;
-            background: #ffffff;
+        .feature-master .master-desc {
+            font-size: 12px;
+            color: #6d6bbe;
         }
 
+        /* ─── Group chips ────────────────────────────────────────── */
+        .group-list-wrap {
+            padding: 14px 20px;
+        }
+
+        .group-chip-list {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 8px;
+            margin-top: 10px;
+            min-height: 36px;
+        }
+
+        .group-chip {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            padding: 5px 10px;
+            border: 1px solid var(--border);
+            border-radius: 20px;
+            font-size: 12px;
+            cursor: pointer;
+            transition: all .15s;
+            background: var(--surface);
+            color: var(--text-secondary);
+        }
+
+        .group-chip.selected {
+            background: var(--accent);
+            border-color: var(--accent);
+            color: #fff;
+        }
+
+        .group-chip-dot {
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            background: currentColor;
+        }
+
+        .group-item {
+            display: grid;
+            grid-template-columns: auto 1fr auto;
+            align-items: center;
+            gap: 10px;
+            width: 100%;
+            padding: 8px 10px;
+            border: 1px solid var(--border);
+            border-radius: var(--radius-sm);
+            background: var(--surface);
+        }
+
+        .group-checkbox {
+            width: 16px;
+            height: 16px;
+            accent-color: var(--accent);
+            cursor: pointer;
+        }
+
+        .group-name {
+            font-size: 12.5px;
+            font-weight: 600;
+            color: var(--text);
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+
+        .group-count {
+            font-size: 11px;
+            color: var(--text-muted);
+            white-space: nowrap;
+        }
+
+        /* ─── Saved groups ───────────────────────────────────────── */
         .saved-group-item {
             display: flex;
             align-items: center;
-            padding: 12px;
-            border-bottom: 1px solid #e0e0e0;
-            background: #ffffff;
-            transition: all 0.2s ease;
-        }
-
-        .saved-group-item:hover {
-            background: #f5f5f5;
-            transform: translateY(-1px);
+            gap: 10px;
+            padding: 11px 20px;
+            border-bottom: 1px solid var(--border);
         }
 
         .saved-group-item:last-child {
             border-bottom: none;
+        }
+
+        .saved-group-color {
+            width: 4px;
+            height: 32px;
+            border-radius: 2px;
+            flex-shrink: 0;
+        }
+
+        .group-color-indicator {
+            width: 4px;
+            height: 32px;
+            border-radius: 2px;
+            flex-shrink: 0;
         }
 
         .saved-group-info {
@@ -454,856 +675,902 @@
         }
 
         .saved-group-name {
+            font-size: 13px;
             font-weight: 500;
-            font-size: 0.9rem;
-            margin-bottom: 2px;
-            color: #333;
+            color: var(--text);
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
         }
 
         .saved-group-meta {
-            font-size: 0.8rem;
-            color: #666;
+            font-size: 11px;
+            color: var(--text-muted);
+            margin-top: 1px;
             display: flex;
-            gap: 12px;
+            gap: 8px;
             flex-wrap: wrap;
+        }
+
+        .group-preview {
+            font-size: 11px;
+            color: var(--text-muted);
+            margin-top: 4px;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
         }
 
         .saved-group-actions {
             display: flex;
             gap: 4px;
-            flex-shrink: 0;
+            flex-wrap: wrap;
+            justify-content: flex-end;
         }
 
         .btn-small {
-            padding: 6px 10px;
-            font-size: 0.8rem;
-            border-radius: 4px;
-            border: 1px solid #d0d0d0;
+            border: 1px solid var(--border);
+            border-radius: var(--radius-sm);
+            background: var(--surface);
+            color: var(--text-secondary);
+            font-size: 11px;
+            font-weight: 600;
+            padding: 4px 8px;
             cursor: pointer;
-            font-weight: 500;
-            transition: all 0.2s ease;
-            background: #f0f0f0;
-            color: #333;
+            transition: all .15s;
         }
 
-        .btn-restore {
-            background: #4caf50;
-            color: white;
-            border-color: #45a049;
-        }
-
-        .btn-restore:hover {
-            background: #45a049;
-            transform: translateY(-1px);
-        }
-
-        .btn-restore-new {
-            background: #2196F3;
-            color: white;
-            border-color: #1976D2;
-        }
-
-        .btn-restore-new:hover {
-            background: #1976D2;
-            transform: translateY(-1px);
+        .btn-small:hover {
+            border-color: #c4c7d4;
+            background: var(--surface-hover);
+            color: var(--text);
         }
 
         .btn-delete {
-            background: #f44336;
-            color: white;
-            border-color: #d32f2f;
+            border-color: #fca5a5;
+            color: var(--danger);
+            background: var(--danger-light);
         }
 
         .btn-delete:hover {
-            background: #d32f2f;
-            transform: translateY(-1px);
+            background: #fee2e2;
         }
 
-        .btn-rename {
-            background: #757575;
-            color: white;
-            border-color: #616161;
+        /* ─── Status toast ───────────────────────────────────────── */
+        #toast {
+            position: fixed;
+            bottom: 24px;
+            right: 24px;
+            background: var(--text);
+            color: #fff;
+            padding: 10px 18px;
+            border-radius: var(--radius-sm);
+            font-size: 13px;
+            font-weight: 500;
+            box-shadow: var(--shadow-md);
+            transform: translateY(80px);
+            opacity: 0;
+            transition: all .25s ease;
+            z-index: 999;
         }
 
-        .btn-rename:hover {
-            background: #616161;
-            transform: translateY(-1px);
+        #toast.show {
+            transform: translateY(0);
+            opacity: 1;
         }
 
-        .group-color-indicator {
-            width: 4px;
-            height: 40px;
-            border-radius: 2px;
-            margin-right: 12px;
-            flex-shrink: 0;
+        #toast.success {
+            background: var(--success);
         }
 
-        .group-preview {
-            font-size: 0.75rem;
-            color: #999;
-            margin-top: 4px;
-            display: -webkit-box;
-            -webkit-line-clamp: 2;
-            line-clamp: 2;
-            -webkit-box-orient: vertical;
-            overflow: hidden;
+        #toast.error {
+            background: var(--danger);
         }
 
+        /* ─── Empty state ────────────────────────────────────────── */
         .empty-state {
-            padding: 40px 20px;
             text-align: center;
-            color: #999;
-            border: 2px dashed #d0d0d0;
-            border-radius: 4px;
-            margin: 20px 0;
-            background: #f5f5f5;
+            padding: 28px 20px;
+            color: var(--text-muted);
+            font-size: 13px;
         }
 
         .empty-state-icon {
-            font-size: 3rem;
-            margin-bottom: 1rem;
-            opacity: 0.5;
+            font-size: 2rem;
+            margin-bottom: 8px;
         }
 
-        .import-area {
-            position: relative;
-            display: inline-block;
+        /* ─── Responsive ─────────────────────────────────────────── */
+        @media (max-width: 680px) {
+            .sidebar {
+                width: 100%;
+                height: auto;
+                position: static;
+                flex-direction: row;
+                flex-wrap: wrap;
+                border-right: none;
+                border-bottom: 1px solid var(--border);
+            }
+
+            .sidebar-nav {
+                display: flex;
+                flex-wrap: wrap;
+                gap: 2px;
+            }
+
+            .nav-section-label {
+                display: none;
+            }
+
+            .main {
+                margin-left: 0;
+            }
+
+            .content-area {
+                padding: 16px;
+            }
         }
 
-        .import-area input[type="file"] {
-            position: absolute;
-            opacity: 0;
-            width: 100%;
-            height: 100%;
+        /* ─── Sync toggle ────────────────────────────────────────── */
+        .sync-row {
+            background: linear-gradient(90deg, #eff6ff, #eef2ff);
+            border-left: 3px solid var(--accent);
+        }
+
+        /* ─── Range input ────────────────────────────────────────── */
+        .range-wrap {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        input[type="range"] {
+            width: 110px;
+            accent-color: var(--accent);
             cursor: pointer;
+        }
+
+        .range-val {
+            min-width: 32px;
+            font-weight: 600;
+            color: var(--accent);
+            font-size: 13px;
         }
     </style>
 </head>
 
 <body>
-    <div class="container">
-        <div class="header">
-            <h1><img class="logo" src="../assets/icons/icon32.png" alt=""> BrowserGuard Pro Settings</h1>
-            <p>Configure your browser protection and optimization features</p>
-        </div>
 
-        <!-- Tab Navigation -->
-        <div class="tabs-nav">
-            <button class="tab-button active" data-tab="general">🔧 General</button>
-            <button class="tab-button" data-tab="tracker-blocker">🛡️ Tracker Blocker</button>
-            <button class="tab-button" data-tab="ads-blocker">🚫 Ads Blocker</button>
-            <button class="tab-button" data-tab="privacy">🔒 Privacy</button>
-            <button class="tab-button" data-tab="performance">⚡ Performance</button>
-            <button class="tab-button" data-tab="advanced">⚙️ Advanced</button>
-        </div>
+    <div class="layout">
 
-        <div class="save-section">
-            <button class="btn btn-primary btn-save" id="save-settings">💾 Save All Settings</button>
-            <div class="status-message" id="status-message"></div>
-        </div>
-
-        <!-- General Tab -->
-        <div class="tab-content active" id="tab-general">
-
-            <div class="settings-section">
-                <h2 class="section-title">🔧 General Settings</h2>
-
-                <div class="setting-item">
-                    <div class="setting-info">
-                        <div class="setting-label">Auto-suspend inactive tabs after</div>
-                        <div class="setting-description">Automatically suspend tabs that haven't been used for this
-                            amount
-                            of time</div>
-                    </div>
-                    <div class="setting-control">
-                        <div class="time-input">
-                            <input type="number" id="suspend-time" min="1" max="1440" value="30">
-                            <select id="time-unit">
-                                <option value="minutes">minutes</option>
-                                <option value="hours">hours</option>
-                            </select>
-                        </div>
-                    </div>
-                </div>
-            </div>
-
-            <div class="settings-section">
-                <h2 class="section-title">👥 Tab Groups</h2>
-
-                <div class="setting-item">
-                    <div class="setting-info">
-                        <div class="setting-label">Excluded Tab Groups</div>
-                        <div class="setting-description">Select tab groups that should never be automatically suspended
-                        </div>
-                    </div>
-                </div>
-
-                <div class="group-list" id="group-list">
-                    <div style="padding: 20px; text-align: center; color: #6c757d;">
-                        Loading tab groups...
-                    </div>
-                </div>
-            </div>
-
-            <div class="settings-section">
-                <h2 class="section-title">💾 Saved Tab Groups</h2>
-
-                <div class="setting-item">
-                    <div class="setting-info">
-                        <div class="setting-label">Enable Saved Groups</div>
-                        <div class="setting-description">Save your tab groups for later restoration. Groups are saved
-                            locally and can be exported/imported.</div>
-                    </div>
-                    <div class="setting-control">
-                        <div class="toggle" id="saved-groups-toggle"></div>
-                    </div>
-                </div>
-
-                <div class="saved-groups-actions" style="margin: 1rem 0; display: flex; gap: 8px; flex-wrap: wrap;">
-                    <button class="btn btn-primary" id="save-current-window">Save Current Window</button>
-                    <button class="btn btn-secondary" id="export-groups">Export Groups</button>
-                    <button class="btn btn-secondary" id="import-groups">Import Groups</button>
-                </div>
-
-                <div class="saved-groups-list" id="saved-groups-list">
-                    <div style="padding: 20px; text-align: center; color: #6c757d;">
-                        Loading saved groups...
-                    </div>
-                </div>
-            </div>
-
-            <div class="settings-section">
-                <h2 class="section-title">🎛️ Feature Controls</h2>
-
-                <div class="setting-item">
-                    <div class="setting-info">
-                        <div class="setting-label">Enable Sessions</div>
-                        <div class="setting-description">Show the Sessions tab in popup for saving and restoring browser
-                            sessions</div>
-                    </div>
-                    <div class="setting-control">
-                        <div class="toggle active" id="sessions-toggle"></div>
-                    </div>
-                </div>
-
-                <div class="setting-item">
-                    <div class="setting-info">
-                        <div class="setting-label">Enable Analytics</div>
-                        <div class="setting-description">Show the Analytics tab in popup for browsing statistics and
-                            insights</div>
-                    </div>
-                    <div class="setting-control">
-                        <div class="toggle active" id="analytics-enabled-toggle"></div>
-                    </div>
-                </div>
-
-                <div class="setting-item">
-                    <div class="setting-info">
-                        <div class="setting-label">Enable Organization</div>
-                        <div class="setting-description">Show the Organization tab in popup for smart tab grouping and
-                            management</div>
-                    </div>
-                    <div class="setting-control">
-                        <div class="toggle active" id="organization-toggle"></div>
-                    </div>
-                </div>
-            </div>
-
-            <div class="settings-section">
-                <h2 class="section-title">🔗 URL Whitelist</h2>
-
-                <div class="setting-item">
-                    <div class="setting-info">
-                        <div class="setting-label">Never suspend these URLs</div>
-                        <div class="setting-description">Add URL patterns that should never be suspended (e.g.,
-                            meet.google.com, localhost:)</div>
-                    </div>
-                </div>
-
-                <div class="whitelist-section">
-                    <div class="url-input">
-                        <input type="text" id="new-url" placeholder="Enter URL pattern (e.g., github.com, localhost:)">
-                        <button class="btn btn-primary" id="add-url">Add</button>
-                    </div>
-
-                    <ul class="url-list" id="url-list"></ul>
-                </div>
-            </div>
-
-            <div class="settings-section">
-                <h2 class="section-title">📊 Advanced Options</h2>
-
-                <div class="setting-item">
-                    <div class="setting-info">
-                        <div class="setting-label">Suspend tabs playing audio</div>
-                        <div class="setting-description">Allow suspension of tabs that are playing audio or video</div>
-                    </div>
-                    <div class="setting-control">
-                        <div class="toggle" id="audio-toggle"></div>
-                    </div>
-                </div>
-
-                <div class="setting-item">
-                    <div class="setting-info">
-                        <div class="setting-label">Show suspension notifications</div>
-                        <div class="setting-description">Display notifications when tabs are automatically suspended
-                        </div>
-                    </div>
-                    <div class="setting-control">
-                        <div class="toggle active" id="notifications-toggle"></div>
-                    </div>
-                </div>
-
-                <div class="setting-item">
-                    <div class="setting-info">
-                        <div class="setting-label">Aggressive memory saving</div>
-                        <div class="setting-description">Use more aggressive suspension methods (may affect tab
-                            restoration)
-                        </div>
-                    </div>
-                    <div class="setting-control">
-                        <div class="toggle" id="aggressive-toggle"></div>
-                    </div>
-                </div>
-            </div>
-
-            <div class="settings-section">
-                <h2 class="section-title">📊 Analytics & Privacy</h2>
-
-                <div class="setting-item">
-                    <div class="setting-info">
-                        <div class="setting-label">Activity Tracking</div>
-                        <div class="setting-description">Track tab usage for analytics and productivity insights</div>
-                    </div>
-                    <div class="setting-control">
-                        <div class="toggle active" id="analytics-toggle"></div>
-                    </div>
-                </div>
-
-                <div class="setting-item">
-                    <div class="setting-info">
-                        <div class="setting-label">Performance Monitoring</div>
-                        <div class="setting-description">Monitor browser performance and memory usage</div>
-                    </div>
-                    <div class="setting-control">
-                        <div class="toggle active" id="performance-toggle"></div>
-                    </div>
-                </div>
-
-                <div class="setting-item">
-                    <div class="setting-info">
-                        <div class="setting-label">Data Export Interval</div>
-                        <div class="setting-description">Automatically export analytics data for backup</div>
-                    </div>
-                    <div class="setting-control">
-                        <select id="export-interval">
-                            <option value="never">Never</option>
-                            <option value="daily">Daily</option>
-                            <option value="weekly">Weekly</option>
-                            <option value="monthly">Monthly</option>
-                        </select>
-                    </div>
-                </div>
-            </div>
-
-            <div class="settings-section">
-                <h2 class="section-title">🎯 Focus Mode</h2>
-
-                <div class="setting-item">
-                    <div class="setting-info">
-                        <div class="setting-label">Auto-enable Focus Mode</div>
-                        <div class="setting-description">Automatically enable focus mode during work hours</div>
-                    </div>
-                    <div class="setting-control">
-                        <div class="toggle" id="auto-focus-toggle"></div>
-                    </div>
-                </div>
-
-                <div class="setting-item">
-                    <div class="setting-info">
-                        <div class="setting-label">Work Hours</div>
-                        <div class="setting-description">Define your work hours for automatic focus mode</div>
-                    </div>
-                    <div class="setting-control">
-                        <div class="time-range">
-                            <input type="time" id="work-start" value="09:00">
-                            <span>to</span>
-                            <input type="time" id="work-end" value="17:00">
-                        </div>
-                    </div>
-                </div>
-
-                <div class="setting-item">
-                    <div class="setting-info">
-                        <div class="setting-label">Focus Mode Actions</div>
-                        <div class="setting-description">What to do when accessing blocked sites</div>
-                    </div>
-                    <div class="setting-control">
-                        <select id="focus-action">
-                            <option value="warn">Show warning</option>
-                            <option value="block">Block completely</option>
-                            <option value="suspend">Auto-suspend tab</option>
-                        </select>
-                    </div>
-                </div>
-            </div>
-
-            <!-- Backup & Sync Section -->
-            <div class="settings-section">
-                <h2 class="section-title">☁️ Backup & Sync</h2>
-
-                <!-- Sync Across Devices (RECOMMENDED) -->
-                <div class="setting-item"
-                    style="background: #f0f7ff; border-left: 4px solid #0066cc; padding: 12px; border-radius: 4px; margin-bottom: 16px;">
-                    <div class="setting-info">
-                        <div class="setting-label">✨ Sync Across Devices (Recommended)</div>
-                        <div class="setting-description">
-                            Automatically sync your settings across ALL Chrome installations where you're signed in.
-                            <br><strong>No setup required - just toggle it on!</strong>
-                        </div>
-                    </div>
-                    <div class="setting-control">
-                        <label class="sync-toggle-label">
-                            <input type="checkbox" id="sync-toggle" class="sync-toggle" />
-                            <span class="toggle-label">Enable Chrome Sync</span>
-                        </label>
-                    </div>
-                </div>
-
-                <div class="setting-item">
-                    <div class="setting-info">
-                        <div class="setting-label">⏱️ Auto Backup Schedule</div>
-                        <div class="setting-description">
-                            Automatically backup your settings on a schedule.
-                            <br><small>Requires 'Sync Across Devices' or manual backup to be configured.</small>
-                        </div>
-                    </div>
-                    <div class="setting-control">
-                        <select id="backup-frequency">
-                            <option value="never">Never (Manual Only)</option>
-                            <option value="daily">Daily</option>
-                            <option value="weekly" selected>Weekly</option>
-                            <option value="monthly">Monthly</option>
-                        </select>
-                    </div>
-                </div>
-
-                <div class="setting-item">
-                    <div class="setting-info">
-                        <div class="setting-label">📤 Export Settings</div>
-                        <div class="setting-description">Download all your settings and saved groups to a file. Save it
-                            to Google Drive, Dropbox, or OneDrive manually.</div>
-                    </div>
-                    <div class="setting-control">
-                        <button class="btn btn-primary" id="export-settings">📤 Export</button>
-                    </div>
-                </div>
-
-                <div class="setting-item">
-                    <div class="setting-info">
-                        <div class="setting-label">📥 Import Settings</div>
-                        <div class="setting-description">Restore settings and saved groups from a backup file. Perfect
-                            for moving to a new device or restoring from cloud storage.</div>
-                    </div>
-                    <div class="setting-control">
-                        <input type="file" id="import-file" accept=".json" style="display: none;">
-                        <button class="btn btn-secondary" id="import-settings">📥 Import</button>
-                    </div>
-                </div>
-
-                <div class="setting-item">
-                    <div class="setting-info">
-                        <div class="setting-label">Last Backup</div>
-                        <div class="setting-description" id="last-backup-time">Never backed up</div>
-                    </div>
-                    <div class="setting-control">
-                        <button class="btn btn-secondary" id="backup-now">Backup Now</button>
-                    </div>
-                </div>
-            </div>
-
-            <div class="settings-section">
-                <h2 class="section-title">⚡ Advanced Features</h2>
-
-                <div class="setting-item">
-                    <div class="setting-info">
-                        <div class="setting-label">Smart Tab Grouping</div>
-                        <div class="setting-description">Automatically group tabs by domain and content type</div>
-                    </div>
-                    <div class="setting-control">
-                        <div class="toggle" id="smart-grouping-toggle"></div>
-                    </div>
-                </div>
-
-                <div class="setting-item">
-                    <div class="setting-info">
-                        <div class="setting-label">Session Auto-save</div>
-                        <div class="setting-description">Automatically save sessions at regular intervals</div>
-                    </div>
-                    <div class="setting-control">
-                        <select id="session-interval">
-                            <option value="never">Never</option>
-                            <option value="hourly">Every hour</option>
-                            <option value="daily">Daily</option>
-                            <option value="weekly">Weekly</option>
-                        </select>
-                    </div>
-                </div>
-
-                <div class="setting-item">
-                    <div class="setting-info">
-                        <div class="setting-label">Predictive Suspension</div>
-                        <div class="setting-description">Use AI to predict which tabs to suspend based on usage patterns
-                        </div>
-                    </div>
-                    <div class="setting-control">
-                        <div class="toggle" id="predictive-toggle"></div>
-                    </div>
-                </div>
-
-                <div class="setting-item">
-                    <div class="setting-info">
-                        <div class="setting-label">Keyboard Shortcuts</div>
-                        <div class="setting-description">Customize keyboard shortcuts for quick actions</div>
-                    </div>
-                    <div class="setting-control">
-                        <button class="btn btn-secondary" id="customize-shortcuts">Customize</button>
-                    </div>
-                </div>
-            </div>
-        </div>
-        <!-- End General Tab -->
-
-        <!-- Tracker Blocker Tab -->
-        <div class="tab-content" id="tab-tracker-blocker">
-            <div class="feature-toggle">
+        <!-- ══ Sidebar ═══════════════════════════════════════════════════════ -->
+        <aside class="sidebar">
+            <div class="sidebar-brand">
+                <img src="../assets/icons/icon32.png" alt="">
                 <div>
-                    <h3>🛡️ Tracker Blocker</h3>
-                    <p>Block ads, trackers, and malicious content to protect your privacy</p>
-                </div>
-                <div class="toggle" id="tracker-blocker-enabled"></div>
-            </div>
-
-            <div class="settings-section">
-                <h2 class="section-title">🎯 Blocking Categories</h2>
-
-                <div class="setting-item">
-                    <div class="setting-info">
-                        <div class="setting-label">Block Advertisements</div>
-                        <div class="setting-description">Block banner ads, video ads, and pop-ups</div>
-                    </div>
-                    <div class="setting-control">
-                        <div class="toggle" id="block-ads"></div>
-                    </div>
-                </div>
-
-                <div class="setting-item">
-                    <div class="setting-info">
-                        <div class="setting-label">Block Trackers</div>
-                        <div class="setting-description">Block analytics and tracking scripts</div>
-                    </div>
-                    <div class="setting-control">
-                        <div class="toggle" id="block-trackers"></div>
-                    </div>
-                </div>
-
-                <div class="setting-item">
-                    <div class="setting-info">
-                        <div class="setting-label">Block Social Media Widgets</div>
-                        <div class="setting-description">Block Facebook, Twitter, and other social widgets</div>
-                    </div>
-                    <div class="setting-control">
-                        <div class="toggle" id="block-social"></div>
-                    </div>
-                </div>
-
-                <div class="setting-item">
-                    <div class="setting-info">
-                        <div class="setting-label">Block Crypto Miners</div>
-                        <div class="setting-description">Prevent unauthorized cryptocurrency mining</div>
-                    </div>
-                    <div class="setting-control">
-                        <div class="toggle" id="block-mining"></div>
-                    </div>
-                </div>
-
-                <div class="setting-item">
-                    <div class="setting-info">
-                        <div class="setting-label">Block Malware & Phishing</div>
-                        <div class="setting-description">Protect against known malicious sites</div>
-                    </div>
-                    <div class="setting-control">
-                        <div class="toggle" id="block-malware"></div>
-                    </div>
+                    <div class="sidebar-brand-name">BrowserGuard Pro</div>
+                    <div class="sidebar-brand-sub">Settings</div>
                 </div>
             </div>
 
-            <div class="settings-section">
-                <h2 class="section-title">✅ Whitelist</h2>
+            <nav class="sidebar-nav">
+                <div class="nav-section-label">General</div>
+                <button class="nav-item active" data-tab="general">
+                    <span class="nav-icon">⚙️</span> General
+                </button>
+                <button class="nav-item" data-tab="tab-groups">
+                    <span class="nav-icon">📁</span> Tab Groups
+                </button>
+                <button class="nav-item" data-tab="whitelist">
+                    <span class="nav-icon">🔗</span> URL Whitelist
+                </button>
 
-                <div class="setting-item">
-                    <div class="setting-info">
-                        <div class="setting-label">Whitelisted Sites</div>
-                        <div class="setting-description">Sites where tracker blocking is disabled</div>
-                    </div>
-                </div>
+                <div class="nav-section-label">Protection</div>
+                <button class="nav-item" data-tab="tracker">
+                    <span class="nav-icon">🛡️</span> Tracker Blocker
+                </button>
+                <button class="nav-item" data-tab="ads">
+                    <span class="nav-icon">🚫</span> Ads Blocker
+                </button>
+                <button class="nav-item" data-tab="privacy">
+                    <span class="nav-icon">🔒</span> Privacy
+                </button>
 
-                <div class="whitelist-section">
-                    <div class="url-input">
-                        <input type="text" id="tracker-whitelist-url" placeholder="example.com">
-                        <button class="btn btn-primary" id="add-tracker-whitelist">Add Site</button>
-                    </div>
-                    <ul class="url-list" id="tracker-whitelist-list"></ul>
+                <div class="nav-section-label">Features</div>
+                <button class="nav-item" data-tab="analytics">
+                    <span class="nav-icon">📈</span> Analytics
+                </button>
+                <button class="nav-item" data-tab="focus">
+                    <span class="nav-icon">🎯</span> Focus Mode
+                </button>
+                <button class="nav-item" data-tab="backup">
+                    <span class="nav-icon">☁️</span> Backup &amp; Sync
+                </button>
+            </nav>
+
+            <div class="sidebar-footer">
+                <button class="btn btn-danger btn-sm" id="reset-settings-btn"
+                    style="width:100%;justify-content:center;">
+                    Reset All Settings
+                </button>
+            </div>
+        </aside>
+
+        <!-- ══ Main ══════════════════════════════════════════════════════════ -->
+        <div class="main">
+            <div class="topbar">
+                <span class="topbar-title" id="topbar-title">General</span>
+                <div class="topbar-actions">
+                    <div id="status-message"></div>
+                    <button class="btn btn-save-all" id="save-settings">💾 Save Settings</button>
                 </div>
             </div>
 
-            <div class="settings-section">
-                <h2 class="section-title">🔧 Custom Filters</h2>
+            <div class="content-area">
 
-                <div class="setting-item">
-                    <div class="setting-info">
-                        <div class="setting-label">Custom Block Rules</div>
-                        <div class="setting-description">Add your own URL patterns to block (one per line)</div>
-                    </div>
-                </div>
+                <!-- ── General ─────────────────────────────────────────── -->
+                <div class="tab-panel active" id="tab-general">
 
-                <div class="whitelist-section">
-                    <textarea id="custom-filters" rows="6"
-                        style="width: 100%; padding: 12px; border: 1px solid rgba(255, 255, 255, 0.3); border-radius: 8px; background: rgba(255, 255, 255, 0.2); backdrop-filter: blur(10px); color: #2d3748; font-family: 'Courier New', monospace; font-size: 0.9rem;"
-                        placeholder="*://ads.example.com/*&#10;*://tracker.example.com/*"></textarea>
-                    <div style="margin-top: 8px; font-size: 0.85rem; color: #4a5568;">
-                        Supports wildcards: * = any characters, use full URL patterns
+                    <div class="card">
+                        <div class="card-header">
+                            <span class="header-icon">⏱️</span>
+                            <h2>Auto-Suspend</h2>
+                        </div>
+                        <div class="setting-row">
+                            <div class="setting-info">
+                                <div class="setting-label">Suspend inactive tabs after</div>
+                                <div class="setting-desc">Automatically suspend tabs that haven't been used for this
+                                    amount of time</div>
+                            </div>
+                            <div class="setting-control">
+                                <div class="time-input">
+                                    <input type="number" id="suspend-time" min="1" max="1440" value="30">
+                                    <select id="time-unit">
+                                        <option value="minutes">min</option>
+                                        <option value="hours">hrs</option>
+                                    </select>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="setting-row">
+                            <div class="setting-info">
+                                <div class="setting-label">Suspend tabs playing audio</div>
+                                <div class="setting-desc">Allow suspension of tabs that are currently playing audio
+                                </div>
+                            </div>
+                            <div class="setting-control">
+                                <div class="toggle" id="audio-toggle"></div>
+                            </div>
+                        </div>
+                        <div class="setting-row">
+                            <div class="setting-info">
+                                <div class="setting-label">Aggressive memory saving</div>
+                                <div class="setting-desc">More aggressive suspension methods — may affect restoration
+                                    speed</div>
+                            </div>
+                            <div class="setting-control">
+                                <div class="toggle" id="aggressive-toggle"></div>
+                            </div>
+                        </div>
                     </div>
-                </div>
-            </div>
 
-            <div class="settings-section">
-                <h2 class="section-title">📊 Statistics</h2>
+                    <div class="card">
+                        <div class="card-header">
+                            <span class="header-icon">🔔</span>
+                            <h2>Notifications &amp; Features</h2>
+                        </div>
+                        <div class="setting-row">
+                            <div class="setting-info">
+                                <div class="setting-label">Show suspension notifications</div>
+                                <div class="setting-desc">Display a notification when tabs are automatically suspended
+                                </div>
+                            </div>
+                            <div class="setting-control">
+                                <div class="toggle active" id="notifications-toggle"></div>
+                            </div>
+                        </div>
+                        <div class="setting-row">
+                            <div class="setting-info">
+                                <div class="setting-label">Sessions</div>
+                                <div class="setting-desc">Show the Sessions tab in popup for saving and restoring
+                                    browser sessions</div>
+                            </div>
+                            <div class="setting-control">
+                                <div class="toggle active" id="sessions-toggle"></div>
+                            </div>
+                        </div>
+                        <div class="setting-row">
+                            <div class="setting-info">
+                                <div class="setting-label">Analytics</div>
+                                <div class="setting-desc">Show the Analytics tab in popup for browsing statistics</div>
+                            </div>
+                            <div class="setting-control">
+                                <div class="toggle active" id="analytics-enabled-toggle"></div>
+                            </div>
+                        </div>
+                        <div class="setting-row">
+                            <div class="setting-info">
+                                <div class="setting-label">Organization</div>
+                                <div class="setting-desc">Show smart tab grouping and management in popup</div>
+                            </div>
+                            <div class="setting-control">
+                                <div class="toggle active" id="organization-toggle"></div>
+                            </div>
+                        </div>
+                        <div class="setting-row">
+                            <div class="setting-info">
+                                <div class="setting-label">Smart Tab Grouping</div>
+                                <div class="setting-desc">Automatically group tabs by domain and content type</div>
+                            </div>
+                            <div class="setting-control">
+                                <div class="toggle" id="smart-grouping-toggle"></div>
+                            </div>
+                        </div>
+                        <div class="setting-row">
+                            <div class="setting-info">
+                                <div class="setting-label">Predictive Suspension</div>
+                                <div class="setting-desc">Use usage patterns to predict which tabs to suspend next</div>
+                            </div>
+                            <div class="setting-control">
+                                <div class="toggle" id="predictive-toggle"></div>
+                            </div>
+                        </div>
+                    </div>
 
-                <div class="setting-item">
-                    <div class="setting-info">
-                        <div class="setting-label">Tracking Statistics</div>
-                        <div class="setting-description">Keep track of blocked requests and bandwidth saved</div>
+                    <div class="card">
+                        <div class="card-header">
+                            <span class="header-icon">📊</span>
+                            <h2>Analytics &amp; Focus</h2>
+                        </div>
+                        <div class="setting-row">
+                            <div class="setting-info">
+                                <div class="setting-label">Activity tracking</div>
+                                <div class="setting-desc">Track tab usage for analytics and productivity insights</div>
+                            </div>
+                            <div class="setting-control">
+                                <div class="toggle active" id="analytics-toggle"></div>
+                            </div>
+                        </div>
+                        <div class="setting-row">
+                            <div class="setting-info">
+                                <div class="setting-label">Performance monitoring</div>
+                                <div class="setting-desc">Monitor browser memory and CPU usage</div>
+                            </div>
+                            <div class="setting-control">
+                                <div class="toggle active" id="performance-toggle"></div>
+                            </div>
+                        </div>
+                        <div class="setting-row">
+                            <div class="setting-info">
+                                <div class="setting-label">Session auto-save</div>
+                                <div class="setting-desc">Automatically save sessions at regular intervals</div>
+                            </div>
+                            <div class="setting-control">
+                                <select id="session-interval">
+                                    <option value="never">Never</option>
+                                    <option value="hourly">Every hour</option>
+                                    <option value="daily">Daily</option>
+                                    <option value="weekly">Weekly</option>
+                                </select>
+                            </div>
+                        </div>
+                        <div class="setting-row">
+                            <div class="setting-info">
+                                <div class="setting-label">Analytics data export</div>
+                                <div class="setting-desc">Automatically export analytics data on a schedule</div>
+                            </div>
+                            <div class="setting-control">
+                                <select id="export-interval">
+                                    <option value="never">Never</option>
+                                    <option value="daily">Daily</option>
+                                    <option value="weekly">Weekly</option>
+                                    <option value="monthly">Monthly</option>
+                                </select>
+                            </div>
+                        </div>
                     </div>
-                    <div class="setting-control">
-                        <div class="toggle" id="track-stats"></div>
-                    </div>
-                </div>
 
-                <div class="setting-item">
-                    <div class="setting-info">
-                        <div class="setting-label">View Dashboard</div>
-                        <div class="setting-description">See detailed blocking statistics and analytics</div>
+                    <div class="card">
+                        <div class="card-header">
+                            <span class="header-icon">🔗</span>
+                            <h2>Dashboards</h2>
+                        </div>
+                        <div class="setting-row">
+                            <div class="setting-info">
+                                <div class="setting-label">Main Dashboard</div>
+                                <div class="setting-desc">Tab suspension stats and quick actions</div>
+                            </div>
+                            <div class="setting-control">
+                                <button class="btn btn-secondary" id="open-dashboard-btn">Open →</button>
+                            </div>
+                        </div>
+                        <div class="setting-row">
+                            <div class="setting-info">
+                                <div class="setting-label">Analytics Dashboard</div>
+                                <div class="setting-desc">Detailed browsing statistics and usage trends</div>
+                            </div>
+                            <div class="setting-control">
+                                <button class="btn btn-secondary" id="open-analytics-dashboard">Open →</button>
+                            </div>
+                        </div>
+                        <div class="setting-row">
+                            <div class="setting-info">
+                                <div class="setting-label">Privacy Dashboard</div>
+                                <div class="setting-desc">Privacy controls and data management</div>
+                            </div>
+                            <div class="setting-control">
+                                <button class="btn btn-secondary" id="open-privacy-dashboard">Open →</button>
+                            </div>
+                        </div>
                     </div>
-                    <div class="setting-control">
-                        <button class="btn btn-primary" id="open-tracker-dashboard">📈 Open Dashboard</button>
-                    </div>
-                </div>
-            </div>
-        </div>
-        <!-- End Tracker Blocker Tab -->
 
-        <!-- Ads Blocker Tab -->
-        <div class="tab-content" id="tab-ads-blocker">
-            <div class="feature-toggle">
-                <div>
-                    <h3>🚫 Ads Blocker</h3>
-                    <p>Comprehensive ad and tracker blocking to improve browsing speed and privacy</p>
-                </div>
-                <div class="toggle" id="ads-blocker-enabled"></div>
-            </div>
+                </div><!-- /tab-general -->
 
-            <div class="settings-section">
-                <h2 class="section-title">🎯 Blocking Categories</h2>
+                <!-- ── Tab Groups ───────────────────────────────────────── -->
+                <div class="tab-panel" id="tab-tab-groups">
 
-                <div class="setting-item">
-                    <div class="setting-info">
-                        <div class="setting-label">Block Ads</div>
-                        <div class="setting-description">Block ad networks and advertisement servers</div>
+                    <div class="card">
+                        <div class="card-header">
+                            <span class="header-icon">📁</span>
+                            <h2>Excluded Tab Groups</h2>
+                        </div>
+                        <div class="group-list-wrap">
+                            <div class="setting-desc" style="margin-bottom:10px;">Select groups that should
+                                <strong>never</strong> be automatically suspended.
+                            </div>
+                            <div class="group-chip-list" id="group-list">
+                                <div class="setting-desc">Loading groups…</div>
+                            </div>
+                        </div>
                     </div>
-                    <div class="setting-control">
-                        <div class="toggle" id="ads-block-ads"></div>
-                    </div>
-                </div>
 
-                <div class="setting-item">
-                    <div class="setting-info">
-                        <div class="setting-label">Block Analytics</div>
-                        <div class="setting-description">Block analytics and tracking services</div>
+                    <div class="card">
+                        <div class="card-header">
+                            <span class="header-icon">💾</span>
+                            <h2>Saved Tab Groups</h2>
+                        </div>
+                        <div class="setting-row">
+                            <div class="setting-info">
+                                <div class="setting-label">Enable saved groups</div>
+                                <div class="setting-desc">Save and restore named tab groups across sessions</div>
+                            </div>
+                            <div class="setting-control">
+                                <div class="toggle" id="saved-groups-toggle"></div>
+                            </div>
+                        </div>
+                        <div class="setting-row" style="gap:8px;flex-wrap:wrap;">
+                            <button class="btn btn-primary" id="save-current-window">Save Current Window</button>
+                            <button class="btn btn-secondary" id="export-groups">Export</button>
+                            <button class="btn btn-secondary" id="import-groups">Import</button>
+                        </div>
+                        <div id="saved-groups-list">
+                            <div class="empty-state">
+                                <div class="empty-state-icon">📂</div>
+                                Loading saved groups…
+                            </div>
+                        </div>
                     </div>
-                    <div class="setting-control">
-                        <div class="toggle" id="ads-block-analytics"></div>
-                    </div>
-                </div>
 
-                <div class="setting-item">
-                    <div class="setting-info">
-                        <div class="setting-label">Block Banners</div>
-                        <div class="setting-description">Block banner ads and display advertisements</div>
-                    </div>
-                    <div class="setting-control">
-                        <div class="toggle" id="ads-block-banners"></div>
-                    </div>
-                </div>
+                </div><!-- /tab-tab-groups -->
 
-                <div class="setting-item">
-                    <div class="setting-info">
-                        <div class="setting-label">Block Popups</div>
-                        <div class="setting-description">Block popup advertisements</div>
-                    </div>
-                    <div class="setting-control">
-                        <div class="toggle" id="ads-block-popups"></div>
-                    </div>
-                </div>
+                <!-- ── URL Whitelist ────────────────────────────────────── -->
+                <div class="tab-panel" id="tab-whitelist">
 
-                <div class="setting-item">
-                    <div class="setting-info">
-                        <div class="setting-label">Block Cookie Trackers</div>
-                        <div class="setting-description">Block cookie consent and privacy trackers</div>
+                    <div class="card">
+                        <div class="card-header">
+                            <span class="header-icon">🔗</span>
+                            <h2>Never-Suspend URLs</h2>
+                        </div>
+                        <div class="notice notice-info" style="margin:14px 20px 0;">
+                            <span class="notice-icon">ℹ️</span>
+                            <span>Add URL patterns to prevent those tabs from ever being suspended. Supports partial
+                                matches, e.g. <code>meet.google.com</code>, <code>localhost:</code>.</span>
+                        </div>
+                        <div class="url-add-row">
+                            <input type="text" id="new-url" placeholder="e.g. github.com or localhost:3000">
+                            <button class="btn btn-primary" id="add-url">Add</button>
+                        </div>
+                        <ul class="url-list" id="url-list"></ul>
                     </div>
-                    <div class="setting-control">
-                        <div class="toggle" id="ads-block-cookies"></div>
-                    </div>
-                </div>
 
-                <div class="setting-item">
-                    <div class="setting-info">
-                        <div class="setting-label">Block Social Widgets</div>
-                        <div class="setting-description">Block social media embedded widgets</div>
-                    </div>
-                    <div class="setting-control">
-                        <div class="toggle" id="ads-block-social"></div>
-                    </div>
-                </div>
+                </div><!-- /tab-whitelist -->
 
-                <div class="setting-item">
-                    <div class="setting-info">
-                        <div class="setting-label">🎬 Block YouTube Ads</div>
-                        <div class="setting-description">Block ads on YouTube (pre-roll, mid-roll, banners)</div>
-                    </div>
-                    <div class="setting-control">
-                        <div class="toggle" id="ads-block-youtube"></div>
-                    </div>
-                </div>
+                <!-- ── Tracker Blocker ──────────────────────────────────── -->
+                <div class="tab-panel" id="tab-tracker">
 
-                <div class="setting-item">
-                    <div class="setting-info">
-                        <div class="setting-label">🎵 Block YouTube Music Ads</div>
-                        <div class="setting-description">Block ads on YouTube Music for uninterrupted listening</div>
+                    <div class="card">
+                        <div class="feature-master">
+                            <div class="master-info">
+                                <div class="master-title">🛡️ Tracker Blocker</div>
+                                <div class="master-desc">Block ads, trackers, miners and malicious content</div>
+                            </div>
+                            <div class="toggle" id="tracker-blocker-enabled"></div>
+                        </div>
+                        <div class="setting-row">
+                            <div class="setting-info">
+                                <div class="setting-label">Block Advertisements</div>
+                                <div class="setting-desc">Block banner ads, video ads, and pop-ups</div>
+                            </div>
+                            <div class="setting-control">
+                                <div class="toggle" id="block-ads"></div>
+                            </div>
+                        </div>
+                        <div class="setting-row">
+                            <div class="setting-info">
+                                <div class="setting-label">Block Trackers</div>
+                                <div class="setting-desc">Block analytics and tracking scripts</div>
+                            </div>
+                            <div class="setting-control">
+                                <div class="toggle" id="block-trackers"></div>
+                            </div>
+                        </div>
+                        <div class="setting-row">
+                            <div class="setting-info">
+                                <div class="setting-label">Block Social Media Widgets</div>
+                                <div class="setting-desc">Block Facebook, Twitter, and other embedded widgets</div>
+                            </div>
+                            <div class="setting-control">
+                                <div class="toggle" id="block-social"></div>
+                            </div>
+                        </div>
+                        <div class="setting-row">
+                            <div class="setting-info">
+                                <div class="setting-label">Block Crypto Miners</div>
+                                <div class="setting-desc">Prevent unauthorized cryptocurrency mining scripts</div>
+                            </div>
+                            <div class="setting-control">
+                                <div class="toggle" id="block-mining"></div>
+                            </div>
+                        </div>
+                        <div class="setting-row">
+                            <div class="setting-info">
+                                <div class="setting-label">Block Malware &amp; Phishing</div>
+                                <div class="setting-desc">Protect against known malicious sites</div>
+                            </div>
+                            <div class="setting-control">
+                                <div class="toggle" id="block-malware"></div>
+                            </div>
+                        </div>
+                        <div class="setting-row">
+                            <div class="setting-info">
+                                <div class="setting-label">Track Statistics</div>
+                                <div class="setting-desc">Keep a count of blocked requests and bandwidth saved</div>
+                            </div>
+                            <div class="setting-control">
+                                <div class="toggle" id="track-stats"></div>
+                            </div>
+                        </div>
+                        <div class="setting-row">
+                            <div class="setting-info">
+                                <div class="setting-label">View Tracker Dashboard</div>
+                            </div>
+                            <div class="setting-control">
+                                <button class="btn btn-secondary" id="open-tracker-dashboard">Open →</button>
+                            </div>
+                        </div>
                     </div>
-                    <div class="setting-control">
-                        <div class="toggle" id="ads-block-youtube-music"></div>
-                    </div>
-                </div>
-            </div>
 
-            <div class="settings-section">
-                <h2 class="section-title">✅ Whitelist</h2>
+                    <div class="card">
+                        <div class="card-header">
+                            <span class="header-icon">✅</span>
+                            <h2>Whitelist</h2>
+                        </div>
+                        <div class="url-add-row">
+                            <input type="text" id="tracker-whitelist-url" placeholder="example.com">
+                            <button class="btn btn-primary" id="add-tracker-whitelist">Add Site</button>
+                        </div>
+                        <ul class="url-list" id="tracker-whitelist-list"></ul>
+                    </div>
 
-                <div class="setting-item">
-                    <div class="setting-info">
-                        <div class="setting-label">Whitelisted Sites</div>
-                        <div class="setting-description">Sites where ad blocking is disabled</div>
+                    <div class="card">
+                        <div class="card-header">
+                            <span class="header-icon">🔧</span>
+                            <h2>Custom Block Rules</h2>
+                        </div>
+                        <div class="filter-hint">One URL pattern per line. Example: <code>*://ads.example.com/*</code>
+                        </div>
+                        <textarea class="filter-textarea" id="custom-filters"
+                            placeholder="*://ads.example.com/*&#10;*://tracker.example.com/*"></textarea>
                     </div>
-                </div>
 
-                <div class="whitelist-section">
-                    <div class="url-input">
-                        <input type="text" id="ads-whitelist-url" placeholder="example.com">
-                        <button class="btn btn-primary" id="add-ads-whitelist">Add Site</button>
-                    </div>
-                    <ul class="url-list" id="ads-whitelist-list"></ul>
-                </div>
-            </div>
+                </div><!-- /tab-tracker -->
 
-            <div class="settings-section">
-                <h2 class="section-title">🔧 Custom Filters</h2>
+                <!-- ── Ads Blocker ──────────────────────────────────────── -->
+                <div class="tab-panel" id="tab-ads">
 
-                <div class="setting-item">
-                    <div class="setting-info">
-                        <div class="setting-label">Custom Block Rules</div>
-                        <div class="setting-description">Add your own URL patterns to block (one per line)</div>
+                    <div class="card">
+                        <div class="feature-master">
+                            <div class="master-info">
+                                <div class="master-title">🚫 Ads Blocker</div>
+                                <div class="master-desc">Block ads across all websites including YouTube</div>
+                            </div>
+                            <div class="toggle" id="ads-blocker-enabled"></div>
+                        </div>
+                        <div class="setting-row">
+                            <div class="setting-info">
+                                <div class="setting-label">Block Ads</div>
+                                <div class="setting-desc">Block ad networks and advertisement servers</div>
+                            </div>
+                            <div class="setting-control">
+                                <div class="toggle" id="ads-block-ads"></div>
+                            </div>
+                        </div>
+                        <div class="setting-row">
+                            <div class="setting-info">
+                                <div class="setting-label">Block Analytics</div>
+                                <div class="setting-desc">Block third-party analytics and tracking services</div>
+                            </div>
+                            <div class="setting-control">
+                                <div class="toggle" id="ads-block-analytics"></div>
+                            </div>
+                        </div>
+                        <div class="setting-row">
+                            <div class="setting-info">
+                                <div class="setting-label">Block Banners</div>
+                                <div class="setting-desc">Block banner and display advertisements</div>
+                            </div>
+                            <div class="setting-control">
+                                <div class="toggle" id="ads-block-banners"></div>
+                            </div>
+                        </div>
+                        <div class="setting-row">
+                            <div class="setting-info">
+                                <div class="setting-label">Block Popups</div>
+                                <div class="setting-desc">Block popup and pop-under advertisements</div>
+                            </div>
+                            <div class="setting-control">
+                                <div class="toggle" id="ads-block-popups"></div>
+                            </div>
+                        </div>
+                        <div class="setting-row">
+                            <div class="setting-info">
+                                <div class="setting-label">Block Cookie Banners</div>
+                                <div class="setting-desc">Hide cookie consent and privacy banners</div>
+                            </div>
+                            <div class="setting-control">
+                                <div class="toggle" id="ads-block-cookies"></div>
+                            </div>
+                        </div>
+                        <div class="setting-row">
+                            <div class="setting-info">
+                                <div class="setting-label">Block Social Widgets</div>
+                                <div class="setting-desc">Block embedded social media widgets</div>
+                            </div>
+                            <div class="setting-control">
+                                <div class="toggle" id="ads-block-social"></div>
+                            </div>
+                        </div>
+                        <div class="setting-row">
+                            <div class="setting-info">
+                                <div class="setting-label">🎬 Block YouTube Ads</div>
+                                <div class="setting-desc">Block pre-roll and mid-roll ads on YouTube</div>
+                            </div>
+                            <div class="setting-control">
+                                <div class="toggle" id="ads-block-youtube"></div>
+                            </div>
+                        </div>
+                        <div class="setting-row">
+                            <div class="setting-info">
+                                <div class="setting-label">🎵 Block YouTube Music Ads</div>
+                                <div class="setting-desc">Block ads on YouTube Music for uninterrupted listening</div>
+                            </div>
+                            <div class="setting-control">
+                                <div class="toggle" id="ads-block-youtube-music"></div>
+                            </div>
+                        </div>
+                        <div class="setting-row">
+                            <div class="setting-info">
+                                <div class="setting-label">View Ads Dashboard</div>
+                            </div>
+                            <div class="setting-control">
+                                <button class="btn btn-secondary" id="open-ads-dashboard">Open →</button>
+                            </div>
+                        </div>
                     </div>
-                </div>
 
-                <div class="whitelist-section">
-                    <textarea id="ads-custom-filters" rows="6"
-                        style="width: 100%; padding: 12px; border: 1px solid rgba(255, 255, 255, 0.3); border-radius: 8px; background: rgba(255, 255, 255, 0.2); backdrop-filter: blur(10px); color: #2d3748; font-family: 'Courier New', monospace; font-size: 0.9rem;"
-                        placeholder="*://ads.example.com/*&#10;*://banner.example.com/*"></textarea>
-                    <div style="margin-top: 8px; font-size: 0.85rem; color: #4a5568;">
-                        Supports wildcards: * = any characters, use full URL patterns
+                    <div class="card">
+                        <div class="card-header">
+                            <span class="header-icon">✅</span>
+                            <h2>Whitelist</h2>
+                        </div>
+                        <div class="url-add-row">
+                            <input type="text" id="ads-whitelist-url" placeholder="example.com">
+                            <button class="btn btn-primary" id="add-ads-whitelist">Add Site</button>
+                        </div>
+                        <ul class="url-list" id="ads-whitelist-list"></ul>
                     </div>
-                </div>
-            </div>
 
-            <div class="settings-section">
-                <h2 class="section-title">📊 Statistics</h2>
+                    <div class="card">
+                        <div class="card-header">
+                            <span class="header-icon">🔧</span>
+                            <h2>Custom Block Rules</h2>
+                        </div>
+                        <div class="filter-hint">One URL pattern per line. Example:
+                            <code>*://banner.example.com/*</code>
+                        </div>
+                        <textarea class="filter-textarea" id="ads-custom-filters"
+                            placeholder="*://ads.example.com/*&#10;*://banner.example.com/*"></textarea>
+                    </div>
 
-                <div class="setting-item">
-                    <div class="setting-info">
-                        <div class="setting-label">View Dashboard</div>
-                        <div class="setting-description">See detailed blocking statistics and analytics</div>
-                    </div>
-                    <div class="setting-control">
-                        <button class="btn btn-primary" id="open-ads-dashboard">📈 Open Dashboard</button>
-                    </div>
-                </div>
-            </div>
-        </div>
-        <!-- End Ads Blocker Tab -->
+                </div><!-- /tab-ads -->
 
-        <!-- Privacy Tab -->
-        <div class="tab-content" id="tab-privacy">
-            <div class="settings-section">
-                <h2 class="section-title">🔒 Privacy Settings</h2>
-                <div class="setting-item">
-                    <div class="setting-info">
-                        <div class="setting-label">Privacy Dashboard</div>
-                        <div class="setting-description">Manage your privacy settings and data</div>
-                    </div>
-                    <div class="setting-control">
-                        <button class="btn btn-primary" id="open-privacy-dashboard">Open Privacy Dashboard</button>
-                    </div>
-                </div>
-            </div>
-        </div>
-        <!-- End Privacy Tab -->
+                <!-- ── Privacy ───────────────────────────────────────────── -->
+                <div class="tab-panel" id="tab-privacy">
 
-        <!-- Performance Tab -->
-        <div class="tab-content" id="tab-performance">
-            <div class="settings-section">
-                <h2 class="section-title">⚡ Performance Settings</h2>
-                <div class="setting-item">
-                    <div class="setting-info">
-                        <div class="setting-label">Performance Analytics</div>
-                        <div class="setting-description">Monitor memory usage and browser performance</div>
+                    <div class="notice notice-info" style="margin:0 0 16px;">
+                        <span class="notice-icon">🔒</span>
+                        <span>All data is stored locally on your device and never sent to external servers.</span>
                     </div>
-                    <div class="setting-control">
-                        <button class="btn btn-primary" id="open-analytics-dashboard">Open Analytics Dashboard</button>
-                    </div>
-                </div>
-            </div>
-        </div>
-        <!-- End Performance Tab -->
 
-        <!-- Advanced Tab -->
-        <div class="tab-content" id="tab-advanced">
-            <div class="settings-section">
-                <h2 class="section-title">⚙️ Advanced Options</h2>
-                <div class="setting-item">
-                    <div class="setting-info">
-                        <div class="setting-label">Advanced Configuration</div>
-                        <div class="setting-description">Access advanced settings and developer options</div>
+                    <div class="card">
+                        <div class="card-header">
+                            <span class="header-icon">🔒</span>
+                            <h2>Privacy Controls</h2>
+                        </div>
+                        <div class="setting-row">
+                            <div class="setting-info">
+                                <div class="setting-label">Open Privacy Dashboard</div>
+                                <div class="setting-desc">Manage data retention, export, and deletion</div>
+                            </div>
+                            <div class="setting-control">
+                                <button class="btn btn-secondary" id="open-privacy-dashboard-2">Open →</button>
+                            </div>
+                        </div>
                     </div>
-                    <div class="setting-control">
-                        <button class="btn btn-secondary" id="open-advanced-options">Open Advanced Settings</button>
-                    </div>
-                </div>
-            </div>
-        </div>
-        <!-- End Advanced Tab -->
 
-    </div>
+                </div><!-- /tab-privacy -->
+
+                <!-- ── Analytics ─────────────────────────────────────────── -->
+                <div class="tab-panel" id="tab-analytics">
+
+                    <div class="card">
+                        <div class="card-header">
+                            <span class="header-icon">📈</span>
+                            <h2>Analytics</h2>
+                        </div>
+                        <div class="setting-row">
+                            <div class="setting-info">
+                                <div class="setting-label">Open Analytics Dashboard</div>
+                                <div class="setting-desc">Detailed usage stats, memory savings, and browsing patterns
+                                </div>
+                            </div>
+                            <div class="setting-control">
+                                <button class="btn btn-secondary" id="open-analytics-dashboard-2">Open →</button>
+                            </div>
+                        </div>
+                    </div>
+
+                </div><!-- /tab-analytics -->
+
+                <!-- ── Focus Mode ─────────────────────────────────────────── -->
+                <div class="tab-panel" id="tab-focus">
+
+                    <div class="card">
+                        <div class="card-header">
+                            <span class="header-icon">🎯</span>
+                            <h2>Focus Mode</h2>
+                        </div>
+                        <div class="setting-row">
+                            <div class="setting-info">
+                                <div class="setting-label">Auto-enable Focus Mode</div>
+                                <div class="setting-desc">Automatically enable focus mode during your work hours</div>
+                            </div>
+                            <div class="setting-control">
+                                <div class="toggle" id="auto-focus-toggle"></div>
+                            </div>
+                        </div>
+                        <div class="setting-row">
+                            <div class="setting-info">
+                                <div class="setting-label">Work hours</div>
+                                <div class="setting-desc">Define when focus mode should activate automatically</div>
+                            </div>
+                            <div class="setting-control">
+                                <div class="time-input">
+                                    <input type="time" id="work-start" value="09:00">
+                                    <span style="color:var(--text-muted)">–</span>
+                                    <input type="time" id="work-end" value="17:00">
+                                </div>
+                            </div>
+                        </div>
+                        <div class="setting-row">
+                            <div class="setting-info">
+                                <div class="setting-label">When visiting blocked sites</div>
+                                <div class="setting-desc">What happens when you try to open a blocked site during focus
+                                    mode</div>
+                            </div>
+                            <div class="setting-control">
+                                <select id="focus-action">
+                                    <option value="warn">Show warning</option>
+                                    <option value="block">Block completely</option>
+                                    <option value="suspend">Auto-suspend tab</option>
+                                </select>
+                            </div>
+                        </div>
+                    </div>
+
+                </div><!-- /tab-focus -->
+
+                <!-- ── Backup & Sync ──────────────────────────────────────── -->
+                <div class="tab-panel" id="tab-backup">
+
+                    <div class="card">
+                        <div class="card-header">
+                            <span class="header-icon">☁️</span>
+                            <h2>Sync Across Devices</h2>
+                        </div>
+                        <div class="setting-row sync-row">
+                            <div class="setting-info">
+                                <div class="setting-label">✨ Chrome Sync (Recommended)</div>
+                                <div class="setting-desc">Automatically sync all settings to every Chrome where you're
+                                    signed in. No setup required.</div>
+                            </div>
+                            <div class="setting-control">
+                                <label style="display:flex;align-items:center;gap:8px;cursor:pointer;user-select:none;">
+                                    <input type="checkbox" id="sync-toggle"
+                                        style="width:16px;height:16px;accent-color:var(--accent);">
+                                    <span style="font-size:12px;color:var(--text-secondary);">Enable</span>
+                                </label>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="card">
+                        <div class="card-header">
+                            <span class="header-icon">📤</span>
+                            <h2>Export &amp; Import</h2>
+                        </div>
+                        <div class="setting-row">
+                            <div class="setting-info">
+                                <div class="setting-label">Export settings</div>
+                                <div class="setting-desc">Download all settings and saved groups to a JSON file</div>
+                            </div>
+                            <div class="setting-control">
+                                <button class="btn btn-success" id="export-settings">📤 Export</button>
+                            </div>
+                        </div>
+                        <div class="setting-row">
+                            <div class="setting-info">
+                                <div class="setting-label">Import settings</div>
+                                <div class="setting-desc">Restore settings from a previously exported file</div>
+                            </div>
+                            <div class="setting-control">
+                                <input type="file" id="import-file" accept=".json" style="display:none;">
+                                <button class="btn btn-secondary" id="import-settings">📥 Import</button>
+                            </div>
+                        </div>
+                        <div class="setting-row">
+                            <div class="setting-info">
+                                <div class="setting-label">Auto backup schedule</div>
+                                <div class="setting-desc">Automatically backup your settings on a schedule</div>
+                            </div>
+                            <div class="setting-control">
+                                <select id="backup-frequency">
+                                    <option value="never">Never</option>
+                                    <option value="daily">Daily</option>
+                                    <option value="weekly" selected>Weekly</option>
+                                    <option value="monthly">Monthly</option>
+                                </select>
+                            </div>
+                        </div>
+                        <div class="setting-row">
+                            <div class="setting-info">
+                                <div class="setting-label">Last backup</div>
+                                <div class="setting-desc" id="last-backup-time">Never backed up</div>
+                            </div>
+                            <div class="setting-control">
+                                <button class="btn btn-secondary" id="backup-now">Backup Now</button>
+                            </div>
+                        </div>
+                    </div>
+
+                </div><!-- /tab-backup -->
+
+            </div><!-- /content-area -->
+        </div><!-- /main -->
+    </div><!-- /layout -->
+
+    <!-- Toast -->
+    <div id="toast"></div>
 
     <script src="options.js"></script>
 </body>

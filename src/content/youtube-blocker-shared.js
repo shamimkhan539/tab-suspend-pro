@@ -33,19 +33,33 @@ const getAdPlayerYT = () => {
     return null;
 };
 
-// Get the ad player element (YouTube Music specific)
-// Simplified JAdSkip approach - just return the active video element
+// Get the ad player element (YouTube Music specific).
+// IMPORTANT: Only return a video element when ad UI is actually visible in the DOM.
+// Without this guard, the function returns the currently-playing song and
+// trySkipAd() seeks it to its end — causing songs to skip after 1-2 seconds.
 const getAdPlayerYTM = () => {
-    const videos = document.querySelectorAll("video");
+    // Check for ad-specific UI elements that are only rendered during active ad playback.
+    const hasActiveAdUI =
+        // Video ad module inside the embedded YouTube player (populated only during an ad)
+        !!document.querySelector(".ytp-ad-module:not(:empty)") ||
+        // Ad overlay / skip elements — only present while a video ad is playing
+        !!document.querySelector(".ytp-ad-player-overlay") ||
+        !!document.querySelector(".ytp-ad-skip-button-container") ||
+        !!document.querySelector(".ytp-skip-ad-button") ||
+        // YouTube Music audio / promo ad bar
+        !!document.querySelector("ytmusic-mealbar-promo-renderer");
 
-    // Return the first playing video (YouTube Music typically has one main video)
+    if (!hasActiveAdUI) return null;
+
+    // Ad is confirmed visible — return the playing video element
+    const videos = document.querySelectorAll("video");
     for (const video of videos) {
         if (!video.paused && video.duration > 0) {
             return video;
         }
     }
 
-    // Fallback: return first video with valid source
+    // Fallback: any video sourced from Google's video CDN
     for (const video of videos) {
         const src = video.src || "";
         if (src.includes("googlevideo.com") && video.duration > 0) {
