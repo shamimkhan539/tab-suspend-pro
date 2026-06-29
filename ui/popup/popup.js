@@ -95,12 +95,13 @@ class PopupManager {
     async loadSettings() {
         try {
             const result = await chrome.storage.sync.get([
-                "tabSuspendSettings",
-                "extensionEnabled",
+                "consolidatedSettings",
             ]);
-            this.settings = result.tabSuspendSettings || { enabled: true };
-            // Add extensionEnabled setting separately for backward compatibility
-            this.settings.extensionEnabled = result.extensionEnabled !== false;
+            const consolidated = result.consolidatedSettings || {};
+            this.settings = {
+                enabled: true,
+                extensionEnabled: consolidated.extensionEnabled !== false,
+            };
         } catch (error) {
             console.error("Error loading settings:", error);
             this.settings = { enabled: true, extensionEnabled: true };
@@ -257,7 +258,23 @@ class PopupManager {
             extensionToggle.addEventListener("click", async () => {
                 const newState = !this.settings.extensionEnabled;
                 this.settings.extensionEnabled = newState;
-                await chrome.storage.sync.set({ extensionEnabled: newState });
+
+                // Update consolidatedSettings with the new state
+                try {
+                    const result = await chrome.storage.sync.get([
+                        "consolidatedSettings",
+                    ]);
+                    const consolidated = result.consolidatedSettings || {
+                        extensionEnabled: true,
+                    };
+                    consolidated.extensionEnabled = newState;
+                    await chrome.storage.sync.set({
+                        consolidatedSettings: consolidated,
+                    });
+                } catch (error) {
+                    console.error("Error saving extension state:", error);
+                }
+
                 this.updateExtensionState();
 
                 // Notify background script about state change
@@ -278,7 +295,7 @@ class PopupManager {
         const settingsBtn = document.getElementById("settings-btn");
         if (settingsBtn) {
             settingsBtn.addEventListener("click", () => {
-                if (this.settings.enabled) {
+                if (this.settings.extensionEnabled) {
                     chrome.runtime.openOptionsPage();
                 }
             });
@@ -288,7 +305,7 @@ class PopupManager {
         const suspendCurrent = document.getElementById("suspend-current");
         if (suspendCurrent) {
             suspendCurrent.addEventListener("click", async () => {
-                if (!this.settings.enabled) return;
+                if (!this.settings.extensionEnabled) return;
 
                 const [tab] = await chrome.tabs.query({
                     active: true,
@@ -305,7 +322,7 @@ class PopupManager {
         const suggestTabs = document.getElementById("suggest-tabs");
         if (suggestTabs) {
             suggestTabs.addEventListener("click", async () => {
-                if (!this.settings.enabled) return;
+                if (!this.settings.extensionEnabled) return;
 
                 await this.sendMessageToBackground("suggestTabs");
                 setTimeout(() => this.checkForSuggestions(), 500);
@@ -316,7 +333,7 @@ class PopupManager {
         const restoreAll = document.getElementById("restore-all");
         if (restoreAll) {
             restoreAll.addEventListener("click", async () => {
-                if (!this.settings.enabled) return;
+                if (!this.settings.extensionEnabled) return;
 
                 await this.sendMessageToBackground("restoreAllTabs");
                 setTimeout(() => this.updateStats(), 500);
@@ -327,7 +344,7 @@ class PopupManager {
         const restoreLost = document.getElementById("restore-lost");
         if (restoreLost) {
             restoreLost.addEventListener("click", async () => {
-                if (!this.settings.enabled) return;
+                if (!this.settings.extensionEnabled) return;
                 await this.sendMessageToBackground("restoreLostTabs");
                 setTimeout(() => this.updateStats(), 800);
             });
@@ -339,7 +356,7 @@ class PopupManager {
         );
         if (toggleGroupSelector) {
             toggleGroupSelector.addEventListener("click", () => {
-                if (!this.settings.enabled) return;
+                if (!this.settings.extensionEnabled) return;
 
                 const selector = document.getElementById(
                     "combined-group-selector",
@@ -370,7 +387,7 @@ class PopupManager {
         const suspendGroupBtn = document.getElementById("suspend-group-btn");
         if (suspendGroupBtn) {
             suspendGroupBtn.addEventListener("click", async () => {
-                if (!this.settings.enabled) return;
+                if (!this.settings.extensionEnabled) return;
 
                 const dropdown = document.getElementById(
                     "combined-group-dropdown",
@@ -395,7 +412,7 @@ class PopupManager {
         const restoreGroupBtn = document.getElementById("restore-group-btn");
         if (restoreGroupBtn) {
             restoreGroupBtn.addEventListener("click", async () => {
-                if (!this.settings.enabled) return;
+                if (!this.settings.extensionEnabled) return;
 
                 const dropdown = document.getElementById(
                     "combined-group-dropdown",
@@ -420,7 +437,7 @@ class PopupManager {
         const neverSuspendUrl = document.getElementById("never-suspend-url");
         if (neverSuspendUrl) {
             neverSuspendUrl.addEventListener("click", async () => {
-                if (!this.settings.enabled) return;
+                if (!this.settings.extensionEnabled) return;
 
                 const [tab] = await chrome.tabs.query({
                     active: true,
@@ -439,7 +456,7 @@ class PopupManager {
         );
         if (neverSuspendDomain) {
             neverSuspendDomain.addEventListener("click", async () => {
-                if (!this.settings.enabled) return;
+                if (!this.settings.extensionEnabled) return;
 
                 const [tab] = await chrome.tabs.query({
                     active: true,
@@ -482,7 +499,7 @@ class PopupManager {
         const openSettings = document.getElementById("open-settings");
         if (openSettings) {
             openSettings.addEventListener("click", () => {
-                if (this.settings.enabled) {
+                if (this.settings.extensionEnabled) {
                     chrome.runtime.openOptionsPage();
                 }
             });
@@ -492,7 +509,7 @@ class PopupManager {
         const saveCurrentGroup = document.getElementById("save-current-group");
         if (saveCurrentGroup) {
             saveCurrentGroup.addEventListener("click", async () => {
-                if (!this.settings.enabled) return;
+                if (!this.settings.extensionEnabled) return;
                 await this.saveCurrentGroupOrWindow();
             });
         }
@@ -503,7 +520,7 @@ class PopupManager {
         );
         if (savedGroupsList) {
             savedGroupsList.addEventListener("click", async (e) => {
-                if (!this.settings.enabled) return;
+                if (!this.settings.extensionEnabled) return;
 
                 const groupId = e.target.dataset.groupId;
                 const action = e.target.dataset.action;
@@ -532,7 +549,7 @@ class PopupManager {
         const settingsBtn = document.getElementById("settings-btn");
 
         if (toggle && statusText) {
-            if (this.settings.enabled) {
+            if (this.settings.extensionEnabled) {
                 toggle.classList.add("active");
                 statusText.textContent = "Extension Enabled";
             } else {
@@ -542,7 +559,7 @@ class PopupManager {
         }
 
         if (settingsBtn) {
-            if (this.settings.enabled) {
+            if (this.settings.extensionEnabled) {
                 settingsBtn.classList.remove("disabled");
             } else {
                 settingsBtn.classList.add("disabled");
@@ -576,7 +593,7 @@ class PopupManager {
         buttons.forEach((buttonId) => {
             const button = document.getElementById(buttonId);
             if (button) {
-                if (this.settings.enabled) {
+                if (this.settings.extensionEnabled) {
                     button.classList.remove("disabled");
                     button.style.opacity = "1";
                     button.style.cursor = "pointer";
@@ -593,7 +610,7 @@ class PopupManager {
         const selector = document.getElementById("combined-group-selector");
         const dropdown = document.getElementById("combined-group-dropdown");
         if (selector && dropdown) {
-            if (this.settings.enabled) {
+            if (this.settings.extensionEnabled) {
                 dropdown.disabled = false;
                 dropdown.style.opacity = "1";
             } else {

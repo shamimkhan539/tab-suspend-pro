@@ -8,9 +8,59 @@
     let lastBlockedAdURL = "";
     let blockEnabled = false;
 
+    const isIdleDialogText = (text) => {
+        const normalized = (text || "").toLowerCase();
+        return (
+            normalized.includes("still watching") ||
+            normalized.includes("still there") ||
+            normalized.includes("continue watching") ||
+            normalized.includes("video paused") ||
+            normalized.includes("are you still")
+        );
+    };
+
+    const clickIdleDialogButton = (dialogRoot) => {
+        if (!dialogRoot || !isElementVisible(dialogRoot)) return false;
+        if (!isIdleDialogText(dialogRoot.textContent)) return false;
+
+        const buttons = dialogRoot.querySelectorAll(
+            "button, yt-button-renderer button, [role='button']",
+        );
+
+        for (const button of buttons) {
+            if (!isElementVisible(button)) continue;
+
+            const buttonText = (button.textContent || "").toLowerCase();
+            const ariaLabel = (
+                button.getAttribute("aria-label") || ""
+            ).toLowerCase();
+
+            if (
+                buttonText.includes("continue") ||
+                buttonText.includes("yes") ||
+                buttonText.includes("watch") ||
+                ariaLabel.includes("continue") ||
+                ariaLabel.includes("yes") ||
+                ariaLabel.includes("watch")
+            ) {
+                button.click();
+                logMessage("Clicked modern idle dialog confirmation button");
+                return true;
+            }
+        }
+
+        return false;
+    };
+
     // Try to click skip button using YouTube's Player API
     const tryClickSkipButton = async () => {
-        if (!getAdPlayerYT()) return;
+        const hasAdPlayer = !!getAdPlayerYT();
+        const hasAdUi = hasAnyAdDomIndicator();
+
+        if (!hasAdPlayer && !hasAdUi) return;
+
+        // Prefer native UI skip buttons first when present.
+        clickVisibleSkipButton();
 
         let player = document.getElementById("movie_player");
         if (!player) {
@@ -38,13 +88,16 @@
 
         // Try ad slots from current player response
         const playerSlots = player.getPlayerResponse()?.adSlots;
-        if (playerSlots) {
+        if (playerSlots && playerSlots.length > 0) {
             logMessage(
-                `Trying ${playerSlots.length} ad slots from player response`
+                `Trying ${playerSlots.length} ad slots from player response`,
             );
             playerSlots.forEach((slot) => {
                 clickTriggers(player, slot);
             });
+        } else {
+            // Keep trying visible UI skip button if API slots are absent.
+            clickVisibleSkipButton();
         }
     };
 
@@ -54,7 +107,7 @@
         if (!player) return;
 
         logMessage(
-            `Processing ad at ${player.currentTime} / ${player.duration}`
+            `Processing ad at ${player.currentTime} / ${player.duration}`,
         );
 
         if (!isFinite(player.duration)) {
@@ -71,7 +124,7 @@
         const threshold = player.duration * 0.4;
         if (player.currentTime < threshold) {
             logMessage(
-                `Waiting for threshold: ${player.currentTime} < ${threshold}`
+                `Waiting for threshold: ${player.currentTime} < ${threshold}`,
             );
             return;
         }
@@ -88,14 +141,32 @@
     const checkAds = async () => {
         if (!blockEnabled) return;
 
+        clickVisibleSkipButton();
         await tryClickSkipButton();
         await new Promise((resolve) => setTimeout(resolve, 1000));
+        clickVisibleSkipButton();
         await trySkipAd();
     };
 
     // Check for "Still watching?" popup
     const checkIdle = async () => {
         if (!blockEnabled) return;
+
+        const dialogSelectors = [
+            "yt-confirm-dialog-renderer",
+            "paper-dialog[role='alertdialog']",
+            "[role='alertdialog']",
+            "ytd-popup-container",
+        ];
+
+        for (const selector of dialogSelectors) {
+            const dialogs = document.querySelectorAll(selector);
+            for (const dialog of dialogs) {
+                if (clickIdleDialogButton(dialog)) {
+                    return;
+                }
+            }
+        }
 
         const buttons = document.querySelectorAll("#confirm-button");
         logMessage(`Found ${buttons.length} confirm buttons`);
@@ -129,9 +200,16 @@
                 try {
                     const response = JSON.parse(this.response);
 
+                    if (
+                        Array.isArray(response.adSlots) &&
+                        response.adSlots.length > 0
+                    ) {
+                        adSlots = response.adSlots;
+                    }
+
                     if ("adThrottled" in response) {
                         logMessage(
-                            `Ad throttling detected: ${response.adThrottled}`
+                            `Ad throttling detected: ${response.adThrottled}`,
                         );
 
                         if (blockEnabled) {
@@ -142,12 +220,13 @@
                             });
                             response.adThrottled = true;
                             this.response = JSON.stringify(response);
-                        } else if (response.adSlots) {
-                            // Capture ad slots for later use
+                        } else if (
+                            Array.isArray(response.adSlots) &&
+                            response.adSlots.length > 0
+                        ) {
                             logMessage(
-                                `Captured ${response.adSlots.length} ad slots`
+                                `Captured ${response.adSlots.length} ad slots`,
                             );
-                            adSlots = response.adSlots;
                         }
                     }
                 } catch (e) {
