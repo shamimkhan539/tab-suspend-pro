@@ -23,54 +23,125 @@
     let checkIdleTimeout = null;
     let blockEnabled = false;
 
+    function applyBlockSettings(response, source) {
+        const shouldBlock = isYouTubeMusic
+            ? response.blockYoutubeMusicAds
+            : response.blockYoutubeAds;
+
+        blockEnabled = shouldBlock || false;
+
+        // Send to MAIN world
+        window.postMessage({
+            origin: "ytblocker-extension",
+            action: "setBlockEnabled",
+            enabled: blockEnabled,
+        });
+
+        console.log(
+            `[YouTube Blocker] Settings loaded from ${source}: blockEnabled=${blockEnabled}`,
+        );
+    }
+
+    async function loadSettingsFromStorage() {
+        try {
+            const localSettings = await chrome.storage.local.get([
+                "adsBlockerSettings",
+            ]);
+            let adsBlockerSettings = localSettings.adsBlockerSettings;
+
+            if (!adsBlockerSettings) {
+                const syncSettings = await chrome.storage.sync.get([
+                    "consolidatedSettings",
+                ]);
+                adsBlockerSettings =
+                    syncSettings.consolidatedSettings?.adsBlocker;
+            }
+
+            if (!adsBlockerSettings) {
+                console.warn(
+                    "[YouTube Blocker] No stored settings found, using defaults",
+                );
+                return {
+                    blockYoutubeAds: true,
+                    blockYoutubeMusicAds: true,
+                };
+            }
+
+            return {
+                blockYoutubeAds: adsBlockerSettings.blockYoutubeAds !== false,
+                blockYoutubeMusicAds:
+                    adsBlockerSettings.blockYoutubeMusicAds !== false,
+            };
+        } catch (error) {
+            console.error(
+                `[YouTube Blocker] Error loading fallback settings: ${error.message}`,
+            );
+            return null;
+        }
+    }
+
     // Load settings from background
     async function loadSettings() {
-        return new Promise((resolve) => {
-            try {
-                chrome.runtime.sendMessage(
-                    { action: "get-youtube-blocker-settings" },
-                    function (response) {
-                        if (chrome.runtime.lastError) {
-                            console.error(
-                                `[YouTube Blocker] Error loading settings: ${chrome.runtime.lastError.message}`,
-                            );
-                            resolve(false);
-                            return;
-                        }
+        try {
+            const runtimeResponse = await new Promise((resolve) => {
+                try {
+                    chrome.runtime.sendMessage(
+                        { action: "get-youtube-blocker-settings" },
+                        function (response) {
+                            if (chrome.runtime.lastError) {
+                                const errorMessage =
+                                    chrome.runtime.lastError.message ||
+                                    "Unknown runtime error";
 
-                        if (response) {
-                            const shouldBlock = isYouTubeMusic
-                                ? response.blockYoutubeMusicAds
-                                : response.blockYoutubeAds;
+                                if (
+                                    errorMessage.includes(
+                                        "Receiving end does not exist",
+                                    )
+                                ) {
+                                    console.warn(
+                                        "[YouTube Blocker] Background listener not ready yet, falling back to storage...",
+                                    );
+                                } else {
+                                    console.error(
+                                        `[YouTube Blocker] Error loading settings: ${errorMessage}`,
+                                    );
+                                }
+                                resolve(null);
+                                return;
+                            }
 
-                            blockEnabled = shouldBlock || false;
+                            resolve(response || null);
+                        },
+                    );
+                } catch (error) {
+                    console.error(
+                        `[YouTube Blocker] Error sending message: ${error.message}`,
+                    );
+                    resolve(null);
+                }
+            });
 
-                            // Send to MAIN world
-                            window.postMessage({
-                                origin: "ytblocker-extension",
-                                action: "setBlockEnabled",
-                                enabled: blockEnabled,
-                            });
-
-                            console.log(
-                                `[YouTube Blocker] Settings loaded: blockEnabled=${blockEnabled}`,
-                            );
-                            resolve(true);
-                        } else {
-                            console.error(
-                                "[YouTube Blocker] No response from background",
-                            );
-                            resolve(false);
-                        }
-                    },
-                );
-            } catch (error) {
-                console.error(
-                    `[YouTube Blocker] Error sending message: ${error.message}`,
-                );
-                resolve(false);
+            if (runtimeResponse) {
+                applyBlockSettings(runtimeResponse, "background");
+                return true;
             }
-        });
+
+            const fallbackResponse = await loadSettingsFromStorage();
+            if (fallbackResponse) {
+                applyBlockSettings(fallbackResponse, "storage fallback");
+                return true;
+            }
+
+            console.error(
+                "[YouTube Blocker] No settings available from background or storage",
+            );
+            return false;
+        } catch (error) {
+            console.error(
+                `[YouTube Blocker] Unexpected settings load error: ${error.message}`,
+            );
+            return false;
+        }
     }
 
     // Check for ads (with retry) - INSTANT on first call for immediate blocking

@@ -10,10 +10,132 @@ const logMessage = (message) => {
     console.log(`[YouTube Blocker MAIN] ${message}`);
 };
 
+const isElementVisible = (element) => {
+    if (!element) return false;
+
+    if (typeof element.checkVisibility === "function") {
+        return element.checkVisibility();
+    }
+
+    const style = window.getComputedStyle(element);
+    return (
+        !!style &&
+        style.display !== "none" &&
+        style.visibility !== "hidden" &&
+        element.offsetWidth > 0 &&
+        element.offsetHeight > 0
+    );
+};
+
 // Check if ad module has ads
 const hasAds = (adsModule) => {
     if (!adsModule || !adsModule[0]) return false;
-    return adsModule[0].childElementCount > 0;
+    return (
+        adsModule[0].childElementCount > 0 ||
+        !!adsModule[0].querySelector(
+            ".ytp-ad-text, .ytp-ad-player-overlay, .ytp-ad-preview-container, .ytp-ad-skip-button-container",
+        )
+    );
+};
+
+const findActiveVideo = (videos) => {
+    const asArray = Array.from(videos || []);
+
+    const playingVideo = asArray.find(
+        (video) =>
+            !video.paused &&
+            isFinite(video.duration) &&
+            video.duration > 0 &&
+            isElementVisible(video),
+    );
+
+    if (playingVideo) return playingVideo;
+
+    return (
+        asArray.find(
+            (video) =>
+                isFinite(video.duration) &&
+                video.duration > 0 &&
+                isElementVisible(video),
+        ) ||
+        asArray[0] ||
+        null
+    );
+};
+
+const hasAnyAdDomIndicator = () => {
+    const selectors = [
+        "#movie_player.ad-showing",
+        "#movie_player.ad-interrupting",
+        ".ytp-ad-module:not(:empty)",
+        ".ytp-ad-player-overlay",
+        ".ytp-ad-text",
+        ".ytp-ad-preview-container",
+        ".ytp-ad-skip-button-container",
+        ".ytp-ad-skip-button",
+        ".ytp-ad-skip-button-modern",
+        ".ytp-skip-ad-button",
+        ".ytp-ad-simple-ad-badge",
+        ".video-ads",
+        "ytmusic-mealbar-promo-renderer",
+        "ytmusic-display-ad-renderer",
+        '[class*="ad-showing"]',
+        '[class*="ad-playing"]',
+    ];
+
+    return selectors.some((selector) => {
+        const nodes = document.querySelectorAll(selector);
+        return Array.from(nodes).some((node) => isElementVisible(node));
+    });
+};
+
+const clickVisibleSkipButton = () => {
+    const selectors = [
+        ".ytp-ad-skip-button",
+        ".ytp-ad-skip-button-modern",
+        ".ytp-skip-ad-button",
+        ".ytp-ad-skip-button-container button",
+    ];
+
+    for (const selector of selectors) {
+        const buttons = document.querySelectorAll(selector);
+        for (const button of buttons) {
+            if (!isElementVisible(button)) continue;
+
+            button.click();
+            logMessage(`Clicked visible skip button (${selector})`);
+            return true;
+        }
+    }
+
+    return false;
+};
+
+const hasVisibleAdIndicator = (moviePlayer) => {
+    if (!moviePlayer) return false;
+
+    if (
+        moviePlayer.classList.contains("ad-showing") ||
+        moviePlayer.classList.contains("ad-interrupting")
+    ) {
+        return true;
+    }
+
+    const adSelectors = [
+        ".ytp-ad-module:not(:empty)",
+        ".ytp-ad-player-overlay",
+        ".ytp-ad-text",
+        ".ytp-ad-preview-container",
+        ".ytp-ad-skip-button-container",
+        ".ytp-skip-ad-button",
+        ".video-ads",
+        ".ad-container",
+    ];
+
+    return adSelectors.some((selector) => {
+        const element = moviePlayer.querySelector(selector);
+        return isElementVisible(element);
+    });
 };
 
 // Get the ad player element (YouTube specific)
@@ -26,8 +148,15 @@ const getAdPlayerYT = () => {
     const videoStream = moviePlayer.getElementsByClassName("video-stream");
     const adsModule = moviePlayer.getElementsByClassName("ytp-ad-module");
 
-    if (videoStream.length && adsModule.length && hasAds(adsModule)) {
-        return videoStream[0];
+    if (!videoStream.length) {
+        return null;
+    }
+
+    const hasAdModule = adsModule.length && hasAds(adsModule);
+    const hasAdIndicator = hasVisibleAdIndicator(moviePlayer);
+
+    if (hasAdModule || hasAdIndicator) {
+        return findActiveVideo(videoStream);
     }
 
     return null;
@@ -38,36 +167,14 @@ const getAdPlayerYT = () => {
 // Without this guard, the function returns the currently-playing song and
 // trySkipAd() seeks it to its end — causing songs to skip after 1-2 seconds.
 const getAdPlayerYTM = () => {
-    // Check for ad-specific UI elements that are only rendered during active ad playback.
-    const hasActiveAdUI =
-        // Video ad module inside the embedded YouTube player (populated only during an ad)
-        !!document.querySelector(".ytp-ad-module:not(:empty)") ||
-        // Ad overlay / skip elements — only present while a video ad is playing
-        !!document.querySelector(".ytp-ad-player-overlay") ||
-        !!document.querySelector(".ytp-ad-skip-button-container") ||
-        !!document.querySelector(".ytp-skip-ad-button") ||
-        // YouTube Music audio / promo ad bar
-        !!document.querySelector("ytmusic-mealbar-promo-renderer");
+    // Only treat as ad playback when a visible ad indicator is present.
+    const hasActiveAdUI = hasAnyAdDomIndicator();
 
     if (!hasActiveAdUI) return null;
 
     // Ad is confirmed visible — return the playing video element
     const videos = document.querySelectorAll("video");
-    for (const video of videos) {
-        if (!video.paused && video.duration > 0) {
-            return video;
-        }
-    }
-
-    // Fallback: any video sourced from Google's video CDN
-    for (const video of videos) {
-        const src = video.src || "";
-        if (src.includes("googlevideo.com") && video.duration > 0) {
-            return video;
-        }
-    }
-
-    return null;
+    return findActiveVideo(videos);
 };
 
 // Click ad skip triggers using YouTube's internal API

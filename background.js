@@ -50,6 +50,10 @@ class TabSuspendManager {
         this.trackerBlocker = new TrackerBlocker();
         this.adsBlocker = new AdsBlocker();
 
+        // Register runtime message handlers immediately so document_start
+        // content scripts can reach the service worker before async init ends.
+        this.setupMessageHandlers();
+
         this.init();
     }
 
@@ -70,7 +74,6 @@ class TabSuspendManager {
 
             this.setupContextMenus();
             this.setupEventListeners();
-            this.setupMessageHandlers();
             this.startMonitoring();
             this.startMetadataCleanup();
             console.log(
