@@ -152,6 +152,8 @@
             return;
         }
 
+        const playerSrc = adPlayer.currentSrc || adPlayer.src || "";
+
         const player = getMusicPlayer();
         if (player && !isCurrentVideoAd(player) && !hasMusicAdDomIndicators()) {
             logMessage(
@@ -169,16 +171,19 @@
             return;
         }
 
-        if (adPlayer.src === lastBlockedAdURL) {
-            logMessage("Skipping already processed ad");
+        if (
+            playerSrc &&
+            playerSrc === lastBlockedAdURL &&
+            Date.now() - lastBlockedTime < 1200
+        ) {
             return;
         }
 
-        const target = adPlayer.duration - 0.1;
+        const target = Math.max(adPlayer.duration - 0.08, adPlayer.currentTime);
         logMessage(`Skipping ad from ${adPlayer.currentTime} to ${target}`);
 
         adPlayer.currentTime = target;
-        lastBlockedAdURL = adPlayer.src;
+        lastBlockedAdURL = playerSrc;
         lastBlockedTime = Date.now();
 
         setTimeout(() => {
@@ -205,8 +210,9 @@
             return;
         }
 
-        // Step 2: Wait 1 second for ad video to load (critical!)
-        await new Promise((resolve) => setTimeout(resolve, 1000));
+        // Step 2: Try immediate seek fallback, then short wait and retry.
+        await trySkipAd();
+        await new Promise((resolve) => setTimeout(resolve, 180));
 
         clickVisibleSkipButton();
 
@@ -355,7 +361,10 @@
                 blockEnabled = event.data.enabled;
                 logMessage(`[YTM] Block enabled: ${blockEnabled}`);
                 if (blockEnabled) {
+                    ensureSponsoredHideStyle();
                     hideSponsoredBlocks();
+                } else {
+                    removeSponsoredHideStyle();
                 }
                 break;
 

@@ -10,6 +10,50 @@ const logMessage = (message) => {
     console.log(`[YouTube Blocker MAIN] ${message}`);
 };
 
+const YTBLOCKER_HIDE_STYLE_ID = "ytblocker-sponsored-hide-style";
+
+const ensureSponsoredHideStyle = () => {
+    if (document.getElementById(YTBLOCKER_HIDE_STYLE_ID)) return;
+
+    const style = document.createElement("style");
+    style.id = YTBLOCKER_HIDE_STYLE_ID;
+    style.textContent = `
+        ytd-display-ad-renderer,
+        ytd-ad-slot-renderer,
+        ytd-in-feed-ad-layout-renderer,
+        ytd-promoted-video-renderer,
+        ytd-compact-promoted-video-renderer,
+        ytd-promoted-sparkles-web-renderer,
+        ytd-promoted-sparkles-text-search-renderer,
+        ytd-companion-slot-renderer,
+        ytd-action-companion-ad-renderer,
+        ytd-player-legacy-desktop-watch-ads-renderer,
+        ytd-video-masthead-ad-v3-renderer,
+        ytd-banner-promo-renderer,
+        ytmusic-display-ad-renderer,
+        ytmusic-promoted-sparkles-web-renderer,
+        ytmusic-mealbar-promo-renderer,
+        #player-ads,
+        #panels ytd-ads-engagement-panel-content-renderer,
+        #related ytd-display-ad-renderer,
+        #secondary ytd-display-ad-renderer,
+        #secondary ytd-ad-slot-renderer {
+            display: none !important;
+            visibility: hidden !important;
+            opacity: 0 !important;
+            max-height: 0 !important;
+            min-height: 0 !important;
+            overflow: hidden !important;
+        }
+    `;
+
+    (document.head || document.documentElement).appendChild(style);
+};
+
+const removeSponsoredHideStyle = () => {
+    document.getElementById(YTBLOCKER_HIDE_STYLE_ID)?.remove();
+};
+
 const isElementVisible = (element) => {
     if (!element) return false;
 
@@ -147,7 +191,13 @@ const hideSponsoredBlocks = () => {
         "ytd-promoted-video-renderer",
         "ytd-compact-promoted-video-renderer",
         "ytd-promoted-sparkles-web-renderer",
+        "ytd-promoted-sparkles-text-search-renderer",
+        "ytd-companion-slot-renderer",
+        "ytd-action-companion-ad-renderer",
         "ytd-player-legacy-desktop-watch-ads-renderer",
+        "ytd-video-masthead-ad-v3-renderer",
+        "ytd-banner-promo-renderer",
+        "#player-ads",
         "ytmusic-display-ad-renderer",
         "ytmusic-promoted-sparkles-web-renderer",
         "ytmusic-mealbar-promo-renderer",
@@ -180,6 +230,23 @@ const hideSponsoredBlocks = () => {
         );
 
         if (hideElement(sponsoredCard, "label-match")) {
+            hiddenCount += 1;
+        }
+    });
+
+    const contentCards = document.querySelectorAll(
+        "#secondary ytd-compact-video-renderer, #related ytd-compact-video-renderer, ytd-video-renderer, ytd-rich-item-renderer, ytd-grid-video-renderer, ytd-rich-grid-media, ytmusic-responsive-list-item-renderer, ytmusic-two-row-item-renderer",
+    );
+
+    contentCards.forEach((card) => {
+        if (card.dataset.ytblockerSponsoredHidden === "1") return;
+
+        const cardText = (card.textContent || "").toLowerCase();
+        if (!cardText.includes("sponsored") && !cardText.includes("promoted")) {
+            return;
+        }
+
+        if (hideElement(card, "card-text-match")) {
             hiddenCount += 1;
         }
     });

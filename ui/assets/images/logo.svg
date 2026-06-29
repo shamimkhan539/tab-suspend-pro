@@ -1,0 +1,20 @@
+<svg width="128" height="128" viewBox="0 0 128 128" xmlns="http://www.w3.org/2000/svg">
+  <!-- Flat minimalist shield -->
+  <path d="M64,6 L114,24 L114,62 C114,96 90,116 64,126 C38,116 14,96 14,62 L14,24 Z"
+        fill="#2563EB"/>
+
+  <!-- Subtle flat two-tone split for depth, no gradient -->
+  <path d="M64,6 L114,24 L114,62 C114,96 90,116 64,126 Z"
+        fill="#1D4ED8"/>
+
+  <!-- Lock shackle -->
+  <path d="M50,58 L50,48 C50,38.06 56.06,32 64,32 C71.94,32 78,38.06 78,48 L78,58"
+        fill="none" stroke="#FFFFFF" stroke-width="9" stroke-linecap="round"/>
+
+  <!-- Lock body -->
+  <rect x="42" y="56" width="44" height="36" rx="8" fill="#FFFFFF"/>
+
+  <!-- Keyhole -->
+  <circle cx="64" cy="71" r="5" fill="#1D4ED8"/>
+  <path d="M61,74 L67,74 L65,84 L63,84 Z" fill="#1D4ED8"/>
+</svg>
