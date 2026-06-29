@@ -395,18 +395,6 @@
             flex-wrap: wrap;
         }
 
-        .dashboard-embed-wrap {
-            padding: 0 20px 20px;
-        }
-
-        .dashboard-embed-frame {
-            width: 100%;
-            min-height: 980px;
-            border: 1px solid var(--border);
-            border-radius: var(--radius-sm);
-            background: var(--surface);
-        }
-
         @keyframes fadeSlide {
             from {
                 opacity: 0;
@@ -1393,8 +1381,6 @@
                     <div class="section-tabs" data-subtab-group="tracker">
                         <button class="section-tab active" data-subtab-group="tracker" data-subtab="overview">📊
                             Overview</button>
-                        <button class="section-tab" data-subtab-group="tracker" data-subtab="dashboard">🧭
-                            Dashboard</button>
                         <button class="section-tab" data-subtab-group="tracker" data-subtab="settings">⚙️
                             Settings</button>
                         <button class="section-tab" data-subtab-group="tracker" data-subtab="whitelist">✅
@@ -1488,25 +1474,6 @@
                             <div class="overview-actions">
                                 <button class="btn btn-secondary btn-sm" id="tracker-refresh-overview">Refresh</button>
                                 <button class="btn btn-danger btn-sm" id="tracker-reset-overview">Reset Stats</button>
-                            </div>
-                        </div>
-                    </div>
-
-                    <div class="section-pane" id="tracker-pane-dashboard">
-                        <div class="card">
-                            <div class="card-header">
-                                <span class="header-icon">🧭</span>
-                                <h2>Tracker Dashboard</h2>
-                            </div>
-                            <div class="notice notice-info">
-                                <span class="notice-icon">ℹ️</span>
-                                <span>Embedded view of the full Tracker Blocker dashboard inside Settings.</span>
-                            </div>
-                            <div class="dashboard-embed-wrap">
-                                <iframe id="tracker-dashboard-frame" class="dashboard-embed-frame"
-                                    title="Tracker Blocker Dashboard"
-                                    data-src="../dashboards/tracker-blocker/tracker-dashboard.html"
-                                    loading="lazy"></iframe>
                             </div>
                         </div>
                     </div>

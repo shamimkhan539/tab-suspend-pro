@@ -1090,15 +1090,6 @@
                     </div>
                 </div>
 
-                <div class="setting-item">
-                    <div class="setting-info">
-                        <div class="setting-label">View Dashboard</div>
-                        <div class="setting-description">See detailed blocking statistics and analytics</div>
-                    </div>
-                    <div class="setting-control">
-                        <button class="btn btn-primary" id="open-tracker-dashboard">📈 Open Dashboard</button>
-                    </div>
-                </div>
             </div>
         </div>
         <!-- End Tracker Blocker Tab -->
@@ -1239,15 +1230,6 @@
             <div class="settings-section">
                 <h2 class="section-title">📊 Statistics</h2>
 
-                <div class="setting-item">
-                    <div class="setting-info">
-                        <div class="setting-label">View Dashboard</div>
-                        <div class="setting-description">See detailed blocking statistics and analytics</div>
-                    </div>
-                    <div class="setting-control">
-                        <button class="btn btn-primary" id="open-ads-dashboard">📈 Open Dashboard</button>
-                    </div>
-                </div>
             </div>
         </div>
         <!-- End Ads Blocker Tab -->

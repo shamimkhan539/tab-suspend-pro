@@ -214,23 +214,6 @@ class OptionsManager {
 
         activeTab?.classList.add("active");
         activePane?.classList.add("active");
-
-        if (group === "tracker" && subtab === "dashboard") {
-            this.ensureEmbeddedDashboardLoaded("tracker-dashboard-frame");
-        }
-    }
-
-    ensureEmbeddedDashboardLoaded(frameId) {
-        const frame = document.getElementById(frameId);
-        if (!frame) return;
-
-        const existingSrc = frame.getAttribute("src");
-        if (existingSrc && existingSrc.trim()) return;
-
-        const src = frame.getAttribute("data-src");
-        if (src) {
-            frame.setAttribute("src", src);
-        }
     }
 
     setupProtectionOverviewListeners() {
@@ -2233,18 +2216,12 @@ document.querySelectorAll(".nav-item").forEach((btn) => {
     });
 });
 
-// Support direct deep links like #tab-ads or #tab-tracker from dashboard pages
+// Support direct deep links like #tab-ads or #tab-tracker
 (() => {
     const hash = (window.location.hash || "").toLowerCase();
     if (!hash.startsWith("#tab-")) return;
 
     let tabName = hash.replace("#tab-", "");
-    let trackerSubtab = "overview";
-
-    if (tabName === "tracker-dashboard") {
-        tabName = "tracker";
-        trackerSubtab = "dashboard";
-    }
 
     const targetButton = document.querySelector(
         `.nav-item[data-tab="${tabName}"]`,
@@ -2255,7 +2232,7 @@ document.querySelectorAll(".nav-item").forEach((btn) => {
     targetButton.click();
 
     if (tabName === "tracker") {
-        optionsManager.switchProtectionSubtab("tracker", trackerSubtab);
+        optionsManager.switchProtectionSubtab("tracker", "overview");
     } else if (tabName === "ads") {
         optionsManager.switchProtectionSubtab("ads", "overview");
     }
