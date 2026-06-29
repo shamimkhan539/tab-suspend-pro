@@ -476,9 +476,9 @@ class PopupManager {
         if (trackerBlockerBtn) {
             trackerBlockerBtn.addEventListener("click", () => {
                 chrome.tabs.create({
-                    url: chrome.runtime.getURL(
-                        "ui/dashboards/tracker-blocker/tracker-dashboard.html",
-                    ),
+                    url:
+                        chrome.runtime.getURL("ui/options/options.html") +
+                        "#tab-tracker",
                 });
             });
         }
@@ -488,9 +488,9 @@ class PopupManager {
         if (adsBlockerBtn) {
             adsBlockerBtn.addEventListener("click", () => {
                 chrome.tabs.create({
-                    url: chrome.runtime.getURL(
-                        "ui/dashboards/ads-blocker/ads-dashboard.html",
-                    ),
+                    url:
+                        chrome.runtime.getURL("ui/options/options.html") +
+                        "#tab-ads",
                 });
             });
         }

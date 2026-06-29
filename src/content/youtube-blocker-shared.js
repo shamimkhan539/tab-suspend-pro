@@ -111,6 +111,86 @@ const clickVisibleSkipButton = () => {
     return false;
 };
 
+const hideSponsoredBlocks = () => {
+    let hiddenCount = 0;
+
+    const wrapperSelector =
+        "ytd-rich-item-renderer, ytd-video-renderer, ytd-compact-video-renderer, ytd-grid-video-renderer, ytd-rich-grid-media, ytmusic-responsive-list-item-renderer, ytmusic-two-row-item-renderer";
+
+    const hideElement = (element, reason) => {
+        if (!element) return false;
+
+        const wrapper = element.closest(wrapperSelector);
+        const target = wrapper || element;
+
+        if (target.dataset.ytblockerSponsoredHidden === "1") return false;
+
+        element.dataset.ytblockerSponsoredHidden = "1";
+        element.style.setProperty("display", "none", "important");
+
+        if (target !== element) {
+            target.dataset.ytblockerSponsoredHidden = "1";
+            target.style.setProperty("display", "none", "important");
+        }
+
+        if (reason) {
+            target.dataset.ytblockerSponsoredReason = reason;
+        }
+
+        return true;
+    };
+
+    const directSelectors = [
+        "ytd-display-ad-renderer",
+        "ytd-ad-slot-renderer",
+        "ytd-in-feed-ad-layout-renderer",
+        "ytd-promoted-video-renderer",
+        "ytd-compact-promoted-video-renderer",
+        "ytd-promoted-sparkles-web-renderer",
+        "ytd-player-legacy-desktop-watch-ads-renderer",
+        "ytmusic-display-ad-renderer",
+        "ytmusic-promoted-sparkles-web-renderer",
+        "ytmusic-mealbar-promo-renderer",
+    ];
+
+    directSelectors.forEach((selector) => {
+        const elements = document.querySelectorAll(selector);
+        elements.forEach((element) => {
+            if (hideElement(element, selector)) {
+                hiddenCount += 1;
+            }
+        });
+    });
+
+    const sponsoredLabelRegex = /\b(sponsored|promoted)\b/i;
+    const labelCandidates = document.querySelectorAll(
+        "ytd-badge-supported-renderer, #metadata-line span, .ytp-ad-text, [aria-label*='Sponsored'], [aria-label*='sponsored'], [aria-label*='Promoted'], [aria-label*='promoted']",
+    );
+
+    labelCandidates.forEach((candidate) => {
+        const labelText =
+            candidate.getAttribute("aria-label") || candidate.textContent || "";
+
+        if (!sponsoredLabelRegex.test(labelText)) {
+            return;
+        }
+
+        const sponsoredCard = candidate.closest(
+            "ytd-compact-video-renderer, ytd-video-renderer, ytd-grid-video-renderer, ytd-rich-item-renderer, ytd-rich-grid-media, ytd-promoted-video-renderer, ytd-compact-promoted-video-renderer, ytmusic-responsive-list-item-renderer, ytmusic-two-row-item-renderer",
+        );
+
+        if (hideElement(sponsoredCard, "label-match")) {
+            hiddenCount += 1;
+        }
+    });
+
+    if (hiddenCount > 0) {
+        logMessage(`[Sponsored] Hidden ${hiddenCount} sponsored block(s)`);
+    }
+
+    return hiddenCount;
+};
+
 const hasVisibleAdIndicator = (moviePlayer) => {
     if (!moviePlayer) return false;
 

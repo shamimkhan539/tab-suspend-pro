@@ -195,6 +195,206 @@
             animation: fadeSlide .2s ease;
         }
 
+        /* ─── Feature Sub Tabs ─────────────────────────────────── */
+        .section-tabs {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 8px;
+            padding: 6px;
+            margin-bottom: 14px;
+            background: var(--surface);
+            border: 1px solid var(--border);
+            border-radius: var(--radius);
+            box-shadow: var(--shadow);
+        }
+
+        .section-tab {
+            border: 1px solid transparent;
+            background: transparent;
+            color: var(--text-secondary);
+            border-radius: var(--radius-sm);
+            font-size: 12.5px;
+            font-weight: 600;
+            padding: 7px 12px;
+            cursor: pointer;
+            transition: all .15s;
+        }
+
+        .section-tab:hover {
+            background: var(--surface-hover);
+            color: var(--text);
+        }
+
+        .section-tab.active {
+            border-color: #c7d2fe;
+            background: var(--accent-light);
+            color: var(--accent);
+        }
+
+        .section-pane {
+            display: none;
+        }
+
+        .section-pane.active {
+            display: block;
+            animation: fadeSlide .2s ease;
+        }
+
+        /* ─── Overview Cards ───────────────────────────────────── */
+        .overview-cards {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+            gap: 10px;
+            padding: 14px 20px;
+            border-bottom: 1px solid var(--border);
+        }
+
+        .overview-card {
+            border: 1px solid var(--border);
+            border-radius: var(--radius-sm);
+            background: var(--surface);
+            padding: 10px 12px;
+        }
+
+        .overview-card-title {
+            color: var(--text-secondary);
+            font-size: 11px;
+            font-weight: 700;
+            letter-spacing: .04em;
+            text-transform: uppercase;
+            margin-bottom: 4px;
+        }
+
+        .overview-card-value {
+            font-size: 24px;
+            line-height: 1.1;
+            font-weight: 700;
+            color: var(--accent);
+        }
+
+        .overview-card-sub {
+            margin-top: 4px;
+            font-size: 11.5px;
+            color: var(--text-muted);
+        }
+
+        .status-pill {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            font-size: 11.5px;
+            font-weight: 700;
+            border-radius: 999px;
+            padding: 4px 10px;
+        }
+
+        .status-pill.active {
+            color: #065f46;
+            background: #d1fae5;
+        }
+
+        .status-pill.inactive {
+            color: #991b1b;
+            background: #fee2e2;
+        }
+
+        .overview-bars {
+            padding: 10px 20px 16px;
+            border-bottom: 1px solid var(--border);
+        }
+
+        .overview-bar-row {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            margin-top: 10px;
+        }
+
+        .overview-bar-row:first-child {
+            margin-top: 0;
+        }
+
+        .overview-bar-label {
+            width: 105px;
+            font-size: 12px;
+            color: var(--text-secondary);
+            font-weight: 600;
+            flex-shrink: 0;
+        }
+
+        .overview-bar-track {
+            position: relative;
+            flex: 1;
+            height: 22px;
+            border-radius: 12px;
+            background: var(--bg);
+            overflow: hidden;
+            border: 1px solid var(--border);
+        }
+
+        .overview-bar-fill {
+            height: 100%;
+            min-width: 0;
+            width: 0;
+            background: linear-gradient(90deg, var(--accent), #7c3aed);
+            transition: width .2s ease;
+        }
+
+        .overview-bar-value {
+            width: 40px;
+            text-align: right;
+            font-size: 12px;
+            color: var(--text-secondary);
+            font-weight: 700;
+            flex-shrink: 0;
+        }
+
+        .overview-list {
+            list-style: none;
+            padding: 0;
+            margin: 0;
+        }
+
+        .overview-list-item {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 9px 20px;
+            border-bottom: 1px solid var(--border);
+            gap: 8px;
+        }
+
+        .overview-list-item:last-child {
+            border-bottom: none;
+        }
+
+        .overview-domain {
+            font-size: 12.5px;
+            font-weight: 600;
+            color: var(--text);
+            word-break: break-all;
+        }
+
+        .overview-count {
+            background: var(--accent-light);
+            color: var(--accent);
+            border: 1px solid #c7d2fe;
+            padding: 2px 8px;
+            border-radius: 999px;
+            font-size: 11px;
+            font-weight: 700;
+            flex-shrink: 0;
+        }
+
+        .overview-actions {
+            display: flex;
+            gap: 8px;
+            padding: 12px 20px;
+            border-top: 1px solid var(--border);
+            justify-content: flex-end;
+            flex-wrap: wrap;
+        }
+
         @keyframes fadeSlide {
             from {
                 opacity: 0;
@@ -1178,99 +1378,198 @@
                 <!-- ── Tracker Blocker ──────────────────────────────────── -->
                 <div class="tab-panel" id="tab-tracker">
 
-                    <div class="card">
-                        <div class="feature-master">
-                            <div class="master-info">
-                                <div class="master-title">🛡️ Tracker Blocker</div>
-                                <div class="master-desc">Block ads, trackers, miners and malicious content</div>
+                    <div class="section-tabs" data-subtab-group="tracker">
+                        <button class="section-tab active" data-subtab-group="tracker" data-subtab="overview">📊
+                            Overview</button>
+                        <button class="section-tab" data-subtab-group="tracker" data-subtab="settings">⚙️
+                            Settings</button>
+                        <button class="section-tab" data-subtab-group="tracker" data-subtab="whitelist">✅
+                            Whitelist</button>
+                        <button class="section-tab" data-subtab-group="tracker" data-subtab="filters">🔧
+                            Filters</button>
+                    </div>
+
+                    <div class="section-pane active" id="tracker-pane-overview">
+                        <div class="card">
+                            <div class="card-header">
+                                <span class="header-icon">📊</span>
+                                <h2>Tracker Protection Overview</h2>
+                                <span class="card-header-badge" id="tracker-overview-status-wrap">
+                                    <span class="status-pill active" id="tracker-overview-status">Active</span>
+                                </span>
                             </div>
-                            <div class="toggle" id="tracker-blocker-enabled"></div>
-                        </div>
-                        <div class="setting-row">
-                            <div class="setting-info">
-                                <div class="setting-label">Block Advertisements</div>
-                                <div class="setting-desc">Block banner ads, video ads, and pop-ups</div>
+
+                            <div class="overview-cards">
+                                <div class="overview-card">
+                                    <div class="overview-card-title">Total Blocked</div>
+                                    <div class="overview-card-value" id="tracker-overview-total">0</div>
+                                    <div class="overview-card-sub">All time</div>
+                                </div>
+                                <div class="overview-card">
+                                    <div class="overview-card-title">Session Blocked</div>
+                                    <div class="overview-card-value" id="tracker-overview-session">0</div>
+                                    <div class="overview-card-sub">This session</div>
+                                </div>
+                                <div class="overview-card">
+                                    <div class="overview-card-title">Active Rules</div>
+                                    <div class="overview-card-value" id="tracker-overview-rules">0</div>
+                                    <div class="overview-card-sub">Applied filters</div>
+                                </div>
+                                <div class="overview-card">
+                                    <div class="overview-card-title">Last Refresh</div>
+                                    <div class="overview-card-value" id="tracker-overview-updated"
+                                        style="font-size:18px;">--</div>
+                                    <div class="overview-card-sub">Auto updates</div>
+                                </div>
                             </div>
-                            <div class="setting-control">
-                                <div class="toggle" id="block-ads"></div>
+
+                            <div class="overview-bars">
+                                <div class="overview-bar-row">
+                                    <div class="overview-bar-label">Ads</div>
+                                    <div class="overview-bar-track">
+                                        <div class="overview-bar-fill" id="tracker-bar-ads"></div>
+                                    </div>
+                                    <div class="overview-bar-value" id="tracker-bar-value-ads">0</div>
+                                </div>
+                                <div class="overview-bar-row">
+                                    <div class="overview-bar-label">Trackers</div>
+                                    <div class="overview-bar-track">
+                                        <div class="overview-bar-fill" id="tracker-bar-trackers"></div>
+                                    </div>
+                                    <div class="overview-bar-value" id="tracker-bar-value-trackers">0</div>
+                                </div>
+                                <div class="overview-bar-row">
+                                    <div class="overview-bar-label">Social</div>
+                                    <div class="overview-bar-track">
+                                        <div class="overview-bar-fill" id="tracker-bar-social"></div>
+                                    </div>
+                                    <div class="overview-bar-value" id="tracker-bar-value-social">0</div>
+                                </div>
+                                <div class="overview-bar-row">
+                                    <div class="overview-bar-label">Crypto</div>
+                                    <div class="overview-bar-track">
+                                        <div class="overview-bar-fill" id="tracker-bar-crypto"></div>
+                                    </div>
+                                    <div class="overview-bar-value" id="tracker-bar-value-crypto">0</div>
+                                </div>
+                                <div class="overview-bar-row">
+                                    <div class="overview-bar-label">Malware</div>
+                                    <div class="overview-bar-track">
+                                        <div class="overview-bar-fill" id="tracker-bar-malware"></div>
+                                    </div>
+                                    <div class="overview-bar-value" id="tracker-bar-value-malware">0</div>
+                                </div>
                             </div>
-                        </div>
-                        <div class="setting-row">
-                            <div class="setting-info">
-                                <div class="setting-label">Block Trackers</div>
-                                <div class="setting-desc">Block analytics and tracking scripts</div>
+
+                            <div class="card-header" style="border-top:0;">
+                                <span class="header-icon">🌐</span>
+                                <h2>Top Blocked Domains</h2>
                             </div>
-                            <div class="setting-control">
-                                <div class="toggle" id="block-trackers"></div>
-                            </div>
-                        </div>
-                        <div class="setting-row">
-                            <div class="setting-info">
-                                <div class="setting-label">Block Social Media Widgets</div>
-                                <div class="setting-desc">Block Facebook, Twitter, and other embedded widgets</div>
-                            </div>
-                            <div class="setting-control">
-                                <div class="toggle" id="block-social"></div>
-                            </div>
-                        </div>
-                        <div class="setting-row">
-                            <div class="setting-info">
-                                <div class="setting-label">Block Crypto Miners</div>
-                                <div class="setting-desc">Prevent unauthorized cryptocurrency mining scripts</div>
-                            </div>
-                            <div class="setting-control">
-                                <div class="toggle" id="block-mining"></div>
-                            </div>
-                        </div>
-                        <div class="setting-row">
-                            <div class="setting-info">
-                                <div class="setting-label">Block Malware &amp; Phishing</div>
-                                <div class="setting-desc">Protect against known malicious sites</div>
-                            </div>
-                            <div class="setting-control">
-                                <div class="toggle" id="block-malware"></div>
-                            </div>
-                        </div>
-                        <div class="setting-row">
-                            <div class="setting-info">
-                                <div class="setting-label">Track Statistics</div>
-                                <div class="setting-desc">Keep a count of blocked requests and bandwidth saved</div>
-                            </div>
-                            <div class="setting-control">
-                                <div class="toggle" id="track-stats"></div>
-                            </div>
-                        </div>
-                        <div class="setting-row">
-                            <div class="setting-info">
-                                <div class="setting-label">View Tracker Dashboard</div>
-                            </div>
-                            <div class="setting-control">
-                                <button class="btn btn-secondary" id="open-tracker-dashboard">Open →</button>
+                            <ul class="overview-list" id="tracker-overview-domains">
+                                <li class="overview-list-item">
+                                    <span class="setting-desc">No blocked domains yet</span>
+                                </li>
+                            </ul>
+
+                            <div class="overview-actions">
+                                <button class="btn btn-secondary btn-sm" id="tracker-refresh-overview">Refresh</button>
+                                <button class="btn btn-danger btn-sm" id="tracker-reset-overview">Reset Stats</button>
                             </div>
                         </div>
                     </div>
 
-                    <div class="card">
-                        <div class="card-header">
-                            <span class="header-icon">✅</span>
-                            <h2>Whitelist</h2>
+                    <div class="section-pane" id="tracker-pane-settings">
+                        <div class="card">
+                            <div class="feature-master">
+                                <div class="master-info">
+                                    <div class="master-title">🛡️ Tracker Blocker</div>
+                                    <div class="master-desc">Block ads, trackers, miners and malicious content</div>
+                                </div>
+                                <div class="toggle" id="tracker-blocker-enabled"></div>
+                            </div>
+                            <div class="setting-row">
+                                <div class="setting-info">
+                                    <div class="setting-label">Block Advertisements</div>
+                                    <div class="setting-desc">Block banner ads, video ads, and pop-ups</div>
+                                </div>
+                                <div class="setting-control">
+                                    <div class="toggle" id="block-ads"></div>
+                                </div>
+                            </div>
+                            <div class="setting-row">
+                                <div class="setting-info">
+                                    <div class="setting-label">Block Trackers</div>
+                                    <div class="setting-desc">Block analytics and tracking scripts</div>
+                                </div>
+                                <div class="setting-control">
+                                    <div class="toggle" id="block-trackers"></div>
+                                </div>
+                            </div>
+                            <div class="setting-row">
+                                <div class="setting-info">
+                                    <div class="setting-label">Block Social Media Widgets</div>
+                                    <div class="setting-desc">Block Facebook, Twitter, and other embedded widgets</div>
+                                </div>
+                                <div class="setting-control">
+                                    <div class="toggle" id="block-social"></div>
+                                </div>
+                            </div>
+                            <div class="setting-row">
+                                <div class="setting-info">
+                                    <div class="setting-label">Block Crypto Miners</div>
+                                    <div class="setting-desc">Prevent unauthorized cryptocurrency mining scripts</div>
+                                </div>
+                                <div class="setting-control">
+                                    <div class="toggle" id="block-mining"></div>
+                                </div>
+                            </div>
+                            <div class="setting-row">
+                                <div class="setting-info">
+                                    <div class="setting-label">Block Malware &amp; Phishing</div>
+                                    <div class="setting-desc">Protect against known malicious sites</div>
+                                </div>
+                                <div class="setting-control">
+                                    <div class="toggle" id="block-malware"></div>
+                                </div>
+                            </div>
+                            <div class="setting-row">
+                                <div class="setting-info">
+                                    <div class="setting-label">Track Statistics</div>
+                                    <div class="setting-desc">Keep a count of blocked requests and bandwidth saved</div>
+                                </div>
+                                <div class="setting-control">
+                                    <div class="toggle" id="track-stats"></div>
+                                </div>
+                            </div>
                         </div>
-                        <div class="url-add-row">
-                            <input type="text" id="tracker-whitelist-url" placeholder="example.com">
-                            <button class="btn btn-primary" id="add-tracker-whitelist">Add Site</button>
-                        </div>
-                        <ul class="url-list" id="tracker-whitelist-list"></ul>
                     </div>
 
-                    <div class="card">
-                        <div class="card-header">
-                            <span class="header-icon">🔧</span>
-                            <h2>Custom Block Rules</h2>
+                    <div class="section-pane" id="tracker-pane-whitelist">
+                        <div class="card">
+                            <div class="card-header">
+                                <span class="header-icon">✅</span>
+                                <h2>Whitelist</h2>
+                            </div>
+                            <div class="url-add-row">
+                                <input type="text" id="tracker-whitelist-url" placeholder="example.com">
+                                <button class="btn btn-primary" id="add-tracker-whitelist">Add Site</button>
+                            </div>
+                            <ul class="url-list" id="tracker-whitelist-list"></ul>
                         </div>
-                        <div class="filter-hint">One URL pattern per line. Example: <code>*://ads.example.com/*</code>
+                    </div>
+
+                    <div class="section-pane" id="tracker-pane-filters">
+                        <div class="card">
+                            <div class="card-header">
+                                <span class="header-icon">🔧</span>
+                                <h2>Custom Block Rules</h2>
+                            </div>
+                            <div class="filter-hint">One URL pattern per line. Example:
+                                <code>*://ads.example.com/*</code>
+                            </div>
+                            <textarea class="filter-textarea" id="custom-filters"
+                                placeholder="*://ads.example.com/*&#10;*://tracker.example.com/*"></textarea>
                         </div>
-                        <textarea class="filter-textarea" id="custom-filters"
-                            placeholder="*://ads.example.com/*&#10;*://tracker.example.com/*"></textarea>
                     </div>
 
                 </div><!-- /tab-tracker -->
@@ -1278,118 +1577,211 @@
                 <!-- ── Ads Blocker ──────────────────────────────────────── -->
                 <div class="tab-panel" id="tab-ads">
 
-                    <div class="card">
-                        <div class="feature-master">
-                            <div class="master-info">
-                                <div class="master-title">🚫 Ads Blocker</div>
-                                <div class="master-desc">Block ads across all websites including YouTube</div>
+                    <div class="section-tabs" data-subtab-group="ads">
+                        <button class="section-tab active" data-subtab-group="ads" data-subtab="overview">📊
+                            Overview</button>
+                        <button class="section-tab" data-subtab-group="ads" data-subtab="settings">⚙️
+                            Settings</button>
+                        <button class="section-tab" data-subtab-group="ads" data-subtab="whitelist">✅
+                            Whitelist</button>
+                        <button class="section-tab" data-subtab-group="ads" data-subtab="filters">🔧
+                            Filters</button>
+                    </div>
+
+                    <div class="section-pane active" id="ads-pane-overview">
+                        <div class="card">
+                            <div class="card-header">
+                                <span class="header-icon">📊</span>
+                                <h2>Ads Protection Overview</h2>
+                                <span class="card-header-badge" id="ads-overview-status-wrap">
+                                    <span class="status-pill active" id="ads-overview-status">Active</span>
+                                </span>
                             </div>
-                            <div class="toggle" id="ads-blocker-enabled"></div>
-                        </div>
-                        <div class="setting-row">
-                            <div class="setting-info">
-                                <div class="setting-label">Block Ads</div>
-                                <div class="setting-desc">Block ad networks and advertisement servers</div>
+
+                            <div class="overview-cards">
+                                <div class="overview-card">
+                                    <div class="overview-card-title">Total Blocked</div>
+                                    <div class="overview-card-value" id="ads-overview-total">0</div>
+                                    <div class="overview-card-sub">All time</div>
+                                </div>
+                                <div class="overview-card">
+                                    <div class="overview-card-title">Session Blocked</div>
+                                    <div class="overview-card-value" id="ads-overview-session">0</div>
+                                    <div class="overview-card-sub">This session</div>
+                                </div>
+                                <div class="overview-card">
+                                    <div class="overview-card-title">Data Saved</div>
+                                    <div class="overview-card-value" id="ads-overview-data" style="font-size:18px;">0 MB
+                                    </div>
+                                    <div class="overview-card-sub">Estimated traffic</div>
+                                </div>
+                                <div class="overview-card">
+                                    <div class="overview-card-title">Last Refresh</div>
+                                    <div class="overview-card-value" id="ads-overview-updated" style="font-size:18px;">
+                                        --</div>
+                                    <div class="overview-card-sub">Auto updates</div>
+                                </div>
                             </div>
-                            <div class="setting-control">
-                                <div class="toggle" id="ads-block-ads"></div>
+
+                            <div class="overview-bars">
+                                <div class="overview-bar-row">
+                                    <div class="overview-bar-label">Ad Requests</div>
+                                    <div class="overview-bar-track">
+                                        <div class="overview-bar-fill" id="ads-bar-ads"></div>
+                                    </div>
+                                    <div class="overview-bar-value" id="ads-bar-value-ads">0</div>
+                                </div>
+                                <div class="overview-bar-row">
+                                    <div class="overview-bar-label">Analytics</div>
+                                    <div class="overview-bar-track">
+                                        <div class="overview-bar-fill" id="ads-bar-analytics"></div>
+                                    </div>
+                                    <div class="overview-bar-value" id="ads-bar-value-analytics">0</div>
+                                </div>
+                                <div class="overview-bar-row">
+                                    <div class="overview-bar-label">Banners</div>
+                                    <div class="overview-bar-track">
+                                        <div class="overview-bar-fill" id="ads-bar-banners"></div>
+                                    </div>
+                                    <div class="overview-bar-value" id="ads-bar-value-banners">0</div>
+                                </div>
+                                <div class="overview-bar-row">
+                                    <div class="overview-bar-label">Cookies</div>
+                                    <div class="overview-bar-track">
+                                        <div class="overview-bar-fill" id="ads-bar-cookies"></div>
+                                    </div>
+                                    <div class="overview-bar-value" id="ads-bar-value-cookies">0</div>
+                                </div>
                             </div>
-                        </div>
-                        <div class="setting-row">
-                            <div class="setting-info">
-                                <div class="setting-label">Block Analytics</div>
-                                <div class="setting-desc">Block third-party analytics and tracking services</div>
+
+                            <div class="card-header" style="border-top:0;">
+                                <span class="header-icon">🌐</span>
+                                <h2>Top Blocked Domains</h2>
                             </div>
-                            <div class="setting-control">
-                                <div class="toggle" id="ads-block-analytics"></div>
-                            </div>
-                        </div>
-                        <div class="setting-row">
-                            <div class="setting-info">
-                                <div class="setting-label">Block Banners</div>
-                                <div class="setting-desc">Block banner and display advertisements</div>
-                            </div>
-                            <div class="setting-control">
-                                <div class="toggle" id="ads-block-banners"></div>
-                            </div>
-                        </div>
-                        <div class="setting-row">
-                            <div class="setting-info">
-                                <div class="setting-label">Block Popups</div>
-                                <div class="setting-desc">Block popup and pop-under advertisements</div>
-                            </div>
-                            <div class="setting-control">
-                                <div class="toggle" id="ads-block-popups"></div>
-                            </div>
-                        </div>
-                        <div class="setting-row">
-                            <div class="setting-info">
-                                <div class="setting-label">Block Cookie Banners</div>
-                                <div class="setting-desc">Hide cookie consent and privacy banners</div>
-                            </div>
-                            <div class="setting-control">
-                                <div class="toggle" id="ads-block-cookies"></div>
-                            </div>
-                        </div>
-                        <div class="setting-row">
-                            <div class="setting-info">
-                                <div class="setting-label">Block Social Widgets</div>
-                                <div class="setting-desc">Block embedded social media widgets</div>
-                            </div>
-                            <div class="setting-control">
-                                <div class="toggle" id="ads-block-social"></div>
-                            </div>
-                        </div>
-                        <div class="setting-row">
-                            <div class="setting-info">
-                                <div class="setting-label">🎬 Block YouTube Ads</div>
-                                <div class="setting-desc">Block pre-roll and mid-roll ads on YouTube</div>
-                            </div>
-                            <div class="setting-control">
-                                <div class="toggle" id="ads-block-youtube"></div>
-                            </div>
-                        </div>
-                        <div class="setting-row">
-                            <div class="setting-info">
-                                <div class="setting-label">🎵 Block YouTube Music Ads</div>
-                                <div class="setting-desc">Block ads on YouTube Music for uninterrupted listening</div>
-                            </div>
-                            <div class="setting-control">
-                                <div class="toggle" id="ads-block-youtube-music"></div>
-                            </div>
-                        </div>
-                        <div class="setting-row">
-                            <div class="setting-info">
-                                <div class="setting-label">View Ads Dashboard</div>
-                            </div>
-                            <div class="setting-control">
-                                <button class="btn btn-secondary" id="open-ads-dashboard">Open →</button>
+                            <ul class="overview-list" id="ads-overview-domains">
+                                <li class="overview-list-item">
+                                    <span class="setting-desc">No blocked domains yet</span>
+                                </li>
+                            </ul>
+
+                            <div class="overview-actions">
+                                <button class="btn btn-secondary btn-sm" id="ads-refresh-overview">Refresh</button>
+                                <button class="btn btn-danger btn-sm" id="ads-reset-overview">Reset Stats</button>
                             </div>
                         </div>
                     </div>
 
-                    <div class="card">
-                        <div class="card-header">
-                            <span class="header-icon">✅</span>
-                            <h2>Whitelist</h2>
+                    <div class="section-pane" id="ads-pane-settings">
+                        <div class="card">
+                            <div class="feature-master">
+                                <div class="master-info">
+                                    <div class="master-title">🚫 Ads Blocker</div>
+                                    <div class="master-desc">Block ads across all websites including YouTube</div>
+                                </div>
+                                <div class="toggle" id="ads-blocker-enabled"></div>
+                            </div>
+                            <div class="setting-row">
+                                <div class="setting-info">
+                                    <div class="setting-label">Block Ads</div>
+                                    <div class="setting-desc">Block ad networks and advertisement servers</div>
+                                </div>
+                                <div class="setting-control">
+                                    <div class="toggle" id="ads-block-ads"></div>
+                                </div>
+                            </div>
+                            <div class="setting-row">
+                                <div class="setting-info">
+                                    <div class="setting-label">Block Analytics</div>
+                                    <div class="setting-desc">Block third-party analytics and tracking services</div>
+                                </div>
+                                <div class="setting-control">
+                                    <div class="toggle" id="ads-block-analytics"></div>
+                                </div>
+                            </div>
+                            <div class="setting-row">
+                                <div class="setting-info">
+                                    <div class="setting-label">Block Banners</div>
+                                    <div class="setting-desc">Block banner and display advertisements</div>
+                                </div>
+                                <div class="setting-control">
+                                    <div class="toggle" id="ads-block-banners"></div>
+                                </div>
+                            </div>
+                            <div class="setting-row">
+                                <div class="setting-info">
+                                    <div class="setting-label">Block Popups</div>
+                                    <div class="setting-desc">Block popup and pop-under advertisements</div>
+                                </div>
+                                <div class="setting-control">
+                                    <div class="toggle" id="ads-block-popups"></div>
+                                </div>
+                            </div>
+                            <div class="setting-row">
+                                <div class="setting-info">
+                                    <div class="setting-label">Block Cookie Banners</div>
+                                    <div class="setting-desc">Hide cookie consent and privacy banners</div>
+                                </div>
+                                <div class="setting-control">
+                                    <div class="toggle" id="ads-block-cookies"></div>
+                                </div>
+                            </div>
+                            <div class="setting-row">
+                                <div class="setting-info">
+                                    <div class="setting-label">Block Social Widgets</div>
+                                    <div class="setting-desc">Block embedded social media widgets</div>
+                                </div>
+                                <div class="setting-control">
+                                    <div class="toggle" id="ads-block-social"></div>
+                                </div>
+                            </div>
+                            <div class="setting-row">
+                                <div class="setting-info">
+                                    <div class="setting-label">🎬 Block YouTube Ads</div>
+                                    <div class="setting-desc">Block pre-roll and mid-roll ads on YouTube</div>
+                                </div>
+                                <div class="setting-control">
+                                    <div class="toggle" id="ads-block-youtube"></div>
+                                </div>
+                            </div>
+                            <div class="setting-row">
+                                <div class="setting-info">
+                                    <div class="setting-label">🎵 Block YouTube Music Ads</div>
+                                    <div class="setting-desc">Block ads on YouTube Music for uninterrupted listening
+                                    </div>
+                                </div>
+                                <div class="setting-control">
+                                    <div class="toggle" id="ads-block-youtube-music"></div>
+                                </div>
+                            </div>
                         </div>
-                        <div class="url-add-row">
-                            <input type="text" id="ads-whitelist-url" placeholder="example.com">
-                            <button class="btn btn-primary" id="add-ads-whitelist">Add Site</button>
-                        </div>
-                        <ul class="url-list" id="ads-whitelist-list"></ul>
                     </div>
 
-                    <div class="card">
-                        <div class="card-header">
-                            <span class="header-icon">🔧</span>
-                            <h2>Custom Block Rules</h2>
+                    <div class="section-pane" id="ads-pane-whitelist">
+                        <div class="card">
+                            <div class="card-header">
+                                <span class="header-icon">✅</span>
+                                <h2>Whitelist</h2>
+                            </div>
+                            <div class="url-add-row">
+                                <input type="text" id="ads-whitelist-url" placeholder="example.com">
+                                <button class="btn btn-primary" id="add-ads-whitelist">Add Site</button>
+                            </div>
+                            <ul class="url-list" id="ads-whitelist-list"></ul>
                         </div>
-                        <div class="filter-hint">One URL pattern per line. Example:
-                            <code>*://banner.example.com/*</code>
+                    </div>
+
+                    <div class="section-pane" id="ads-pane-filters">
+                        <div class="card">
+                            <div class="card-header">
+                                <span class="header-icon">🔧</span>
+                                <h2>Custom Block Rules</h2>
+                            </div>
+                            <div class="filter-hint">One URL pattern per line. Example:
+                                <code>*://banner.example.com/*</code>
+                            </div>
+                            <textarea class="filter-textarea" id="ads-custom-filters"
+                                placeholder="*://ads.example.com/*&#10;*://banner.example.com/*"></textarea>
                         </div>
-                        <textarea class="filter-textarea" id="ads-custom-filters"
-                            placeholder="*://ads.example.com/*&#10;*://banner.example.com/*"></textarea>
                     </div>
 
                 </div><!-- /tab-ads -->

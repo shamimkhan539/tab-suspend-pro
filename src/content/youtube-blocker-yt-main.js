@@ -7,6 +7,17 @@
     let lastBlockedTime = 0;
     let lastBlockedAdURL = "";
     let blockEnabled = false;
+    let sponsoredSweepTimeout = null;
+
+    const scheduleSponsoredSweep = () => {
+        if (!blockEnabled) return;
+        if (sponsoredSweepTimeout) return;
+
+        sponsoredSweepTimeout = setTimeout(() => {
+            sponsoredSweepTimeout = null;
+            hideSponsoredBlocks();
+        }, 120);
+    };
 
     const isIdleDialogText = (text) => {
         const normalized = (text || "").toLowerCase();
@@ -141,11 +152,13 @@
     const checkAds = async () => {
         if (!blockEnabled) return;
 
+        hideSponsoredBlocks();
         clickVisibleSkipButton();
         await tryClickSkipButton();
         await new Promise((resolve) => setTimeout(resolve, 1000));
         clickVisibleSkipButton();
         await trySkipAd();
+        hideSponsoredBlocks();
     };
 
     // Check for "Still watching?" popup
@@ -251,6 +264,9 @@
             case "setBlockEnabled":
                 blockEnabled = event.data.enabled;
                 logMessage(`Block enabled: ${blockEnabled}`);
+                if (blockEnabled) {
+                    hideSponsoredBlocks();
+                }
                 break;
 
             case "checkAds":
@@ -269,6 +285,21 @@
                 break;
         }
     });
+
+    const sponsoredObserver = new MutationObserver(() => {
+        scheduleSponsoredSweep();
+    });
+
+    try {
+        sponsoredObserver.observe(document.documentElement, {
+            childList: true,
+            subtree: true,
+        });
+    } catch (error) {
+        logMessage(
+            `Sponsored observer failed to start: ${error.message || error}`,
+        );
+    }
 
     logMessage("YouTube ad blocker (MAIN world) initialized");
 })();

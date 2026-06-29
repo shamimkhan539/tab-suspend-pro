@@ -1,5 +1,6 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -19,7 +20,7 @@
             --green: #10b981;
             --green-bg: #ecfdf5;
             --red: #ef4444;
-            --shadow: 0 1px 3px rgba(0,0,0,.09), 0 1px 2px rgba(0,0,0,.05);
+            --shadow: 0 1px 3px rgba(0, 0, 0, .09), 0 1px 2px rgba(0, 0, 0, .05);
             --radius: 10px;
             --radius-sm: 7px;
         }
@@ -37,10 +38,14 @@
             --accent-bg: #1e1b4b;
             --green: #34d399;
             --green-bg: #064e3b;
-            --shadow: 0 1px 3px rgba(0,0,0,.4);
+            --shadow: 0 1px 3px rgba(0, 0, 0, .4);
         }
 
-        * { box-sizing: border-box; margin: 0; padding: 0; }
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
 
         body {
             width: 340px;
@@ -67,7 +72,8 @@
         }
 
         .header-brand img {
-            width: 22px; height: 22px;
+            width: 22px;
+            height: 22px;
             border-radius: 5px;
         }
 
@@ -84,10 +90,11 @@
         }
 
         .icon-btn {
-            background: rgba(255,255,255,.15);
-            border: 1px solid rgba(255,255,255,.2);
+            background: rgba(255, 255, 255, .15);
+            border: 1px solid rgba(255, 255, 255, .2);
             color: #fff;
-            width: 28px; height: 28px;
+            width: 28px;
+            height: 28px;
             border-radius: 6px;
             cursor: pointer;
             display: flex;
@@ -97,7 +104,9 @@
             transition: background .15s;
         }
 
-        .icon-btn:hover { background: rgba(255,255,255,.28); }
+        .icon-btn:hover {
+            background: rgba(255, 255, 255, .28);
+        }
 
         /* Status bar */
         .status-bar {
@@ -118,7 +127,8 @@
         /* Toggle */
         .toggle {
             position: relative;
-            width: 38px; height: 21px;
+            width: 38px;
+            height: 21px;
             background: #d1d5db;
             border-radius: 11px;
             cursor: pointer;
@@ -128,20 +138,26 @@
             outline: none;
         }
 
-        .toggle.active { background: var(--green); }
+        .toggle.active {
+            background: var(--green);
+        }
 
         .toggle::after {
             content: '';
             position: absolute;
-            width: 15px; height: 15px;
+            width: 15px;
+            height: 15px;
             background: #fff;
             border-radius: 50%;
-            top: 3px; left: 3px;
+            top: 3px;
+            left: 3px;
             transition: transform .2s;
-            box-shadow: 0 1px 3px rgba(0,0,0,.2);
+            box-shadow: 0 1px 3px rgba(0, 0, 0, .2);
         }
 
-        .toggle.active::after { transform: translateX(17px); }
+        .toggle.active::after {
+            transform: translateX(17px);
+        }
 
         /* Stats */
         .stats {
@@ -175,7 +191,9 @@
         }
 
         /* Tabs */
-        .tab-container { display: none; }
+        .tab-container {
+            display: none;
+        }
 
         .tab-header {
             display: flex;
@@ -185,7 +203,9 @@
             scrollbar-width: none;
         }
 
-        .tab-header::-webkit-scrollbar { display: none; }
+        .tab-header::-webkit-scrollbar {
+            display: none;
+        }
 
         .tab-button {
             flex-shrink: 0;
@@ -202,7 +222,9 @@
             white-space: nowrap;
         }
 
-        .tab-button:hover { color: var(--text); }
+        .tab-button:hover {
+            color: var(--text);
+        }
 
         .tab-button.active {
             color: var(--accent);
@@ -211,8 +233,13 @@
         }
 
         /* Tab panels */
-        .tab-content { display: none; }
-        .tab-content.active { display: block; }
+        .tab-content {
+            display: none;
+        }
+
+        .tab-content.active {
+            display: block;
+        }
 
         /* Action list */
         .actions {
@@ -245,7 +272,10 @@
             border-color: #c4c7d4;
         }
 
-        .btn:disabled { opacity: .45; pointer-events: none; }
+        .btn:disabled {
+            opacity: .45;
+            pointer-events: none;
+        }
 
         .btn-primary {
             background: var(--accent);
@@ -333,23 +363,39 @@
             transition: background .1s;
         }
 
-        .suggestion-item:hover { background: var(--surface2); }
+        .suggestion-item:hover {
+            background: var(--surface2);
+        }
 
         .suggestion-favicon {
-            width: 14px; height: 14px;
-            border-radius: 2px; flex-shrink: 0;
+            width: 14px;
+            height: 14px;
+            border-radius: 2px;
+            flex-shrink: 0;
         }
 
-        .suggestion-info { flex: 1; min-width: 0; }
+        .suggestion-info {
+            flex: 1;
+            min-width: 0;
+        }
 
         .suggestion-title {
-            font-size: 12px; font-weight: 500;
-            overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+            font-size: 12px;
+            font-weight: 500;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
         }
 
-        .suggestion-meta { font-size: 10px; color: var(--text-2); }
+        .suggestion-meta {
+            font-size: 10px;
+            color: var(--text-2);
+        }
 
-        .suggestion-actions { display: flex; gap: 3px; }
+        .suggestion-actions {
+            display: flex;
+            gap: 3px;
+        }
 
         .btn-small {
             padding: 3px 8px;
@@ -364,7 +410,9 @@
             transition: background .1s;
         }
 
-        .btn-small:hover { background: var(--surface2); }
+        .btn-small:hover {
+            background: var(--surface2);
+        }
 
         .btn-small.btn-primary {
             background: var(--accent);
@@ -372,10 +420,14 @@
             color: #fff;
         }
 
-        .btn-small.btn-primary:hover { background: var(--accent-hover); }
+        .btn-small.btn-primary:hover {
+            background: var(--accent-hover);
+        }
 
         /* Tab sections */
-        .tab-section { padding: 9px 11px; }
+        .tab-section {
+            padding: 9px 11px;
+        }
 
         .tab-section-header {
             display: flex;
@@ -384,10 +436,14 @@
             margin-bottom: 9px;
         }
 
-        .tab-section-title { font-size: 13px; font-weight: 600; }
+        .tab-section-title {
+            font-size: 13px;
+            font-weight: 600;
+        }
 
         /* Sessions */
-        .session-item, .template-item {
+        .session-item,
+        .template-item {
             background: var(--surface);
             border: 1px solid var(--border);
             border-radius: var(--radius-sm);
@@ -397,31 +453,58 @@
             transition: background .1s;
         }
 
-        .session-item:hover, .template-item:hover { background: var(--surface2); }
-
-        .session-item-content, .template-item-content {
-            display: flex; align-items: center; gap: 7px;
+        .session-item:hover,
+        .template-item:hover {
+            background: var(--surface2);
         }
 
-        .session-item-info, .template-item-info { flex: 1; min-width: 0; }
-
-        .session-title, .template-title {
-            font-size: 12.5px; font-weight: 600;
-            white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+        .session-item-content,
+        .template-item-content {
+            display: flex;
+            align-items: center;
+            gap: 7px;
         }
 
-        .session-meta, .template-meta {
-            font-size: 11px; color: var(--text-2); margin-top: 1px;
+        .session-item-info,
+        .template-item-info {
+            flex: 1;
+            min-width: 0;
         }
 
-        .session-delete-btn, .template-delete-btn {
-            background: none; border: none; color: var(--red);
-            cursor: pointer; padding: 3px 5px; border-radius: 4px;
-            font-size: 13px; line-height: 1; opacity: .6;
+        .session-title,
+        .template-title {
+            font-size: 12.5px;
+            font-weight: 600;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+
+        .session-meta,
+        .template-meta {
+            font-size: 11px;
+            color: var(--text-2);
+            margin-top: 1px;
+        }
+
+        .session-delete-btn,
+        .template-delete-btn {
+            background: none;
+            border: none;
+            color: var(--red);
+            cursor: pointer;
+            padding: 3px 5px;
+            border-radius: 4px;
+            font-size: 13px;
+            line-height: 1;
+            opacity: .6;
             transition: opacity .15s;
         }
 
-        .session-delete-btn:hover, .template-delete-btn:hover { opacity: 1; }
+        .session-delete-btn:hover,
+        .template-delete-btn:hover {
+            opacity: 1;
+        }
 
         /* Analytics */
         .performance-overview {
@@ -439,8 +522,17 @@
             text-align: center;
         }
 
-        .metric-label { font-size: 10px; color: var(--text-2); margin-bottom: 3px; }
-        .metric-value { font-size: 14px; font-weight: 700; color: var(--text); }
+        .metric-label {
+            font-size: 10px;
+            color: var(--text-2);
+            margin-bottom: 3px;
+        }
+
+        .metric-value {
+            font-size: 14px;
+            font-weight: 700;
+            color: var(--text);
+        }
 
         .health-score {
             padding: 3px 8px;
@@ -451,21 +543,44 @@
             font-weight: 600;
         }
 
-        .health-score.warning { background: #fffbeb; color: #d97706; }
-        .health-score.critical { background: #fef2f2; color: var(--red); }
+        .health-score.warning {
+            background: #fffbeb;
+            color: #d97706;
+        }
+
+        .health-score.critical {
+            background: #fef2f2;
+            color: var(--red);
+        }
 
         .list-title {
-            font-size: 11px; font-weight: 600; color: var(--text-2); margin-bottom: 5px;
+            font-size: 11px;
+            font-weight: 600;
+            color: var(--text-2);
+            margin-bottom: 5px;
         }
 
         .top-site-item {
-            display: flex; justify-content: space-between; align-items: center;
-            padding: 4px 0; border-bottom: 1px solid var(--border); font-size: 12px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 4px 0;
+            border-bottom: 1px solid var(--border);
+            font-size: 12px;
         }
 
-        .top-site-item:last-child { border-bottom: none; }
-        .site-domain { font-weight: 500; }
-        .site-time { color: var(--text-2); font-size: 11px; }
+        .top-site-item:last-child {
+            border-bottom: none;
+        }
+
+        .site-domain {
+            font-weight: 500;
+        }
+
+        .site-time {
+            color: var(--text-2);
+            font-size: 11px;
+        }
 
         /* Organization */
         .form-select {
@@ -481,36 +596,62 @@
 
         /* Saved groups */
         .popup-saved-group-item {
-            display: flex; align-items: center; gap: 7px;
+            display: flex;
+            align-items: center;
+            gap: 7px;
             padding: 7px 9px;
-            background: var(--surface); border: 1px solid var(--border);
-            border-radius: var(--radius-sm); margin-bottom: 4px;
+            background: var(--surface);
+            border: 1px solid var(--border);
+            border-radius: var(--radius-sm);
+            margin-bottom: 4px;
             transition: background .1s;
         }
 
-        .popup-saved-group-item:hover { background: var(--surface2); }
+        .popup-saved-group-item:hover {
+            background: var(--surface2);
+        }
 
-        .popup-group-info { flex: 1; min-width: 0; }
+        .popup-group-info {
+            flex: 1;
+            min-width: 0;
+        }
 
         .popup-group-name {
-            font-size: 12.5px; font-weight: 500;
-            white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+            font-size: 12.5px;
+            font-weight: 500;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
         }
 
-        .popup-group-meta { font-size: 11px; color: var(--text-2); }
+        .popup-group-meta {
+            font-size: 11px;
+            color: var(--text-2);
+        }
 
         .popup-group-actions {
-            display: flex; gap: 3px; opacity: 0; transition: opacity .15s;
+            display: flex;
+            gap: 3px;
+            opacity: 0;
+            transition: opacity .15s;
         }
 
-        .popup-saved-group-item:hover .popup-group-actions { opacity: 1; }
+        .popup-saved-group-item:hover .popup-group-actions {
+            opacity: 1;
+        }
 
         .btn-restore-small {
-            padding: 3px 6px; font-size: 10px; border-radius: 4px;
-            background: var(--green); color: #fff; border: none; cursor: pointer;
+            padding: 3px 6px;
+            font-size: 10px;
+            border-radius: 4px;
+            background: var(--green);
+            color: #fff;
+            border: none;
+            cursor: pointer;
         }
     </style>
 </head>
+
 <body>
 
     <!-- Header -->
@@ -564,8 +705,10 @@
                 <option value="">Loading tab groups...</option>
             </select>
             <div id="group-action-buttons">
-                <button class="btn btn-primary" id="suspend-group-btn" style="display:none;flex:1;">Suspend Group</button>
-                <button class="btn btn-primary" id="restore-group-btn" style="display:none;flex:1;">Restore Group</button>
+                <button class="btn btn-primary" id="suspend-group-btn" style="display:none;flex:1;">Suspend
+                    Group</button>
+                <button class="btn btn-primary" id="restore-group-btn" style="display:none;flex:1;">Restore
+                    Group</button>
             </div>
         </div>
 
@@ -581,10 +724,6 @@
             <button class="btn" id="never-suspend-url">Never Suspend This URL</button>
             <button class="btn" id="never-suspend-domain">Never Suspend This Domain</button>
 
-            <div class="btn-divider"></div>
-            <div class="btn-section-label">Protection</div>
-            <button class="btn btn-primary" id="tracker-blocker-btn">Tracker Blocker Dashboard</button>
-            <button class="btn btn-primary" id="ads-blocker-btn">Ads Blocker Dashboard</button>
         </div>
 
         <!-- Suggestions shown dynamically by popup.js -->
@@ -684,4 +823,5 @@
 
     <script src="popup.js"></script>
 </body>
+
 </html>

@@ -1867,16 +1867,16 @@ class TabSuspendManager {
                     break;
                 case "page-tracker-blocker":
                     chrome.tabs.create({
-                        url: chrome.runtime.getURL(
-                            "ui/dashboards/tracker-blocker/tracker-dashboard.html",
-                        ),
+                        url:
+                            chrome.runtime.getURL("ui/options/options.html") +
+                            "#tab-tracker",
                     });
                     break;
                 case "page-ads-blocker":
                     chrome.tabs.create({
-                        url: chrome.runtime.getURL(
-                            "ui/dashboards/ads-blocker/ads-dashboard.html",
-                        ),
+                        url:
+                            chrome.runtime.getURL("ui/options/options.html") +
+                            "#tab-ads",
                     });
                     break;
                 case "suggest-tabs":
