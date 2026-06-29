@@ -30,6 +30,24 @@ class TrackerDashboard {
     }
 
     setupEventListeners() {
+        document
+            .getElementById("open-options-btn")
+            ?.addEventListener("click", () => {
+                chrome.tabs.create({
+                    url: chrome.runtime.getURL("ui/options/options.html"),
+                });
+            });
+
+        document
+            .getElementById("open-options-tracker-btn")
+            ?.addEventListener("click", () => {
+                chrome.tabs.create({
+                    url:
+                        chrome.runtime.getURL("ui/options/options.html") +
+                        "#tab-tracker",
+                });
+            });
+
         // Filter category toggles
         document
             .getElementById("toggle-ads")
@@ -126,7 +144,7 @@ class TrackerDashboard {
         document.getElementById("session-blocked").textContent =
             this.formatNumber(this.data.sessionBlocked);
         document.getElementById("active-rules").textContent = this.formatNumber(
-            this.data.activeRules
+            this.data.activeRules,
         );
 
         // Update status badge
@@ -203,14 +221,14 @@ class TrackerDashboard {
             <div class="list-item">
                 <div class="list-item-info">
                     <div class="list-item-title">${this.escapeHtml(
-                        item.domain
+                        item.domain,
                     )}</div>
                     <div class="list-item-subtitle">${this.formatNumber(
-                        item.count
+                        item.count,
                     )} requests blocked</div>
                 </div>
             </div>
-        `
+        `,
             )
             .join("");
     }
@@ -231,18 +249,18 @@ class TrackerDashboard {
             <div class="list-item">
                 <div class="list-item-info">
                     <div class="list-item-title">${this.escapeHtml(
-                        domain
+                        domain,
                     )}</div>
                 </div>
                 <button class="btn btn-danger btn-sm" data-domain="${this.escapeHtml(
-                    domain
+                    domain,
                 )}" onclick="trackerDashboard.removeWhitelistDomain('${this.escapeHtml(
-                    domain
+                    domain,
                 )}')">
                     Remove
                 </button>
             </div>
-        `
+        `,
             )
             .join("");
     }
@@ -263,16 +281,16 @@ class TrackerDashboard {
             <div class="list-item">
                 <div class="list-item-info">
                     <div class="list-item-title"><code>${this.escapeHtml(
-                        filter
+                        filter,
                     )}</code></div>
                 </div>
                 <button class="btn btn-danger btn-sm" onclick="trackerDashboard.removeCustomFilter('${this.escapeHtml(
-                    filter
+                    filter,
                 )}')">
                     Remove
                 </button>
             </div>
-        `
+        `,
             )
             .join("");
     }
@@ -288,7 +306,7 @@ class TrackerDashboard {
                 await this.loadData();
                 this.showNotification(
                     "Settings updated successfully",
-                    "success"
+                    "success",
                 );
             }
         } catch (error) {
@@ -317,7 +335,7 @@ class TrackerDashboard {
                 await this.loadData();
                 this.showNotification(
                     `Added ${domain} to whitelist`,
-                    "success"
+                    "success",
                 );
             }
         } catch (error) {
@@ -337,7 +355,7 @@ class TrackerDashboard {
                 await this.loadData();
                 this.showNotification(
                     `Removed ${domain} from whitelist`,
-                    "success"
+                    "success",
                 );
             }
         } catch (error) {
@@ -359,7 +377,7 @@ class TrackerDashboard {
         if (!pattern.includes("*://") && !pattern.startsWith("http")) {
             this.showNotification(
                 "Pattern should start with *:// or http(s)://",
-                "warning"
+                "warning",
             );
             return;
         }
@@ -375,7 +393,7 @@ class TrackerDashboard {
                 await this.loadData();
                 this.showNotification(
                     "Custom filter added successfully",
-                    "success"
+                    "success",
                 );
             }
         } catch (error) {
@@ -404,7 +422,7 @@ class TrackerDashboard {
     async resetStats() {
         if (
             !confirm(
-                "Are you sure you want to reset all statistics? This action cannot be undone."
+                "Are you sure you want to reset all statistics? This action cannot be undone.",
             )
         ) {
             return;
@@ -419,7 +437,7 @@ class TrackerDashboard {
                 await this.loadData();
                 this.showNotification(
                     "Statistics reset successfully",
-                    "success"
+                    "success",
                 );
             }
         } catch (error) {
@@ -449,7 +467,7 @@ class TrackerDashboard {
                 URL.revokeObjectURL(url);
                 this.showNotification(
                     "Filters exported successfully",
-                    "success"
+                    "success",
                 );
             }
         } catch (error) {
@@ -474,14 +492,14 @@ class TrackerDashboard {
                 await this.loadData();
                 this.showNotification(
                     "Filters imported successfully",
-                    "success"
+                    "success",
                 );
             }
         } catch (error) {
             console.error("Error importing filters:", error);
             this.showNotification(
                 "Failed to import filters. Please check the file format.",
-                "error"
+                "error",
             );
         }
     }

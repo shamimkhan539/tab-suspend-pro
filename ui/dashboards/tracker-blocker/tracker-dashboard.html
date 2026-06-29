@@ -340,11 +340,23 @@
             gap: 1rem;
             margin-top: 1.5rem;
         }
+
+        .nav-actions {
+            display: flex;
+            justify-content: flex-end;
+            gap: 0.75rem;
+            margin-bottom: 1rem;
+        }
     </style>
 </head>
 
 <body>
     <div class="container">
+        <div class="nav-actions">
+            <button class="btn btn-secondary" id="open-options-btn">⚙️ Open Settings</button>
+            <button class="btn btn-primary" id="open-options-tracker-btn">🛡️ Tracker Tab</button>
+        </div>
+
         <div class="header">
             <h1>🛡️ Tracker Blocker Dashboard</h1>
             <p>Monitor and control ad tracking, analytics, and malicious content blocking</p>

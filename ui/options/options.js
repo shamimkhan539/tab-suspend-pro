@@ -61,6 +61,8 @@ class OptionsManager {
             whitelistedDomains: [],
         };
 
+        this.protectionOverviewRefreshTimer = null;
+
         this.init();
     }
 
@@ -69,6 +71,7 @@ class OptionsManager {
         await this.wakeUpServiceWorker();
 
         this.setupTabNavigation();
+        this.setupProtectionSubtabs();
         await this.loadSettings();
         await this.loadTabGroups();
         await this.loadSavedGroups();
@@ -82,6 +85,9 @@ class OptionsManager {
         this.setupBackupEventListeners();
         this.setupTrackerBlockerListeners();
         this.setupAdsBlockerListeners();
+        this.setupProtectionOverviewListeners();
+        await this.refreshProtectionOverviews();
+        this.startProtectionOverviewAutoRefresh();
         this.updateUI();
         this.updateLastBackupTime();
     }
@@ -174,6 +180,388 @@ class OptionsManager {
         });
     }
 
+    setupProtectionSubtabs() {
+        document
+            .querySelectorAll(".section-tab[data-subtab-group]")
+            .forEach((button) => {
+                button.addEventListener("click", () => {
+                    const group = button.getAttribute("data-subtab-group");
+                    const subtab = button.getAttribute("data-subtab");
+                    this.switchProtectionSubtab(group, subtab);
+                });
+            });
+    }
+
+    switchProtectionSubtab(group, subtab) {
+        if (!group || !subtab) return;
+
+        document
+            .querySelectorAll(`.section-tab[data-subtab-group="${group}"]`)
+            .forEach((tab) => {
+                tab.classList.remove("active");
+            });
+
+        document
+            .querySelectorAll(`#tab-${group} .section-pane`)
+            .forEach((pane) => {
+                pane.classList.remove("active");
+            });
+
+        const activeTab = document.querySelector(
+            `.section-tab[data-subtab-group="${group}"][data-subtab="${subtab}"]`,
+        );
+        const activePane = document.getElementById(`${group}-pane-${subtab}`);
+
+        activeTab?.classList.add("active");
+        activePane?.classList.add("active");
+
+        if (group === "tracker" && subtab === "dashboard") {
+            this.ensureEmbeddedDashboardLoaded("tracker-dashboard-frame");
+        }
+    }
+
+    ensureEmbeddedDashboardLoaded(frameId) {
+        const frame = document.getElementById(frameId);
+        if (!frame) return;
+
+        const existingSrc = frame.getAttribute("src");
+        if (existingSrc && existingSrc.trim()) return;
+
+        const src = frame.getAttribute("data-src");
+        if (src) {
+            frame.setAttribute("src", src);
+        }
+    }
+
+    setupProtectionOverviewListeners() {
+        document
+            .getElementById("tracker-refresh-overview")
+            ?.addEventListener("click", () => this.loadTrackerOverview());
+
+        document
+            .getElementById("ads-refresh-overview")
+            ?.addEventListener("click", () => this.loadAdsOverview());
+
+        document
+            .getElementById("tracker-reset-overview")
+            ?.addEventListener("click", async () => {
+                const confirmed = confirm(
+                    "Reset tracker blocker statistics? This cannot be undone.",
+                );
+                if (!confirmed) return;
+
+                try {
+                    const response = await this.sendMessageSafely({
+                        action: "tracker-reset-stats",
+                    });
+                    if (response?.success) {
+                        await this.loadTrackerBlockerSettings();
+                        await this.loadTrackerOverview();
+                        this.showStatusMessage(
+                            "Tracker statistics reset successfully",
+                            "success",
+                        );
+                    }
+                } catch (error) {
+                    console.error("Error resetting tracker stats:", error);
+                    this.showStatusMessage(
+                        "Failed to reset tracker statistics",
+                        "error",
+                    );
+                }
+            });
+
+        document
+            .getElementById("ads-reset-overview")
+            ?.addEventListener("click", async () => {
+                const confirmed = confirm(
+                    "Reset ads blocker statistics? This cannot be undone.",
+                );
+                if (!confirmed) return;
+
+                try {
+                    const response = await this.sendMessageSafely({
+                        action: "reset-ads-stats",
+                    });
+                    if (response?.success) {
+                        await this.loadAdsBlockerSettings();
+                        await this.loadAdsOverview();
+                        this.showStatusMessage(
+                            "Ads statistics reset successfully",
+                            "success",
+                        );
+                    }
+                } catch (error) {
+                    console.error("Error resetting ads stats:", error);
+                    this.showStatusMessage(
+                        "Failed to reset ads statistics",
+                        "error",
+                    );
+                }
+            });
+    }
+
+    startProtectionOverviewAutoRefresh() {
+        if (this.protectionOverviewRefreshTimer) {
+            clearInterval(this.protectionOverviewRefreshTimer);
+        }
+
+        this.protectionOverviewRefreshTimer = setInterval(() => {
+            this.refreshProtectionOverviews();
+        }, 5000);
+    }
+
+    async refreshProtectionOverviews() {
+        await Promise.all([this.loadTrackerOverview(), this.loadAdsOverview()]);
+    }
+
+    setOverviewStatusPill(elementId, enabled) {
+        const element = document.getElementById(elementId);
+        if (!element) return;
+
+        element.classList.remove("active", "inactive");
+        element.classList.add(enabled ? "active" : "inactive");
+        element.textContent = enabled ? "Active" : "Inactive";
+    }
+
+    updateOverviewBar(fillId, valueId, value, total) {
+        const fill = document.getElementById(fillId);
+        const valueElement = document.getElementById(valueId);
+
+        const count = Number(value) || 0;
+        const denominator = Math.max(Number(total) || 0, 1);
+        const width = Math.min((count / denominator) * 100, 100);
+
+        if (fill) {
+            fill.style.width = `${width}%`;
+        }
+
+        if (valueElement) {
+            valueElement.textContent = this.formatCompactNumber(count);
+        }
+    }
+
+    updateOverviewDomains(listId, domains, emptyMessage) {
+        const listElement = document.getElementById(listId);
+        if (!listElement) return;
+
+        if (!Array.isArray(domains) || domains.length === 0) {
+            listElement.innerHTML = `
+                <li class="overview-list-item">
+                    <span class="setting-desc">${emptyMessage}</span>
+                </li>
+            `;
+            return;
+        }
+
+        listElement.innerHTML = domains
+            .slice(0, 8)
+            .map((item) => {
+                const domain = this.escapeHtml(item.domain || "unknown");
+                const count = this.formatCompactNumber(item.count || 0);
+                return `
+                    <li class="overview-list-item">
+                        <span class="overview-domain">${domain}</span>
+                        <span class="overview-count">${count}</span>
+                    </li>
+                `;
+            })
+            .join("");
+    }
+
+    setOverviewUpdatedTime(elementId) {
+        const element = document.getElementById(elementId);
+        if (!element) return;
+
+        element.textContent = new Date().toLocaleTimeString([], {
+            hour: "2-digit",
+            minute: "2-digit",
+            second: "2-digit",
+        });
+    }
+
+    async loadTrackerOverview() {
+        try {
+            const response = await this.sendMessageSafely({
+                action: "tracker-get-dashboard",
+            });
+
+            if (!response?.success || !response.data) {
+                return;
+            }
+
+            const data = response.data;
+            const blockedByType = data.blockedByType || {};
+            const totalBlocked = Number(data.totalBlocked) || 0;
+
+            const totalElement = document.getElementById(
+                "tracker-overview-total",
+            );
+            const sessionElement = document.getElementById(
+                "tracker-overview-session",
+            );
+            const rulesElement = document.getElementById(
+                "tracker-overview-rules",
+            );
+
+            if (totalElement) {
+                totalElement.textContent =
+                    this.formatCompactNumber(totalBlocked);
+            }
+
+            if (sessionElement) {
+                sessionElement.textContent = this.formatCompactNumber(
+                    data.sessionBlocked || 0,
+                );
+            }
+
+            if (rulesElement) {
+                rulesElement.textContent = this.formatCompactNumber(
+                    data.activeRules || 0,
+                );
+            }
+
+            this.setOverviewStatusPill(
+                "tracker-overview-status",
+                !!data.enabled,
+            );
+
+            this.updateOverviewBar(
+                "tracker-bar-ads",
+                "tracker-bar-value-ads",
+                blockedByType.ads || 0,
+                totalBlocked,
+            );
+            this.updateOverviewBar(
+                "tracker-bar-trackers",
+                "tracker-bar-value-trackers",
+                blockedByType.trackers || 0,
+                totalBlocked,
+            );
+            this.updateOverviewBar(
+                "tracker-bar-social",
+                "tracker-bar-value-social",
+                blockedByType.social || 0,
+                totalBlocked,
+            );
+            this.updateOverviewBar(
+                "tracker-bar-crypto",
+                "tracker-bar-value-crypto",
+                blockedByType.crypto || 0,
+                totalBlocked,
+            );
+            this.updateOverviewBar(
+                "tracker-bar-malware",
+                "tracker-bar-value-malware",
+                blockedByType.malware || 0,
+                totalBlocked,
+            );
+
+            this.updateOverviewDomains(
+                "tracker-overview-domains",
+                data.topBlockedDomains,
+                "No blocked domains yet",
+            );
+
+            this.setOverviewUpdatedTime("tracker-overview-updated");
+        } catch (error) {
+            console.error("Error loading tracker overview:", error);
+        }
+    }
+
+    async loadAdsOverview() {
+        try {
+            const response = await this.sendMessageSafely({
+                action: "get-ads-blocker-data",
+            });
+
+            if (!response || !response.stats || !response.settings) {
+                return;
+            }
+
+            const stats = response.stats || {};
+            const settings = response.settings || {};
+            const blockedByType = stats.blockedByType || {};
+            const totalBlocked = Number(stats.totalBlocked) || 0;
+
+            const totalElement = document.getElementById("ads-overview-total");
+            const sessionElement = document.getElementById(
+                "ads-overview-session",
+            );
+            const dataElement = document.getElementById("ads-overview-data");
+
+            if (totalElement) {
+                totalElement.textContent =
+                    this.formatCompactNumber(totalBlocked);
+            }
+
+            if (sessionElement) {
+                sessionElement.textContent = this.formatCompactNumber(
+                    stats.sessionBlocked || 0,
+                );
+            }
+
+            if (dataElement) {
+                const savedMb = Number(stats.dataBlockedMB) || 0;
+                dataElement.textContent = `${savedMb.toFixed(1)} MB`;
+            }
+
+            this.setOverviewStatusPill(
+                "ads-overview-status",
+                !!settings.enabled,
+            );
+
+            this.updateOverviewBar(
+                "ads-bar-ads",
+                "ads-bar-value-ads",
+                blockedByType.ads || 0,
+                totalBlocked,
+            );
+            this.updateOverviewBar(
+                "ads-bar-analytics",
+                "ads-bar-value-analytics",
+                blockedByType.analytics || 0,
+                totalBlocked,
+            );
+            this.updateOverviewBar(
+                "ads-bar-banners",
+                "ads-bar-value-banners",
+                blockedByType.banners || 0,
+                totalBlocked,
+            );
+            this.updateOverviewBar(
+                "ads-bar-cookies",
+                "ads-bar-value-cookies",
+                blockedByType.cookies || 0,
+                totalBlocked,
+            );
+
+            this.updateOverviewDomains(
+                "ads-overview-domains",
+                response.topBlockedDomains,
+                "No blocked domains yet",
+            );
+
+            this.setOverviewUpdatedTime("ads-overview-updated");
+        } catch (error) {
+            console.error("Error loading ads overview:", error);
+        }
+    }
+
+    formatCompactNumber(num) {
+        const value = Number(num) || 0;
+
+        if (value >= 1000000) {
+            return `${(value / 1000000).toFixed(1)}M`;
+        }
+
+        if (value >= 1000) {
+            return `${(value / 1000).toFixed(1)}K`;
+        }
+
+        return value.toString();
+    }
+
     async loadTrackerBlockerSettings() {
         try {
             const result = await this.sendMessageSafely({
@@ -204,6 +592,8 @@ class OptionsManager {
             if (whitelistResult && whitelistResult.whitelist) {
                 this.updateTrackerWhitelistUI(whitelistResult.whitelist);
             }
+
+            await this.loadTrackerOverview();
         } catch (error) {
             console.error("Error loading tracker blocker settings:", error);
             // Still update UI with defaults
@@ -285,6 +675,7 @@ class OptionsManager {
                     settings: { enabled: !enabled },
                 });
                 this.setToggleState("tracker-blocker-enabled", !enabled);
+                this.loadTrackerOverview();
             });
 
         // Category toggles
@@ -334,6 +725,7 @@ class OptionsManager {
 
                     this.setToggleState(id, !enabled);
                     this.trackerSettings.categories[category] = !enabled;
+                    this.loadTrackerOverview();
                 });
         });
 
@@ -347,6 +739,7 @@ class OptionsManager {
                     settings: { trackStatistics: !enabled },
                 });
                 this.setToggleState("track-stats", !enabled);
+                this.loadTrackerOverview();
             });
 
         // Add to whitelist
@@ -364,6 +757,7 @@ class OptionsManager {
 
                     input.value = "";
                     await this.loadTrackerBlockerSettings();
+                    this.loadTrackerOverview();
                 }
             });
 
@@ -378,17 +772,7 @@ class OptionsManager {
                     action: "tracker-update-settings",
                     settings: { customFilters: filters },
                 });
-            });
-
-        // Open tracker dashboard
-        document
-            .getElementById("open-tracker-dashboard")
-            ?.addEventListener("click", () => {
-                chrome.tabs.create({
-                    url: chrome.runtime.getURL(
-                        "ui/dashboards/tracker-blocker/tracker-dashboard.html",
-                    ),
-                });
+                this.loadTrackerOverview();
             });
 
         // Open other dashboards
@@ -419,6 +803,7 @@ class OptionsManager {
             domain: domain,
         });
         await this.loadTrackerBlockerSettings();
+        this.loadTrackerOverview();
     }
 
     async loadAdsBlockerSettings() {
@@ -446,6 +831,8 @@ class OptionsManager {
             ) {
                 this.updateAdsWhitelistUI(result.settings.whitelistedDomains);
             }
+
+            await this.loadAdsOverview();
         } catch (error) {
             console.error("Error loading ads blocker settings:", error);
             this.updateAdsBlockerUI();
@@ -533,6 +920,7 @@ class OptionsManager {
                     settings: { enabled: !enabled },
                 });
                 this.setToggleState("ads-blocker-enabled", !enabled);
+                this.loadAdsOverview();
             });
 
         // Category toggles
@@ -572,6 +960,7 @@ class OptionsManager {
 
                     this.setToggleState(id, !enabled);
                     this.adsBlockerSettings[setting] = !enabled;
+                    this.loadAdsOverview();
                 });
         });
 
@@ -590,6 +979,7 @@ class OptionsManager {
 
                     input.value = "";
                     await this.loadAdsBlockerSettings();
+                    this.loadAdsOverview();
                 }
             });
 
@@ -604,17 +994,7 @@ class OptionsManager {
                     action: "update-ads-blocker-settings",
                     settings: { customFilters: filters },
                 });
-            });
-
-        // Open ads blocker dashboard
-        document
-            .getElementById("open-ads-dashboard")
-            ?.addEventListener("click", () => {
-                chrome.tabs.create({
-                    url: chrome.runtime.getURL(
-                        "ui/dashboards/ads-blocker/ads-dashboard.html",
-                    ),
-                });
+                this.loadAdsOverview();
             });
     }
 
@@ -624,6 +1004,7 @@ class OptionsManager {
             domain: domain,
         });
         await this.loadAdsBlockerSettings();
+        this.loadAdsOverview();
     }
 
     setToggleState(elementId, isActive) {
@@ -1851,6 +2232,34 @@ document.querySelectorAll(".nav-item").forEach((btn) => {
             btn.textContent.trim();
     });
 });
+
+// Support direct deep links like #tab-ads or #tab-tracker from dashboard pages
+(() => {
+    const hash = (window.location.hash || "").toLowerCase();
+    if (!hash.startsWith("#tab-")) return;
+
+    let tabName = hash.replace("#tab-", "");
+    let trackerSubtab = "overview";
+
+    if (tabName === "tracker-dashboard") {
+        tabName = "tracker";
+        trackerSubtab = "dashboard";
+    }
+
+    const targetButton = document.querySelector(
+        `.nav-item[data-tab="${tabName}"]`,
+    );
+
+    if (!targetButton) return;
+
+    targetButton.click();
+
+    if (tabName === "tracker") {
+        optionsManager.switchProtectionSubtab("tracker", trackerSubtab);
+    } else if (tabName === "ads") {
+        optionsManager.switchProtectionSubtab("ads", "overview");
+    }
+})();
 
 // Toast helper
 window.showToast = function (msg, type) {

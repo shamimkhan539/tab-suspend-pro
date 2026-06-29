@@ -7,6 +7,17 @@
     let lastBlockedAdURL = "";
     let blockEnabled = false;
     let adSlots = [];
+    let sponsoredSweepTimeout = null;
+
+    const scheduleSponsoredSweep = () => {
+        if (!blockEnabled) return;
+        if (sponsoredSweepTimeout) return;
+
+        sponsoredSweepTimeout = setTimeout(() => {
+            sponsoredSweepTimeout = null;
+            hideSponsoredBlocks();
+        }, 120);
+    };
 
     const hasMusicAdDomIndicators = () => hasAnyAdDomIndicator();
 
@@ -182,6 +193,7 @@
     const checkAds = async () => {
         if (!blockEnabled) return;
 
+        hideSponsoredBlocks();
         clickVisibleSkipButton();
 
         // Step 1: Trigger YouTube's internal skip API first
@@ -202,6 +214,7 @@
         // - If API was used (result.usedApi = true), this is a fallback in case API failed
         // - If API wasn't used (result.usedApi = false), this is the primary skip method
         await trySkipAd();
+        hideSponsoredBlocks();
     };
 
     // Check for "Still watching?" popup (YouTube Music specific)
@@ -341,6 +354,9 @@
             case "setBlockEnabled":
                 blockEnabled = event.data.enabled;
                 logMessage(`[YTM] Block enabled: ${blockEnabled}`);
+                if (blockEnabled) {
+                    hideSponsoredBlocks();
+                }
                 break;
 
             case "checkAds":
@@ -359,6 +375,21 @@
                 break;
         }
     });
+
+    const sponsoredObserver = new MutationObserver(() => {
+        scheduleSponsoredSweep();
+    });
+
+    try {
+        sponsoredObserver.observe(document.documentElement, {
+            childList: true,
+            subtree: true,
+        });
+    } catch (error) {
+        logMessage(
+            `[YTM] Sponsored observer failed to start: ${error.message || error}`,
+        );
+    }
 
     logMessage("YouTube Music ad blocker (MAIN world) initialized");
 })();

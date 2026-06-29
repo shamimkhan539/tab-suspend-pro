@@ -39,6 +39,28 @@ class AdsDashboard {
     }
 
     setupEventListeners() {
+        const openOptionsBtn = document.getElementById("open-options-btn");
+        if (openOptionsBtn) {
+            openOptionsBtn.addEventListener("click", () => {
+                chrome.tabs.create({
+                    url: chrome.runtime.getURL("ui/options/options.html"),
+                });
+            });
+        }
+
+        const openOptionsAdsBtn = document.getElementById(
+            "open-options-ads-btn",
+        );
+        if (openOptionsAdsBtn) {
+            openOptionsAdsBtn.addEventListener("click", () => {
+                chrome.tabs.create({
+                    url:
+                        chrome.runtime.getURL("ui/options/options.html") +
+                        "#tab-ads",
+                });
+            });
+        }
+
         // Close button
         const closeBtn = document.getElementById("close-btn");
         if (closeBtn) {
@@ -54,14 +76,14 @@ class AdsDashboard {
         const blockingToggle = document.getElementById("ads-blocker-toggle");
         if (blockingToggle) {
             blockingToggle.addEventListener("change", () =>
-                this.toggleBlocking(blockingToggle.checked)
+                this.toggleBlocking(blockingToggle.checked),
             );
         }
 
         // Setting toggles
         document.querySelectorAll(".setting-toggle").forEach((toggle) => {
             toggle.addEventListener("change", () =>
-                this.handleSettingChange(toggle)
+                this.handleSettingChange(toggle),
             );
         });
 
@@ -69,7 +91,7 @@ class AdsDashboard {
         const addWhitelistBtn = document.getElementById("add-whitelist-btn");
         if (addWhitelistBtn) {
             addWhitelistBtn.addEventListener("click", () =>
-                this.addToWhitelist()
+                this.addToWhitelist(),
             );
         }
 
@@ -77,7 +99,7 @@ class AdsDashboard {
         const addFilterBtn = document.getElementById("add-filter-btn");
         if (addFilterBtn) {
             addFilterBtn.addEventListener("click", () =>
-                this.addCustomFilter()
+                this.addCustomFilter(),
             );
         }
 
@@ -95,14 +117,14 @@ class AdsDashboard {
         const exportFiltersBtn = document.getElementById("export-filters-btn");
         if (exportFiltersBtn) {
             exportFiltersBtn.addEventListener("click", () =>
-                this.exportFilters()
+                this.exportFilters(),
             );
         }
 
         const importFiltersBtn = document.getElementById("import-filters-btn");
         if (importFiltersBtn) {
             importFiltersBtn.addEventListener("click", () =>
-                this.importFilters()
+                this.importFilters(),
             );
         }
     }
@@ -160,7 +182,7 @@ class AdsDashboard {
         // Update metrics
         const blockedByType = stats.blockedByType || {};
         document.getElementById("metric-ads").textContent = this.formatNumber(
-            blockedByType.ads || 0
+            blockedByType.ads || 0,
         );
         document.getElementById("metric-analytics").textContent =
             this.formatNumber(blockedByType.analytics || 0);
@@ -204,10 +226,10 @@ class AdsDashboard {
             <div class="domain-item">
                 <span class="domain-name">${this.escapeHtml(item.domain)}</span>
                 <span class="domain-count">${this.formatNumber(
-                    item.count
+                    item.count,
                 )}</span>
             </div>
-        `
+        `,
             )
             .join("");
     }
@@ -238,7 +260,7 @@ class AdsDashboard {
                 <span class="item-text">${this.escapeHtml(domain)}</span>
                 <button class="btn-remove" data-index="${index}">Remove</button>
             </div>
-        `
+        `,
             )
             .join("");
 
@@ -266,11 +288,11 @@ class AdsDashboard {
                 (filter, index) => `
             <div class="list-item">
                 <span class="item-text" title="${this.escapeHtml(
-                    filter
+                    filter,
                 )}">${this.escapeHtml(filter)}</span>
                 <button class="btn-remove" data-index="${index}">Remove</button>
             </div>
-        `
+        `,
             )
             .join("");
 
