@@ -225,7 +225,7 @@
             video.addEventListener("timeupdate", () => {
                 if (
                     !video._lastAdCheck ||
-                    Date.now() - video._lastAdCheck > 2000
+                    Date.now() - video._lastAdCheck > 700
                 ) {
                     video._lastAdCheck = Date.now();
                     checkAdPresence(0);

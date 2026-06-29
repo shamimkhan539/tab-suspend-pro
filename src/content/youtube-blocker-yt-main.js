@@ -63,6 +63,16 @@
         return false;
     };
 
+    const getFallbackAdVideo = () => {
+        const moviePlayer = document.getElementById("movie_player");
+        if (!moviePlayer) return null;
+
+        const videos = moviePlayer.querySelectorAll(
+            "video.video-stream, video",
+        );
+        return findActiveVideo(videos);
+    };
+
     // Try to click skip button using YouTube's Player API
     const tryClickSkipButton = async () => {
         const hasAdPlayer = !!getAdPlayerYT();
@@ -114,38 +124,47 @@
 
     // Try to skip ad by seeking to end
     const trySkipAd = async () => {
-        const player = getAdPlayerYT();
+        const player =
+            getAdPlayerYT() ||
+            (hasAnyAdDomIndicator() ? getFallbackAdVideo() : null);
         if (!player) return;
+
+        const playerSrc = player.currentSrc || player.src || "";
 
         logMessage(
             `Processing ad at ${player.currentTime} / ${player.duration}`,
         );
 
-        if (!isFinite(player.duration)) {
+        if (!isFinite(player.duration) || player.duration <= 0) {
             logMessage("Ad duration is not finite");
             return;
         }
 
-        if (player.src === lastBlockedAdURL) {
-            logMessage("Already processed this ad");
+        if (
+            playerSrc &&
+            playerSrc === lastBlockedAdURL &&
+            Date.now() - lastBlockedTime < 1200
+        ) {
             return;
         }
 
-        // Wait until 40% through ad to avoid detection
-        const threshold = player.duration * 0.4;
-        if (player.currentTime < threshold) {
-            logMessage(
-                `Waiting for threshold: ${player.currentTime} < ${threshold}`,
-            );
-            return;
-        }
-
-        const target = player.duration - 0.1;
+        const target = Math.max(player.duration - 0.08, player.currentTime);
         logMessage(`Skipping ad from ${player.currentTime} to ${target}`);
 
         player.currentTime = target;
-        lastBlockedAdURL = player.src;
+        lastBlockedAdURL = playerSrc;
         lastBlockedTime = Date.now();
+
+        setTimeout(() => {
+            if (!hasAnyAdDomIndicator()) return;
+            if (!isFinite(player.duration) || player.duration <= 0) return;
+
+            player.currentTime = Math.max(
+                player.currentTime,
+                player.duration - 0.03,
+            );
+            clickVisibleSkipButton();
+        }, 140);
     };
 
     // Main ad checking routine
@@ -155,10 +174,60 @@
         hideSponsoredBlocks();
         clickVisibleSkipButton();
         await tryClickSkipButton();
-        await new Promise((resolve) => setTimeout(resolve, 1000));
+        await trySkipAd();
+        await new Promise((resolve) => setTimeout(resolve, 180));
         clickVisibleSkipButton();
         await trySkipAd();
         hideSponsoredBlocks();
+    };
+
+    const captureAdSlotsFromResponse = (response) => {
+        const slotSources = [
+            response?.adSlots,
+            response?.playerResponse?.adSlots,
+        ];
+
+        for (const slots of slotSources) {
+            if (Array.isArray(slots) && slots.length > 0) {
+                adSlots = slots;
+                return slots.length;
+            }
+        }
+
+        return 0;
+    };
+
+    const stripAdFields = (payload) => {
+        if (!payload || typeof payload !== "object") return false;
+
+        let mutated = false;
+        const removableKeys = [
+            "adPlacements",
+            "playerAds",
+            "adSlots",
+            "adBreakHeartbeatParams",
+        ];
+
+        removableKeys.forEach((key) => {
+            if (key in payload) {
+                delete payload[key];
+                mutated = true;
+            }
+        });
+
+        if ("adThrottled" in payload && payload.adThrottled !== true) {
+            payload.adThrottled = true;
+            mutated = true;
+        }
+
+        return mutated;
+    };
+
+    const stripAdPayloads = (response) => {
+        let mutated = false;
+        mutated = stripAdFields(response) || mutated;
+        mutated = stripAdFields(response?.playerResponse) || mutated;
+        return mutated;
     };
 
     // Check for "Still watching?" popup
@@ -213,34 +282,15 @@
                 try {
                     const response = JSON.parse(this.response);
 
-                    if (
-                        Array.isArray(response.adSlots) &&
-                        response.adSlots.length > 0
-                    ) {
-                        adSlots = response.adSlots;
-                    }
+                    const capturedCount = captureAdSlotsFromResponse(response);
 
-                    if ("adThrottled" in response) {
-                        logMessage(
-                            `Ad throttling detected: ${response.adThrottled}`,
-                        );
-
-                        if (blockEnabled) {
-                            // Modify response to prevent ads
-                            logMessage("Replacing ad throttling response");
-                            Object.defineProperty(this, "response", {
-                                writable: true,
-                            });
-                            response.adThrottled = true;
-                            this.response = JSON.stringify(response);
-                        } else if (
-                            Array.isArray(response.adSlots) &&
-                            response.adSlots.length > 0
-                        ) {
-                            logMessage(
-                                `Captured ${response.adSlots.length} ad slots`,
-                            );
-                        }
+                    if (blockEnabled && stripAdPayloads(response)) {
+                        Object.defineProperty(this, "response", {
+                            writable: true,
+                        });
+                        this.response = JSON.stringify(response);
+                    } else if (capturedCount > 0) {
+                        logMessage(`Captured ${capturedCount} ad slots`);
                     }
                 } catch (e) {
                     // Not a JSON response, continue normally
@@ -265,7 +315,10 @@
                 blockEnabled = event.data.enabled;
                 logMessage(`Block enabled: ${blockEnabled}`);
                 if (blockEnabled) {
+                    ensureSponsoredHideStyle();
                     hideSponsoredBlocks();
+                } else {
+                    removeSponsoredHideStyle();
                 }
                 break;
 
