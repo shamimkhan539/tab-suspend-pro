@@ -78,34 +78,13 @@ class AdsBlocker {
                 "*://*.ads.aol.com/*",
                 "*://*.ads.linkedin.com/*",
                 "*://*.ads.facebook.com/*",
-                // YouTube Ad Serving & Ad Networks
-                "*://*.youtube.com/pagead/*",
-                "*://*.youtube.com/ptracking/*",
-                "*://*.youtube.com/ads*",
-                "*://*.youtube.com/watch_ads*",
-                "*://*.youtube.com/get_midroll_*",
-                "*://*.youtube.com/api/timedtext_sync*",
-                "*://*.m.youtube.com/pagead/*",
-                "*://*.m.youtube.com/ads*",
-                "*://*.www.youtube.com/pagead/*",
-                "*://*.www.youtube.com/ads*",
-                "*://*.youtubei.googleapis.com/*pagead*",
-                "*://*.youtubei.googleapis.com/*ads*",
-                "*://*.youtubei.googleapis.com/youtubei/v1/log_interaction*",
-                // YouTube Music Ad Serving
-                "*://*.music.youtube.com/pagead/*",
-                "*://*.music.youtube.com/ads*",
-                "*://*.music.youtube.com/get_midroll_*",
-                "*://*.music.youtube.com/watch_ads*",
-                "*://*.youtubei.googleapis.com/*music*ads*",
-                // Google Ad Services for YouTube Content
-                "*://*.gstatic.com/youtube/*ads*",
-                "*://*.gstatic.com/youtube/*pagead*",
-                // YouTube CDN Ad Content
-                "*://*.yt4.ggpht.com/*ads*",
-                "*://*.yt3.ggpht.com/*ads*",
-                "*://*.ytimg.com/*ads*",
-                "*://*.ytimg.com/pagead*",
+                // Note: YouTube/YouTube Music ad requests are intentionally NOT
+                // network-blocked here. Blocking youtube.com/youtubei.googleapis.com/
+                // ytimg.com ad-related requests produces failed requests
+                // (net::ERR_BLOCKED_BY_CLIENT) that YouTube's anti-adblock detection
+                // watches for and responds to with a playback-blocking wall. Ads on
+                // YouTube are instead skipped client-side via the content scripts in
+                // src/content/youtube-blocker-*.js, which doesn't touch the network layer.
             ],
 
             // Analytics Trackers (including YouTube tracking)
@@ -140,8 +119,6 @@ class AdsBlocker {
                 "*://*.wistia.net/*",
                 "*://*.wistia.com/*",
                 "*://*.vimeo.com/api/*",
-                // YouTube Analytics Tracking (only actual tracking endpoints, not player/embed)
-                "*://*.youtube.com/s/player/*analytics*",
             ],
 
             // Banner Ads (real ad-serving domains only)
@@ -149,12 +126,6 @@ class AdsBlocker {
                 "*://*.ads.google.com/*",
                 "*://*.pagead2.googlesyndication.com/pagead/*",
                 "*://*.adssettings.google.com/*",
-                // YouTube Banner Ad Scripts (player-level ad scripts only, not the player itself)
-                "*://*.youtube.com/s/player/*banner*",
-                "*://*.youtube.com/s/player/*ads*",
-                // YouTube Music Banner Ad Scripts
-                "*://*.music.youtube.com/s/player/*banner*",
-                "*://*.music.youtube.com/s/player/*ads*",
             ],
 
             // Social Media Widgets & Tracking

@@ -179,19 +179,22 @@
             return;
         }
 
-        const target = Math.max(adPlayer.duration - 0.08, adPlayer.currentTime);
+        // Wait until the ad has registered as "started" before seeking, to
+        // avoid YouTube's ad-block detection.
+        const threshold = adPlayer.duration * 0.4;
+        if (adPlayer.currentTime < threshold) {
+            logMessage(
+                `Waiting for threshold: ${adPlayer.currentTime} < ${threshold}`,
+            );
+            return;
+        }
+
+        const target = adPlayer.duration - 0.1;
         logMessage(`Skipping ad from ${adPlayer.currentTime} to ${target}`);
 
         adPlayer.currentTime = target;
         lastBlockedAdURL = playerSrc;
         lastBlockedTime = Date.now();
-
-        setTimeout(() => {
-            if (hasMusicAdDomIndicators()) {
-                clickVisibleSkipButton();
-                clickMusicNextButton();
-            }
-        }, 150);
     };
 
     // Main ad checking routine - EXACTLY like JAdSkip
@@ -210,9 +213,10 @@
             return;
         }
 
-        // Step 2: Try immediate seek fallback, then short wait and retry.
+        // Step 2: Give the skip-button API time to register with YouTube's
+        // backend before falling back to seeking, to avoid ad-block detection.
         await trySkipAd();
-        await new Promise((resolve) => setTimeout(resolve, 180));
+        await new Promise((resolve) => setTimeout(resolve, 1000));
 
         clickVisibleSkipButton();
 
@@ -290,7 +294,11 @@
         }
     };
 
-    // Override XMLHttpRequest to capture and strip ad payloads / idle prompts
+    // Override XMLHttpRequest to capture ad slots for the skip-button API.
+    // Read-only: never reassign this.response. Rewriting a parsed-and-
+    // reserialized payload is a strong tamper signature for YouTube's
+    // ad-block/integrity detection, so idle prompts are left untouched here
+    // and handled via checkIdle()'s DOM-level button click instead.
     const originalSend = XMLHttpRequest.prototype.send;
     XMLHttpRequest.prototype.send = function (...args) {
         const originalOnload = this.onload;
@@ -299,7 +307,6 @@
             this.onload = function (...onloadArgs) {
                 try {
                     const response = JSON.parse(this.response);
-                    let didMutate = false;
 
                     if (
                         Array.isArray(response.adSlots) &&
@@ -309,34 +316,6 @@
                         logMessage(
                             `[YTM] Captured ${response.adSlots.length} ad slots from XHR`,
                         );
-
-                        if (blockEnabled) {
-                            delete response.adSlots;
-                            didMutate = true;
-                        }
-                    }
-
-                    if (Array.isArray(response.messages) && blockEnabled) {
-                        const filteredMessages = response.messages.filter(
-                            (message) => !message.youThereRenderer,
-                        );
-
-                        if (
-                            filteredMessages.length !== response.messages.length
-                        ) {
-                            response.messages = filteredMessages;
-                            didMutate = true;
-                            logMessage(
-                                "[YTM] Removed YouThere prompts from XHR response",
-                            );
-                        }
-                    }
-
-                    if (didMutate) {
-                        Object.defineProperty(this, "response", {
-                            writable: true,
-                        });
-                        this.response = JSON.stringify(response);
                     }
                 } catch (e) {
                     // Not a JSON response, continue normally

@@ -148,23 +148,23 @@
             return;
         }
 
-        const target = Math.max(player.duration - 0.08, player.currentTime);
+        // Wait until the ad has registered as "started" before seeking, to
+        // avoid YouTube's ad-block detection. See docs/features/youtube/
+        // YOUTUBE_BLOCKER_JADSKIP_REWRITE.md section 3.
+        const threshold = player.duration * 0.4;
+        if (player.currentTime < threshold) {
+            logMessage(
+                `Waiting for threshold: ${player.currentTime} < ${threshold}`,
+            );
+            return;
+        }
+
+        const target = player.duration - 0.1;
         logMessage(`Skipping ad from ${player.currentTime} to ${target}`);
 
         player.currentTime = target;
         lastBlockedAdURL = playerSrc;
         lastBlockedTime = Date.now();
-
-        setTimeout(() => {
-            if (!hasAnyAdDomIndicator()) return;
-            if (!isFinite(player.duration) || player.duration <= 0) return;
-
-            player.currentTime = Math.max(
-                player.currentTime,
-                player.duration - 0.03,
-            );
-            clickVisibleSkipButton();
-        }, 140);
     };
 
     // Main ad checking routine
@@ -174,8 +174,11 @@
         hideSponsoredBlocks();
         clickVisibleSkipButton();
         await tryClickSkipButton();
-        await trySkipAd();
-        await new Promise((resolve) => setTimeout(resolve, 180));
+
+        // Give the skip-button API time to register with YouTube's backend
+        // before falling back to seeking, to avoid ad-block detection.
+        await new Promise((resolve) => setTimeout(resolve, 1000));
+
         clickVisibleSkipButton();
         await trySkipAd();
         hideSponsoredBlocks();
@@ -195,39 +198,6 @@
         }
 
         return 0;
-    };
-
-    const stripAdFields = (payload) => {
-        if (!payload || typeof payload !== "object") return false;
-
-        let mutated = false;
-        const removableKeys = [
-            "adPlacements",
-            "playerAds",
-            "adSlots",
-            "adBreakHeartbeatParams",
-        ];
-
-        removableKeys.forEach((key) => {
-            if (key in payload) {
-                delete payload[key];
-                mutated = true;
-            }
-        });
-
-        if ("adThrottled" in payload && payload.adThrottled !== true) {
-            payload.adThrottled = true;
-            mutated = true;
-        }
-
-        return mutated;
-    };
-
-    const stripAdPayloads = (response) => {
-        let mutated = false;
-        mutated = stripAdFields(response) || mutated;
-        mutated = stripAdFields(response?.playerResponse) || mutated;
-        return mutated;
     };
 
     // Check for "Still watching?" popup
@@ -280,16 +250,13 @@
         if (originalOnload) {
             this.onload = function (...onloadArgs) {
                 try {
+                    // Read-only: never reassign this.response. Rewriting a
+                    // parsed-and-reserialized payload is a strong tamper
+                    // signature for YouTube's ad-block/integrity detection.
                     const response = JSON.parse(this.response);
-
                     const capturedCount = captureAdSlotsFromResponse(response);
 
-                    if (blockEnabled && stripAdPayloads(response)) {
-                        Object.defineProperty(this, "response", {
-                            writable: true,
-                        });
-                        this.response = JSON.stringify(response);
-                    } else if (capturedCount > 0) {
+                    if (capturedCount > 0) {
                         logMessage(`Captured ${capturedCount} ad slots`);
                     }
                 } catch (e) {

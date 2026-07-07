@@ -17,6 +17,9 @@ const ensureSponsoredHideStyle = () => {
 
     const style = document.createElement("style");
     style.id = YTBLOCKER_HIDE_STYLE_ID;
+    // Note: #player-ads is intentionally excluded. YouTube's anti-adblock
+    // check inspects that container's visibility/emptiness to detect
+    // blockers, so force-hiding it is a direct detection trip wire.
     style.textContent = `
         ytd-display-ad-renderer,
         ytd-ad-slot-renderer,
@@ -33,7 +36,6 @@ const ensureSponsoredHideStyle = () => {
         ytmusic-display-ad-renderer,
         ytmusic-promoted-sparkles-web-renderer,
         ytmusic-mealbar-promo-renderer,
-        #player-ads,
         #panels ytd-ads-engagement-panel-content-renderer,
         #related ytd-display-ad-renderer,
         #secondary ytd-display-ad-renderer,
@@ -197,7 +199,6 @@ const hideSponsoredBlocks = () => {
         "ytd-player-legacy-desktop-watch-ads-renderer",
         "ytd-video-masthead-ad-v3-renderer",
         "ytd-banner-promo-renderer",
-        "#player-ads",
         "ytmusic-display-ad-renderer",
         "ytmusic-promoted-sparkles-web-renderer",
         "ytmusic-mealbar-promo-renderer",
