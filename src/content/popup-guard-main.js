@@ -24,8 +24,21 @@
         }
     }
 
+    function hasUserActivation() {
+        // Popunders fire window.open() async or with a stale/no gesture.
+        // A real click handler (e.g. a "Check activity" button) has live
+        // transient activation at the moment it calls window.open().
+        return !!(navigator.userActivation && navigator.userActivation.isActive);
+    }
+
     window.open = function (url, target, features) {
-        if (!state.enabled || state.allowedHost || !url || isSameOrigin(url)) {
+        if (
+            !state.enabled ||
+            state.allowedHost ||
+            !url ||
+            isSameOrigin(url) ||
+            hasUserActivation()
+        ) {
             return nativeOpen.call(window, url, target, features);
         }
 
@@ -105,7 +118,12 @@
     const NEUTRALIZED_ATTR = "data-bgp-neutralized";
 
     function isLikelyOverlay(el) {
-        if (!el || el === document.body || el === document.documentElement) {
+        if (
+            !el ||
+            el.nodeType !== 1 ||
+            el === document.body ||
+            el === document.documentElement
+        ) {
             return false;
         }
 
@@ -155,13 +173,15 @@
 
         // Vector 1: a script builds an <a target="_blank"> pointing at an ad
         // redirector and fires it with el.click()/dispatchEvent() instead of
-        // window.open() - which our override above never sees. Programmatic
-        // activation always produces an untrusted event, so a synthetic click
-        // landing on a cross-origin new-tab link is popunder behavior, not a
-        // legitimate site feature (real sites don't script-click external
-        // links open for users).
+        // window.open() - which our override above never sees. A synthetic
+        // click with no live user gesture behind it is popunder behavior.
+        // But some sites (Gmail's link-tracking relay, e.g.) intercept the
+        // real trusted click, log it, then re-dispatch the same anchor click
+        // synthetically to actually navigate - that's still a live user
+        // gesture, just relayed, so gate on user activation rather than
+        // isTrusted alone.
         const anchor = nearestAnchor(event.target);
-        if (anchor && !event.isTrusted) {
+        if (anchor && !event.isTrusted && !hasUserActivation()) {
             const opensNewTab =
                 anchor.target === "_blank" || anchor.target === "_new";
             if (opensNewTab && !isSameOrigin(anchor.href)) {
