@@ -76,6 +76,21 @@
             "js": ["src/content/content.js"],
             "run_at": "document_start",
             "all_frames": false
+        },
+        {
+            "matches": ["http://*/*", "https://*/*"],
+            "js": ["src/content/popup-guard-coordinator.js"],
+            "run_at": "document_start",
+            "all_frames": true,
+            "match_origin_as_fallback": true
+        },
+        {
+            "matches": ["http://*/*", "https://*/*"],
+            "js": ["src/content/popup-guard-main.js"],
+            "world": "MAIN",
+            "run_at": "document_start",
+            "all_frames": true,
+            "match_origin_as_fallback": true
         }
     ],
     "action": {

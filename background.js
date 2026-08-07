@@ -1614,6 +1614,18 @@ class TabSuspendManager {
                     await this.adsBlocker.toggleBlocking(message.enabled);
                     sendResponse({ success: true });
                     break;
+                case "popup-guard-blocked":
+                    try {
+                        const blockedDomain = new URL(message.url).hostname;
+                        this.adsBlocker.trackBlockedAd(
+                            blockedDomain,
+                            "popups",
+                        );
+                    } catch (error) {
+                        // Non-URL or unparsable target - ignore
+                    }
+                    sendResponse({ success: true });
+                    break;
 
                 // Cloud Backup Management
                 case "cloud-authenticate":

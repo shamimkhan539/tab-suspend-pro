@@ -171,6 +171,12 @@ class AdsBlocker {
                 "*://*.aweber.com/*",
                 "*://*.mailchimp.com/ecommerce/*",
                 "*://*.infusionsoft.com/*",
+                // Monetag/PropellerAds "zone loader" popunder scripts.
+                // These rotate CDN-alias domains frequently to dodge static
+                // blocklists (llvpn.com observed on purehd.cc); the client-side
+                // guard in popup-guard-main.js is the durable defense, this
+                // entry just cuts the currently-known host off at the network.
+                "*://*.llvpn.com/*",
             ],
         };
 
