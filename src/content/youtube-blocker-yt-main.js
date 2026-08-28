@@ -149,9 +149,11 @@
         }
 
         // Wait until the ad has registered as "started" before seeking, to
-        // avoid YouTube's ad-block detection. See docs/features/youtube/
-        // YOUTUBE_BLOCKER_JADSKIP_REWRITE.md section 3.
-        const threshold = player.duration * 0.4;
+        // avoid YouTube's ad-block detection. Fixed ~1.5s rather than the old
+        // proportional `duration * 0.4`, which made the user watch 6s of a 15s
+        // ad and 12s of a 30s one. See getAdSkipThreshold in
+        // youtube-blocker-shared.js.
+        const threshold = getAdSkipThreshold(player.duration);
         if (player.currentTime < threshold) {
             logMessage(
                 `Waiting for threshold: ${player.currentTime} < ${threshold}`,
@@ -175,9 +177,10 @@
         clickVisibleSkipButton();
         await tryClickSkipButton();
 
-        // Give the skip-button API time to register with YouTube's backend
-        // before falling back to seeking, to avoid ad-block detection.
-        await new Promise((resolve) => setTimeout(resolve, 1000));
+        // Give the skip-button API a beat to register with YouTube's backend
+        // before falling back to seeking. 1000ms was pure added ad watch time
+        // on top of the seek threshold.
+        await new Promise((resolve) => setTimeout(resolve, 250));
 
         clickVisibleSkipButton();
         await trySkipAd();
@@ -242,33 +245,14 @@
         }
     };
 
-    // Override XMLHttpRequest to intercept API responses
-    const originalSend = XMLHttpRequest.prototype.send;
-    XMLHttpRequest.prototype.send = function (...args) {
-        const originalOnload = this.onload;
+    // Observe player API responses (fetch + XHR) to capture ad slots.
+    installAdPayloadInterceptor((response) => {
+        const capturedCount = captureAdSlotsFromResponse(response);
 
-        if (originalOnload) {
-            this.onload = function (...onloadArgs) {
-                try {
-                    // Read-only: never reassign this.response. Rewriting a
-                    // parsed-and-reserialized payload is a strong tamper
-                    // signature for YouTube's ad-block/integrity detection.
-                    const response = JSON.parse(this.response);
-                    const capturedCount = captureAdSlotsFromResponse(response);
-
-                    if (capturedCount > 0) {
-                        logMessage(`Captured ${capturedCount} ad slots`);
-                    }
-                } catch (e) {
-                    // Not a JSON response, continue normally
-                }
-
-                return originalOnload.apply(this, onloadArgs);
-            };
+        if (capturedCount > 0) {
+            logMessage(`Captured ${capturedCount} ad slots`);
         }
-
-        return originalSend.apply(this, args);
-    };
+    });
 
     // Listen for messages from ISOLATED world
     window.addEventListener("message", async (event) => {

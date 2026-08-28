@@ -78,13 +78,23 @@ class AdsBlocker {
                 "*://*.ads.aol.com/*",
                 "*://*.ads.linkedin.com/*",
                 "*://*.ads.facebook.com/*",
-                // Note: YouTube/YouTube Music ad requests are intentionally NOT
-                // network-blocked here. Blocking youtube.com/youtubei.googleapis.com/
-                // ytimg.com ad-related requests produces failed requests
-                // (net::ERR_BLOCKED_BY_CLIENT) that YouTube's anti-adblock detection
-                // watches for and responds to with a playback-blocking wall. Ads on
-                // YouTube are instead skipped client-side via the content scripts in
-                // src/content/youtube-blocker-*.js, which doesn't touch the network layer.
+                // YouTube: ad *telemetry* endpoints only.
+                //
+                // Deliberately narrow. Blocking youtubei.googleapis.com,
+                // /youtubei/v1/player, ytimg.com or the player scripts produces
+                // net::ERR_BLOCKED_BY_CLIENT on paths YouTube's anti-adblock
+                // check watches, and it answers with a playback-blocking wall.
+                // The endpoints below are impression/viewability pings that
+                // playback does not depend on, so failing them is safe. The ads
+                // themselves are still skipped client-side by
+                // src/content/youtube-blocker-*.js.
+                //
+                // `||youtube.com/...` matches www. and music. alike.
+                "*://*.youtube.com/pagead/*",
+                "*://*.youtube.com/ptracking*",
+                "*://*.youtube.com/api/stats/ads*",
+                "*://*.youtube.com/get_midroll_info*",
+                "*://*.youtube.com/pcs/activeview*",
             ],
 
             // Analytics Trackers (including YouTube tracking)
@@ -355,6 +365,11 @@ class AdsBlocker {
                         "sub_frame",
                         "media",
                         "xmlhttprequest",
+                        // Impression/viewability pings are usually sent with
+                        // navigator.sendBeacon ("ping"), which the list above
+                        // does not cover.
+                        "ping",
+                        "other",
                     ],
                 };
 

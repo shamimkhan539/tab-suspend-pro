@@ -180,8 +180,10 @@
         }
 
         // Wait until the ad has registered as "started" before seeking, to
-        // avoid YouTube's ad-block detection.
-        const threshold = adPlayer.duration * 0.4;
+        // avoid YouTube's ad-block detection. Fixed ~1.5s rather than the old
+        // proportional `duration * 0.4`. See getAdSkipThreshold in
+        // youtube-blocker-shared.js.
+        const threshold = getAdSkipThreshold(adPlayer.duration);
         if (adPlayer.currentTime < threshold) {
             logMessage(
                 `Waiting for threshold: ${adPlayer.currentTime} < ${threshold}`,
@@ -213,10 +215,11 @@
             return;
         }
 
-        // Step 2: Give the skip-button API time to register with YouTube's
-        // backend before falling back to seeking, to avoid ad-block detection.
+        // Step 2: Give the skip-button API a beat to register with YouTube's
+        // backend before falling back to seeking. 1000ms was pure added ad
+        // watch time on top of the seek threshold.
         await trySkipAd();
-        await new Promise((resolve) => setTimeout(resolve, 1000));
+        await new Promise((resolve) => setTimeout(resolve, 250));
 
         clickVisibleSkipButton();
 
@@ -294,39 +297,21 @@
         }
     };
 
-    // Override XMLHttpRequest to capture ad slots for the skip-button API.
-    // Read-only: never reassign this.response. Rewriting a parsed-and-
-    // reserialized payload is a strong tamper signature for YouTube's
-    // ad-block/integrity detection, so idle prompts are left untouched here
-    // and handled via checkIdle()'s DOM-level button click instead.
-    const originalSend = XMLHttpRequest.prototype.send;
-    XMLHttpRequest.prototype.send = function (...args) {
-        const originalOnload = this.onload;
+    // Observe player API responses (fetch + XHR) to capture ad slots for the
+    // skip-button API. Read-only: the payload is never rewritten - reserializing
+    // a parsed response is a strong tamper signature for YouTube's ad-block/
+    // integrity detection, so idle prompts are left untouched here and handled
+    // via checkIdle()'s DOM-level button click instead.
+    installAdPayloadInterceptor((response) => {
+        const slots = Array.isArray(response.adSlots)
+            ? response.adSlots
+            : response.playerResponse?.adSlots;
 
-        if (originalOnload) {
-            this.onload = function (...onloadArgs) {
-                try {
-                    const response = JSON.parse(this.response);
-
-                    if (
-                        Array.isArray(response.adSlots) &&
-                        response.adSlots.length > 0
-                    ) {
-                        adSlots = response.adSlots;
-                        logMessage(
-                            `[YTM] Captured ${response.adSlots.length} ad slots from XHR`,
-                        );
-                    }
-                } catch (e) {
-                    // Not a JSON response, continue normally
-                }
-
-                return originalOnload.apply(this, onloadArgs);
-            };
+        if (Array.isArray(slots) && slots.length > 0) {
+            adSlots = slots;
+            logMessage(`[YTM] Captured ${slots.length} ad slots`);
         }
-
-        return originalSend.apply(this, args);
-    };
+    });
 
     // Listen for messages from ISOLATED world
     window.addEventListener("message", async (event) => {
