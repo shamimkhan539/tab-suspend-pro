@@ -78,23 +78,13 @@ class AdsBlocker {
                 "*://*.ads.aol.com/*",
                 "*://*.ads.linkedin.com/*",
                 "*://*.ads.facebook.com/*",
-                // YouTube: ad *telemetry* endpoints only.
-                //
-                // Deliberately narrow. Blocking youtubei.googleapis.com,
-                // /youtubei/v1/player, ytimg.com or the player scripts produces
-                // net::ERR_BLOCKED_BY_CLIENT on paths YouTube's anti-adblock
-                // check watches, and it answers with a playback-blocking wall.
-                // The endpoints below are impression/viewability pings that
-                // playback does not depend on, so failing them is safe. The ads
-                // themselves are still skipped client-side by
-                // src/content/youtube-blocker-*.js.
-                //
-                // `||youtube.com/...` matches www. and music. alike.
-                "*://*.youtube.com/pagead/*",
-                "*://*.youtube.com/ptracking*",
-                "*://*.youtube.com/api/stats/ads*",
-                "*://*.youtube.com/get_midroll_info*",
-                "*://*.youtube.com/pcs/activeview*",
+                // Note: YouTube/YouTube Music ad requests are intentionally NOT
+                // network-blocked here, not even "telemetry-only" endpoints like
+                // pagead/ptracking/get_midroll_info. That narrower set was tried
+                // (3d2628c) and still tripped YouTube's anti-adblock wall — any
+                // failed request on a path it probes is enough. Ads on YouTube
+                // are instead skipped client-side via src/content/youtube-blocker-*.js,
+                // which doesn't touch the network layer.
             ],
 
             // Analytics Trackers (including YouTube tracking)
@@ -338,11 +328,18 @@ class AdsBlocker {
 
         // Build the whitelist condition once — exclude requests initiated from
         // whitelisted domains so those sites are not affected.
-        const whitelistedDomains = Array.isArray(
-            this.settings.whitelistedDomains,
-        )
-            ? this.settings.whitelistedDomains.filter(Boolean)
-            : [];
+        // youtube.com/music.youtube.com are always excluded as request
+        // initiators. Network-level blocking here isn't scoped to YouTube's
+        // own ad paths — it also hits doubleclick.net/googlesyndication.com/
+        // googleadservices.com, which YouTube's IMA ad SDK calls directly for
+        // in-video ads. A blocked request on those domains from a youtube.com
+        // page is exactly what trips the "ad blockers violate ToS" wall. Ads
+        // there are skipped client-side instead via src/content/youtube-blocker-*.js.
+        const whitelistedDomains = (
+            Array.isArray(this.settings.whitelistedDomains)
+                ? this.settings.whitelistedDomains.filter(Boolean)
+                : []
+        ).concat(["youtube.com", "music.youtube.com"]);
 
         categories.forEach((category) => {
             const patterns = this.filterLists[category] || [];

@@ -204,8 +204,14 @@ class TabActivityAnalytics {
     }
 
     async recordTabActivation(tabId) {
+        let tab;
         try {
-            const tab = await chrome.tabs.get(tabId);
+            tab = await chrome.tabs.get(tabId);
+        } catch (error) {
+            // Tab closed/navigated away before we could look it up — not an error.
+            return;
+        }
+        try {
             if (
                 !tab.url ||
                 tab.url.startsWith("chrome://") ||

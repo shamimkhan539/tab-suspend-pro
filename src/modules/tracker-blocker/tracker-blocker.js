@@ -252,10 +252,19 @@ class TrackerBlocker {
             ruleId++;
         }
 
-        // Apply whitelist exceptions
+        // Apply whitelist exceptions. youtube.com/music.youtube.com are always
+        // allowed here: this blocker's rules aren't scoped to tracker-only
+        // paths, so they also catch doubleclick.net/googlesyndication.com
+        // requests YouTube's own ad SDK makes directly, which trips YouTube's
+        // "ad blockers violate ToS" wall. Ads on YouTube are skipped
+        // client-side instead via src/content/youtube-blocker-*.js.
         const whitelistRules = this.createWhitelistRules(
             ruleId,
-            this.settings.whitelistedDomains
+            [
+                ...this.settings.whitelistedDomains,
+                "youtube.com",
+                "music.youtube.com",
+            ]
         );
         rules.push(...whitelistRules);
 
