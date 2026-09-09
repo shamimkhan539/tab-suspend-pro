@@ -173,25 +173,28 @@ const ensureSponsoredHideStyle = () => {
 
     const style = document.createElement("style");
     style.id = YTBLOCKER_HIDE_STYLE_ID;
-    // Note: #player-ads is intentionally excluded. YouTube's anti-adblock
-    // check inspects that container's visibility/emptiness to detect
-    // blockers, so force-hiding it is a direct detection trip wire.
+    // #player-ads is intentionally excluded. YouTube's anti-adblock check
+    // inspects that container's visibility/emptiness to detect blockers, so
+    // force-hiding it is a direct detection trip wire. The bare tag selectors
+    // below (ytd-display-ad-renderer, ytd-ad-slot-renderer) can also render
+    // *inside* #player-ads, so every one of them needs the :not(#player-ads *)
+    // guard — an unscoped selector defeats the exclusion above.
     style.textContent = `
-        ytd-display-ad-renderer,
-        ytd-ad-slot-renderer,
-        ytd-in-feed-ad-layout-renderer,
-        ytd-promoted-video-renderer,
-        ytd-compact-promoted-video-renderer,
-        ytd-promoted-sparkles-web-renderer,
-        ytd-promoted-sparkles-text-search-renderer,
-        ytd-companion-slot-renderer,
-        ytd-action-companion-ad-renderer,
-        ytd-player-legacy-desktop-watch-ads-renderer,
-        ytd-video-masthead-ad-v3-renderer,
-        ytd-banner-promo-renderer,
-        ytmusic-display-ad-renderer,
-        ytmusic-promoted-sparkles-web-renderer,
-        ytmusic-mealbar-promo-renderer,
+        ytd-display-ad-renderer:not(#player-ads *),
+        ytd-ad-slot-renderer:not(#player-ads *),
+        ytd-in-feed-ad-layout-renderer:not(#player-ads *),
+        ytd-promoted-video-renderer:not(#player-ads *),
+        ytd-compact-promoted-video-renderer:not(#player-ads *),
+        ytd-promoted-sparkles-web-renderer:not(#player-ads *),
+        ytd-promoted-sparkles-text-search-renderer:not(#player-ads *),
+        ytd-companion-slot-renderer:not(#player-ads *),
+        ytd-action-companion-ad-renderer:not(#player-ads *),
+        ytd-player-legacy-desktop-watch-ads-renderer:not(#player-ads *),
+        ytd-video-masthead-ad-v3-renderer:not(#player-ads *),
+        ytd-banner-promo-renderer:not(#player-ads *),
+        ytmusic-display-ad-renderer:not(#player-ads *),
+        ytmusic-promoted-sparkles-web-renderer:not(#player-ads *),
+        ytmusic-mealbar-promo-renderer:not(#player-ads *),
         #panels ytd-ads-engagement-panel-content-renderer,
         #related ytd-display-ad-renderer,
         #secondary ytd-display-ad-renderer,
@@ -321,6 +324,11 @@ const hideSponsoredBlocks = () => {
 
     const hideElement = (element, reason) => {
         if (!element) return false;
+
+        // #player-ads is a known anti-adblock trip wire (see
+        // ensureSponsoredHideStyle) — never hide anything inside it, even
+        // when it matches one of the tag-name selectors below.
+        if (element.closest("#player-ads")) return false;
 
         const wrapper = element.closest(wrapperSelector);
         const target = wrapper || element;
