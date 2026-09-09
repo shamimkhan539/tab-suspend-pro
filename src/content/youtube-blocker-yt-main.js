@@ -285,6 +285,7 @@
                 lastBlockedTime = 0;
                 lastBlockedAdURL = "";
                 adSlots = [];
+                hideSponsoredBlocks();
                 logMessage("State reset");
                 break;
         }

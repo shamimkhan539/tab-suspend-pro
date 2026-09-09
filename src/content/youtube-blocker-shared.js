@@ -316,7 +316,29 @@ const clickVisibleSkipButton = () => {
     return false;
 };
 
+// Self-healing pass: undo any hide we applied to something that has since
+// ended up inside #player-ads. YouTube's SPA navigation reuses/relocates
+// Polymer elements rather than recreating them, so an ad-slot element can
+// briefly exist detached (or under a different parent) — and get caught by
+// a mutation-triggered sweep — before landing in its final position inside
+// #player-ads on the next video. hideElement()'s #player-ads guard only
+// protects hides going forward; this repairs ones that already landed wrong.
+const unhideStrandedPlayerAdsElements = () => {
+    const playerAds = document.getElementById("player-ads");
+    if (!playerAds) return;
+
+    playerAds
+        .querySelectorAll('[data-ytblocker-sponsored-hidden="1"]')
+        .forEach((element) => {
+            element.style.removeProperty("display");
+            delete element.dataset.ytblockerSponsoredHidden;
+            delete element.dataset.ytblockerSponsoredReason;
+        });
+};
+
 const hideSponsoredBlocks = () => {
+    unhideStrandedPlayerAdsElements();
+
     let hiddenCount = 0;
 
     const wrapperSelector =
